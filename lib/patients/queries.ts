@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
 import { patients, patientAllergies, patientChronicConditions } from '@/db/schema';
 
