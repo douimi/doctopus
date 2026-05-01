@@ -18,10 +18,13 @@
     "db:generate": "drizzle-kit generate --config db/drizzle.config.ts",
     "db:push": "drizzle-kit push --config db/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config db/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config db/drizzle.config.ts"
+    "db:studio": "drizzle-kit studio --config db/drizzle.config.ts",
+    "invite:doctor": "tsx scripts/invite-doctor.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.105.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
@@ -50,6 +53,7 @@
     "happy-dom": "^20.9.0",
     "supabase": "^2.98.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.1.5"
   }
