@@ -56,6 +56,6 @@ See [`docs/superpowers/specs/2026-04-30-doctopus-mvp-design.md`](docs/superpower
 
 - [x] **Plan 1.A — Foundation** ([plan](docs/superpowers/plans/2026-04-30-doctopus-1a-foundation.md))
 - [x] **Plan 1.B — Patients & day view** ([plan](docs/superpowers/plans/2026-05-01-doctopus-1b-patients-day-view.md))
-- [ ] Plan 1.C — Consultations
+- [x] **Plan 1.C — Consultations** ([plan](docs/superpowers/plans/2026-05-01-doctopus-1c-consultations.md))
 - [ ] Plan 1.D — Medication DB & prescriptions
 - [ ] Plan 1.E — Audit log & production hardening
