@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { Suspense, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -20,11 +20,35 @@ function Submit() {
   );
 }
 
-export default function SignInPage() {
+function SignInForm() {
   const params = useSearchParams();
   const next = params.get('next') ?? '';
   const [state, action] = useActionState(signInAction, initial);
 
+  return (
+    <form action={action} className="space-y-4">
+      <input type="hidden" name="next" value={next} />
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" name="email" type="email" required autoComplete="email" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Mot de passe</Label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autoComplete="current-password"
+        />
+      </div>
+      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      <Submit />
+    </form>
+  );
+}
+
+export default function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
@@ -32,25 +56,9 @@ export default function SignInPage() {
           <CardTitle>Doctopus</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={action} className="space-y-4">
-            <input type="hidden" name="next" value={next} />
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" required autoComplete="email" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
-            <Submit />
-          </form>
+          <Suspense fallback={null}>
+            <SignInForm />
+          </Suspense>
         </CardContent>
       </Card>
     </div>
