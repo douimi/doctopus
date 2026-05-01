@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Doctopus
 
-## Getting Started
+Multi-tenant medical practice management for Moroccan generalists.
 
-First, run the development server:
+## Plan 1.A scope (this branch)
+
+Foundation only: auth, tenant onboarding via invite link, assistant invitations. No application features yet.
+
+## Local development
+
+### Prerequisites
+
+- Node 22 (`nvm use`)
+- pnpm 10+
+- Docker Desktop (for `supabase start`)
+
+### One-time setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+# Restore the supabase CLI binary into node_modules/.bin (pnpm strips it on each install):
+cp node_modules/.pnpm/supabase@*/node_modules/supabase/bin/supabase.exe node_modules/.bin/supabase.exe
+
+pnpm supabase:start             # boots local Postgres, Auth, Storage on Docker
+cp .env.example .env.local      # then paste the keys printed by `pnpm exec supabase status -o env`
+pnpm exec supabase db reset     # applies all migrations (drizzle + RLS)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Run
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev                        # http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Invite a doctor (manual platform-admin action)
 
-## Learn More
+```bash
+pnpm invite:doctor --email dr@example.ma
+```
 
-To learn more about Next.js, take a look at the following resources:
+The script prints a one-time invite URL valid for 7 days.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Tests
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm test                       # vitest (unit + RLS)
+pnpm test:rls                   # RLS isolation only
+pnpm test:e2e                   # Playwright (boots dev server)
+```
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See [`docs/superpowers/specs/2026-04-30-doctopus-mvp-design.md`](docs/superpowers/specs/2026-04-30-doctopus-mvp-design.md).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Implementation roadmap
+
+- [x] **Plan 1.A — Foundation** ([plan](docs/superpowers/plans/2026-04-30-doctopus-1a-foundation.md))
+- [ ] Plan 1.B — Patients & day view
+- [ ] Plan 1.C — Consultations
+- [ ] Plan 1.D — Medication DB & prescriptions
+- [ ] Plan 1.E — Audit log & production hardening
