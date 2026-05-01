@@ -38,7 +38,7 @@ export default async function TodayPage() {
 
       <section className="space-y-2">
         <h2 className="font-medium">Salle d&apos;attente</h2>
-        <WaitingPanel items={waiting} />
+        <WaitingPanel items={waiting} canStartConsultation={session.role === 'doctor'} />
       </section>
 
       {inConsult.length > 0 ? (

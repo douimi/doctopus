@@ -2,13 +2,20 @@ import Link from 'next/link';
 import type { AppointmentWithPatient } from '@/lib/appointments/queries';
 import { ageFromDob } from '@/lib/patients/age';
 import { cancelAppointmentAction } from '@/app/(authenticated)/today/actions';
+import { startConsultationAction } from '@/app/(authenticated)/today/start/actions';
 
 function fmtTime(d: Date | null): string {
   if (!d) return '—';
   return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export function WaitingPanel({ items }: { items: AppointmentWithPatient[] }) {
+export function WaitingPanel({
+  items,
+  canStartConsultation,
+}: {
+  items: AppointmentWithPatient[];
+  canStartConsultation: boolean;
+}) {
   if (items.length === 0) {
     return <p className="text-sm text-gray-500">Salle d&apos;attente vide.</p>;
   }
@@ -27,12 +34,25 @@ export function WaitingPanel({ items }: { items: AppointmentWithPatient[] }) {
               {a.reason ? ` · ${a.reason}` : ''}
             </div>
           </div>
-          <form action={cancelAppointmentAction}>
-            <input type="hidden" name="id" value={a.id} />
-            <button type="submit" className="text-xs text-red-600 underline">
-              annuler
-            </button>
-          </form>
+          <div className="flex gap-2 text-xs items-center">
+            {canStartConsultation ? (
+              <form action={startConsultationAction}>
+                <input type="hidden" name="appointmentId" value={a.id} />
+                <button
+                  type="submit"
+                  className="rounded bg-primary px-2 py-1 text-primary-foreground text-xs"
+                >
+                  Commencer
+                </button>
+              </form>
+            ) : null}
+            <form action={cancelAppointmentAction}>
+              <input type="hidden" name="id" value={a.id} />
+              <button type="submit" className="text-red-600 underline">
+                annuler
+              </button>
+            </form>
+          </div>
         </li>
       ))}
     </ul>

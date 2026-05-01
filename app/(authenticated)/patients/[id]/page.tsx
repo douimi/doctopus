@@ -6,6 +6,8 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PatientCard } from '@/components/patients/patient-card';
+import { listConsultationsForPatient } from '@/lib/consultations/queries';
+import { PastConsultationsList } from '@/components/consultations/past-consultations-list';
 import { archivePatientAction } from './actions';
 import { addAllergyAction, removeAllergyAction } from './allergies/actions';
 import { addConditionAction, removeConditionAction } from './conditions/actions';
@@ -19,6 +21,7 @@ export default async function PatientDetailPage({
   const session = await requireSession();
   const data = await getPatientDetail(session.tenantId, id);
   if (!data) notFound();
+  const consultations = await listConsultationsForPatient(session.tenantId, id);
 
   return (
     <div className="space-y-4 max-w-3xl">
@@ -114,6 +117,11 @@ export default async function PatientDetailPage({
           </form>
         </div>
       </div>
+
+      <section className="space-y-2">
+        <h2 className="font-medium">Consultations antérieures</h2>
+        <PastConsultationsList items={consultations} />
+      </section>
     </div>
   );
 }
