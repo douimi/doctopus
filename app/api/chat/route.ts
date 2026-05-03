@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { convertToModelMessages, streamText, type UIMessage } from 'ai';
 import { sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { dbAdmin } from '@/db/client';
@@ -28,21 +28,28 @@ import { recordAudit } from '@/lib/audit/record';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
-
 function jsonError(code: string, status: number) {
   return NextResponse.json({ error: code }, { status });
 }
 
+function extractText(m: UIMessage): string {
+  return (m.parts ?? [])
+    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map((p) => p.text)
+    .join('');
+}
+
 export async function POST(req: Request) {
   const session = await requireDoctor();
-  const body = (await req.json()) as { consultationId?: string; messages?: Msg[] };
+  const body = (await req.json()) as { consultationId?: string; messages?: UIMessage[] };
   const { consultationId, messages } = body;
   if (!consultationId || !Array.isArray(messages) || messages.length === 0) {
     return jsonError('bad_request', 400);
   }
   const lastUser = messages.at(-1);
   if (!lastUser || lastUser.role !== 'user') return jsonError('bad_request', 400);
+  const lastUserText = extractText(lastUser);
+  if (!lastUserText) return jsonError('bad_request', 400);
 
   // Load tenant + consultation; validate.
   const admin = dbAdmin();
@@ -116,19 +123,21 @@ export async function POST(req: Request) {
       tenantId: session.tenantId,
       consultationId,
       role: 'user',
-      content: lastUser.content,
+      content: lastUserText,
     });
   });
 
   const provider = tenantRow.chatbot_provider;
   const modelName = tenantRow.chatbot_model;
 
+  const modelMessages = await convertToModelMessages(messages);
+
   const result = streamText({
     model,
     system: SYSTEM_PROMPT,
     messages: [
       { role: 'user', content: context },
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ...modelMessages,
     ],
     maxOutputTokens: MAX_OUTPUT_TOKENS_PER_TURN,
     onFinish: async ({ text, usage }) => {
