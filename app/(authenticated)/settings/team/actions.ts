@@ -7,6 +7,7 @@ import { tenantInvites } from '@/db/schema';
 import { generateInviteToken, hashInviteToken } from '@/lib/invites/tokens';
 import { requireDoctor } from '@/lib/auth/guards';
 import { env } from '@/lib/env';
+import { recordAudit } from '@/lib/audit/record';
 
 const schema = z.object({ email: z.string().email() });
 
@@ -31,6 +32,14 @@ export async function inviteAssistant(
     emailHint: parsed.data.email,
     expiresAt,
     createdBy: session.userId,
+  });
+
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'tenant.invite_created',
+    entityType: 'invite',
+    metadata: { email: parsed.data.email },
   });
 
   const url = `${env().APP_URL}/invite/${token}`;

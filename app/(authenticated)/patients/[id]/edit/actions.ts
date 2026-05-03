@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { requireSession } from '@/lib/auth/session';
 import { patientUpdateSchema } from '@/lib/patients/schemas';
 import { updatePatient } from '@/lib/patients/mutations';
+import { recordAudit } from '@/lib/audit/record';
 
 export type UpdatePatientState = { error: string | null };
 
@@ -20,6 +21,13 @@ export async function updatePatientAction(
   }
   const updated = await updatePatient(session.tenantId, parsed.data);
   if (!updated) return { error: 'Patient introuvable.' };
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'patient.update',
+    entityType: 'patient',
+    entityId: updated.id,
+  });
   revalidatePath(`/patients/${updated.id}`);
   redirect(`/patients/${updated.id}`);
 }

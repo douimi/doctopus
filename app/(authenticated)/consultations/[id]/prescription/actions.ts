@@ -15,6 +15,7 @@ import {
   updatePrescriptionItem,
 } from '@/lib/prescriptions/mutations';
 import { searchMedications, type MedicationSearchHit } from '@/lib/medications/queries';
+import { recordAudit } from '@/lib/audit/record';
 
 export async function addItemActionFromForm(formData: FormData): Promise<void> {
   const session = await requireDoctor();
@@ -29,6 +30,14 @@ export async function addItemActionFromForm(formData: FormData): Promise<void> {
   });
   if (!parsed.success) return;
   await addPrescriptionItem(session.tenantId, session.userId, parsed.data);
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'prescription.item_added',
+    entityType: 'consultation',
+    entityId: parsed.data.consultationId,
+    metadata: { medicationId: parsed.data.medicationId || null },
+  });
   revalidatePath(`/consultations/${parsed.data.consultationId}`);
 }
 

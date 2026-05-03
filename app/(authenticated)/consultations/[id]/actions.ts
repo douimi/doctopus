@@ -10,6 +10,7 @@ import {
   updateConsultationSections,
   updateConsultationVitals,
 } from '@/lib/consultations/mutations';
+import { recordAudit } from '@/lib/audit/record';
 
 const idSchema = z.object({ id: z.string().uuid() });
 
@@ -46,6 +47,13 @@ export async function finalizeConsultationAction(formData: FormData) {
   const parsed = idSchema.safeParse({ id: formData.get('id') });
   if (!parsed.success) return;
   await finalizeConsultation(session.tenantId, parsed.data.id);
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'consultation.finalize',
+    entityType: 'consultation',
+    entityId: parsed.data.id,
+  });
   revalidatePath('/today');
   redirect('/today');
 }

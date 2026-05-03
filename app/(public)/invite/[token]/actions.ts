@@ -10,6 +10,7 @@ import { hashInviteToken } from '@/lib/invites/tokens';
 import { lookupInvite } from '@/lib/invites/lookup';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { env } from '@/lib/env';
+import { recordAudit } from '@/lib/audit/record';
 
 const ownerSchema = z.object({
   token: z.string().regex(/^[0-9a-f]{64}$/),
@@ -62,6 +63,7 @@ export async function acceptOwnerInvite(_: OwnerState, formData: FormData): Prom
 
   const userId = created.data.user.id;
   const admin = dbAdmin();
+  let createdTenantId: string | null = null;
   try {
     await admin.transaction(async (tx) => {
       const tokenHash = hashInviteToken(parsed.data.token);
@@ -82,6 +84,7 @@ export async function acceptOwnerInvite(_: OwnerState, formData: FormData): Prom
           phone: parsed.data.cabinetPhone || null,
         })
         .returning();
+      createdTenantId = tenant.id;
 
       await tx.insert(userProfiles).values({
         id: userId,
@@ -97,6 +100,16 @@ export async function acceptOwnerInvite(_: OwnerState, formData: FormData): Prom
       return { error: "Cette invitation vient d'être utilisée." };
     }
     return { error: 'Erreur lors de la création du cabinet.' };
+  }
+
+  if (createdTenantId) {
+    await recordAudit({
+      tenantId: createdTenantId,
+      actorUserId: userId,
+      action: 'tenant.invite_consumed',
+      entityType: 'invite',
+      metadata: { kind: 'tenant_owner' },
+    });
   }
 
   const supabase = await getSupabaseServerClient();
@@ -167,6 +180,14 @@ export async function acceptAssistantInvite(
     }
     return { error: 'Erreur lors de la création du compte.' };
   }
+
+  await recordAudit({
+    tenantId,
+    actorUserId: userId,
+    action: 'tenant.invite_consumed',
+    entityType: 'invite',
+    metadata: { kind: 'assistant' },
+  });
 
   const supabase = await getSupabaseServerClient();
   const signIn = await supabase.auth.signInWithPassword({

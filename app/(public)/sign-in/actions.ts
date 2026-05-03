@@ -1,8 +1,12 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { dbAdmin } from '@/db/client';
+import { userProfiles } from '@/db/schema';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { recordAudit, recordAuditUnscoped } from '@/lib/audit/record';
 
 const schema = z.object({
   email: z.string().email(),
@@ -25,7 +29,25 @@ export async function signInAction(_: SignInState, formData: FormData): Promise<
     email: parsed.data.email,
     password: parsed.data.password,
   });
-  if (error) return { error: 'Identifiants incorrects.' };
+  if (error) {
+    recordAuditUnscoped('auth.sign_in_failed', { email: parsed.data.email });
+    return { error: 'Identifiants incorrects.' };
+  }
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (userData.user) {
+    const profile = await dbAdmin().query.userProfiles.findFirst({
+      where: eq(userProfiles.id, userData.user.id),
+    });
+    if (profile) {
+      await recordAudit({
+        tenantId: profile.tenantId,
+        actorUserId: profile.id,
+        action: 'auth.sign_in_success',
+        metadata: { email: profile.email },
+      });
+    }
+  }
 
   redirect(parsed.data.next?.startsWith('/') ? parsed.data.next : '/today');
 }

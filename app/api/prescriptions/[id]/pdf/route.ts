@@ -6,6 +6,7 @@ import { getPrescriptionDetail } from '@/lib/prescriptions/queries';
 import { dbAdmin } from '@/db/client';
 import { tenants, patients, userProfiles } from '@/db/schema';
 import { PrescriptionPdfDocument } from '@/components/prescriptions/pdf-document';
+import { recordAudit } from '@/lib/audit/record';
 
 export const runtime = 'nodejs';
 
@@ -48,6 +49,14 @@ export async function GET(
       items: detail.items,
     }),
   );
+
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'prescription.printed',
+    entityType: 'prescription',
+    entityId: id,
+  });
 
   return new NextResponse(new Uint8Array(pdf), {
     status: 200,

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { requireDoctor } from '@/lib/auth/guards';
 import { startFromAppointment } from '@/lib/consultations/mutations';
+import { recordAudit } from '@/lib/audit/record';
 
 const schema = z.object({ appointmentId: z.string().uuid() });
 
@@ -16,5 +17,13 @@ export async function startConsultationAction(formData: FormData) {
     parsed.data.appointmentId,
     session.userId,
   );
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'consultation.start',
+    entityType: 'consultation',
+    entityId: consultation.id,
+    metadata: { appointmentId: parsed.data.appointmentId },
+  });
   redirect(`/consultations/${consultation.id}`);
 }
