@@ -58,4 +58,14 @@ See [`docs/superpowers/specs/2026-04-30-doctopus-mvp-design.md`](docs/superpower
 - [x] **Plan 1.B — Patients & day view** ([plan](docs/superpowers/plans/2026-05-01-doctopus-1b-patients-day-view.md))
 - [x] **Plan 1.C — Consultations** ([plan](docs/superpowers/plans/2026-05-01-doctopus-1c-consultations.md))
 - [x] **Plan 1.D — Medication DB & prescriptions** ([plan](docs/superpowers/plans/2026-05-03-doctopus-1d-medications-prescriptions.md))
-- [ ] Plan 1.E — Audit log & production hardening
+- [x] **Plan 1.E — Audit log & production hardening** ([plan](docs/superpowers/plans/2026-05-03-doctopus-1e-audit-and-hardening.md))
+
+## Phase 1 complete
+
+All five sub-plans of Phase 1 are done. The product is launch-ready for the first paying tenant. See [docs/runbooks/deploy-1a.md](docs/runbooks/deploy-1a.md) to deploy.
+
+### Live AMMPS sync
+
+Doctopus pulls medications from the official Moroccan **AMMPS** database
+(`ammps.sante.gov.ma`). Run `pnpm sync:ammps` to refresh — see
+[docs/research/ammps-integration.md](docs/research/ammps-integration.md).

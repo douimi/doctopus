@@ -24,7 +24,7 @@ test('doctor signs up, invites assistant, both sign in', async ({ browser }) => 
   await drPage.getByLabel(/Mot de passe/).fill(password);
   await drPage.getByRole('button', { name: /Créer mon cabinet/ }).click();
   await drPage.waitForURL('**/today');
-  await expect(drPage.getByRole('heading')).toContainText('Bonjour Dr. Test');
+  await expect(drPage.getByRole('heading', { level: 1 })).toContainText('Bonjour Dr. Test');
 
   // 3. Doctor invites assistant.
   await drPage.goto('/settings/team');
@@ -42,7 +42,7 @@ test('doctor signs up, invites assistant, both sign in', async ({ browser }) => 
   await asstPage.getByLabel(/Mot de passe/).fill(password);
   await asstPage.getByRole('button', { name: /Rejoindre/ }).click();
   await asstPage.waitForURL('**/today');
-  await expect(asstPage.getByRole('heading')).toContainText('Bonjour Asst Test');
+  await expect(asstPage.getByRole('heading', { level: 1 })).toContainText('Bonjour Asst Test');
 
   // 5. Assistant cannot reach /settings/team.
   await asstPage.goto('/settings/team');
