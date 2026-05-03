@@ -72,17 +72,22 @@ export function PrescriptionPdfDocument({
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.cabinetTitle}>{tenant.name}</Text>
-            <Text style={styles.doctorLine}>Dr. {doctor.fullName}</Text>
-            {tenant.address ? <Text style={styles.cabinetMeta}>{tenant.address}</Text> : null}
-            {tenant.phone ? <Text style={styles.cabinetMeta}>Tél: {tenant.phone}</Text> : null}
-            {tenant.rpmNumber ? (
-              <Text style={styles.cabinetMeta}>RPM: {tenant.rpmNumber}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+            {tenant.logoUrl ? (
+              <Image src={tenant.logoUrl} style={{ width: 90, height: 60, objectFit: 'contain' }} />
             ) : null}
-            {tenant.cnomNumber ? (
-              <Text style={styles.cabinetMeta}>CNOM: {tenant.cnomNumber}</Text>
-            ) : null}
+            <View>
+              <Text style={styles.cabinetTitle}>{tenant.name}</Text>
+              <Text style={styles.doctorLine}>Dr. {doctor.fullName}</Text>
+              {tenant.address ? <Text style={styles.cabinetMeta}>{tenant.address}</Text> : null}
+              {tenant.phone ? <Text style={styles.cabinetMeta}>Tél: {tenant.phone}</Text> : null}
+              {tenant.rpmNumber ? (
+                <Text style={styles.cabinetMeta}>RPM: {tenant.rpmNumber}</Text>
+              ) : null}
+              {tenant.cnomNumber ? (
+                <Text style={styles.cabinetMeta}>CNOM: {tenant.cnomNumber}</Text>
+              ) : null}
+            </View>
           </View>
           <View>
             <Text style={styles.date}>{fmtDate(prescription.issuedAt)}</Text>
