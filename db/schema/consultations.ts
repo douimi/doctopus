@@ -31,6 +31,7 @@ export const consultations = pgTable(
     followUpNotes: text('follow_up_notes'),
     isFinalized: boolean('is_finalized').notNull().default(false),
     finalizedAt: timestamp('finalized_at', { withTimezone: true }),
+    aiCreditConsumedAt: timestamp('ai_credit_consumed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

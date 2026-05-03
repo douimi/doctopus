@@ -7,3 +7,4 @@ export * from './consultations';
 export * from './medications';
 export * from './prescriptions';
 export * from './audit';
+export * from './chatbot';

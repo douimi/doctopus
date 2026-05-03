@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -11,6 +11,12 @@ export const tenants = pgTable('tenants', {
   rpmNumber: text('rpm_number'),
   cnomNumber: text('cnom_number'),
   status: text('status', { enum: ['active', 'suspended'] }).notNull().default('active'),
+  chatbotProvider: text('chatbot_provider', { enum: ['anthropic', 'openai', 'mistral'] }),
+  chatbotModel: text('chatbot_model'),
+  chatbotEnabled: boolean('chatbot_enabled').notNull().default(false),
+  chatbotCreditsBalance: integer('chatbot_credits_balance').notNull().default(0),
+  chatbotDisclaimerAcknowledgedAt: timestamp('chatbot_disclaimer_acknowledged_at', { withTimezone: true }),
+  logoUrl: text('logo_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
