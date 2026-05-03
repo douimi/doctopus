@@ -4,7 +4,7 @@ import { env } from '@/lib/env';
 
 export async function uploadCabinetAsset(
   tenantId: string,
-  kind: 'signature' | 'stamp',
+  kind: 'signature' | 'stamp' | 'logo',
   file: File,
 ): Promise<string> {
   if (file.size === 0) throw new Error('Empty file');

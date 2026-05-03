@@ -83,3 +83,23 @@ export async function uploadStampAction(
     return { error: (err as Error).message, uploaded: false };
   }
 }
+
+export async function uploadLogoAction(
+  _: UploadState,
+  formData: FormData,
+): Promise<UploadState> {
+  const session = await requireDoctor();
+  const file = formData.get('file');
+  if (!(file instanceof File)) return { error: 'Aucun fichier reçu.', uploaded: false };
+  try {
+    const url = await uploadCabinetAsset(session.tenantId, 'logo', file);
+    await dbAdmin()
+      .update(tenants)
+      .set({ logoUrl: url, updatedAt: new Date() })
+      .where(eq(tenants.id, session.tenantId));
+    revalidatePath('/settings/cabinet');
+    return { error: null, uploaded: true };
+  } catch (err) {
+    return { error: (err as Error).message, uploaded: false };
+  }
+}

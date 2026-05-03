@@ -24,6 +24,9 @@ export default async function CabinetSettingsPage() {
               prescriptionHeaderHtml: tenant.prescriptionHeaderHtml ?? '',
               signatureUrl: tenant.signatureUrl ?? null,
               stampUrl: tenant.stampUrl ?? null,
+              logoUrl: tenant.logoUrl ?? null,
+              chatbotEnabled: tenant.chatbotEnabled,
+              chatbotCreditsBalance: tenant.chatbotCreditsBalance,
             }}
           />
         </CardContent>

@@ -11,6 +11,7 @@ import {
   saveCabinetTextAction,
   uploadSignatureAction,
   uploadStampAction,
+  uploadLogoAction,
   type SaveTextState,
   type UploadState,
 } from './actions';
@@ -45,11 +46,15 @@ export function CabinetForms({
     prescriptionHeaderHtml: string;
     signatureUrl: string | null;
     stampUrl: string | null;
+    logoUrl: string | null;
+    chatbotEnabled: boolean;
+    chatbotCreditsBalance: number;
   };
 }) {
   const [textState, textAction] = useActionState(saveCabinetTextAction, textInitial);
   const [sigState, sigAction] = useActionState(uploadSignatureAction, upInitial);
   const [stampState, stampAction] = useActionState(uploadStampAction, upInitial);
+  const [logoState, logoAction] = useActionState(uploadLogoAction, upInitial);
 
   return (
     <div className="space-y-6">
@@ -78,7 +83,25 @@ export function CabinetForms({
 
       <hr />
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="space-y-2">
+        <div className="font-medium">Assistant IA</div>
+        {initial.chatbotEnabled ? (
+          <p className="text-sm">Crédits IA : ~{initial.chatbotCreditsBalance} consultations restantes.</p>
+        ) : (
+          <p className="text-sm text-gray-500">
+            Non activé. Contactez l&apos;administrateur de la plateforme pour activer l&apos;assistant.
+          </p>
+        )}
+        <p className="text-xs text-gray-500">
+          Doctopus utilise des fournisseurs d&apos;IA (Anthropic, OpenAI, Mistral) comme sous-traitants pour
+          l&apos;assistant. Le contexte clinique du patient (sans nom, CIN, téléphone ni adresse) leur est
+          transmis. Aucune donnée n&apos;est utilisée pour entraîner leurs modèles.
+        </p>
+      </div>
+
+      <hr />
+
+      <div className="grid grid-cols-3 gap-6">
         <div className="space-y-2">
           <div className="font-medium">Signature</div>
           {initial.signatureUrl ? (
@@ -120,6 +143,21 @@ export function CabinetForms({
             {stampState.error ? <p className="text-sm text-red-600">{stampState.error}</p> : null}
             {stampState.uploaded ? <p className="text-sm text-green-700">Mise à jour.</p> : null}
             <UploadSubmit label="Téléverser le cachet" />
+          </form>
+        </div>
+
+        <div className="space-y-2">
+          <div className="font-medium">Logo</div>
+          {initial.logoUrl ? (
+            <Image src={initial.logoUrl} alt="logo" width={120} height={80} className="border rounded" unoptimized />
+          ) : (
+            <p className="text-sm text-gray-500">Aucun logo.</p>
+          )}
+          <form action={logoAction} className="space-y-2">
+            <Input type="file" name="file" accept="image/png,image/jpeg" required />
+            {logoState.error ? <p className="text-sm text-red-600">{logoState.error}</p> : null}
+            {logoState.uploaded ? <p className="text-sm text-green-700">Mise à jour.</p> : null}
+            <UploadSubmit label="Téléverser le logo" />
           </form>
         </div>
       </div>
