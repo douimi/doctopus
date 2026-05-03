@@ -18,8 +18,8 @@ export function MedicationSearchInput({
 
   useEffect(() => {
     if (query.trim().length < 2) {
-      setHits([]);
-      return;
+      const id = setTimeout(() => setHits([]), 0);
+      return () => clearTimeout(id);
     }
     const id = setTimeout(() => {
       start(async () => {

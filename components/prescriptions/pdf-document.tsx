@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/alt-text -- @react-pdf/renderer Image is not an HTML img */
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import type {
   Prescription,

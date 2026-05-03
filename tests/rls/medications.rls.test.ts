@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { withTenantTx } from '@/db/with-tenant';
 import { seedTenant } from '../fixtures/tenants';
 import { seedMedication } from '../fixtures/medications';
@@ -10,11 +11,15 @@ registerDbCleanup();
 describe('RLS — medications (global read)', () => {
   it('any authenticated tenant can SELECT all medications', async () => {
     const a = await seedTenant('rls-m-a');
-    await seedMedication({ nomCommercial: 'Brufen-RLS-test', laboratoire: 'Test-Lab-RLS' });
+    const name = `Brufen-RLS-${randomUUID().slice(0, 8)}`;
+    await seedMedication({
+      nomCommercial: name,
+      laboratoire: `Test-${randomUUID().slice(0, 6)}`,
+    });
 
     const rows = await withTenantTx(a.tenantId, async (tx) => {
       return tx.execute<{ nom_commercial: string }>(
-        sql`SELECT nom_commercial FROM medications WHERE nom_commercial = 'Brufen-RLS-test'`,
+        sql`SELECT nom_commercial FROM medications WHERE nom_commercial = ${name}`,
       );
     });
     expect(rows.length).toBe(1);
