@@ -13,7 +13,8 @@ export type AuditAction =
   | 'consultation.start'
   | 'consultation.finalize'
   | 'prescription.item_added'
-  | 'prescription.printed';
+  | 'prescription.printed'
+  | 'ai.chat_message_sent';
 
 export type RecordAuditInput = {
   tenantId: string;
