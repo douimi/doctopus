@@ -4,3 +4,5 @@ export * from './invites';
 export * from './patients';
 export * from './appointments';
 export * from './consultations';
+export * from './medications';
+export * from './prescriptions';
