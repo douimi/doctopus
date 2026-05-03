@@ -8,6 +8,8 @@ export const envSchema = z.object({
   DATABASE_URL_DIRECT: z.string().min(1),
   APP_URL: z.string().url(),
   CRON_SECRET: z.string().min(1),
+  SENTRY_DSN: z.string().optional(),
+  NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
