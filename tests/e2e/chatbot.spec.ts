@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { onboardDoctor, closeDb } from './helpers/invite';
 import { dbAdmin } from '@/db/client';
-import { tenants } from '@/db/schema';
+import { tenants, userProfiles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { grantCredits } from '@/lib/chatbot/credits';
 
@@ -10,10 +10,18 @@ test.afterAll(async () => {
 });
 
 test('admin grants credits, doctor sees panel in ready state, disclaimer can be acknowledged', async ({ page }) => {
-  await onboardDoctor(page);
+  const { email } = await onboardDoctor(page);
 
-  const [tenant] = await dbAdmin().select().from(tenants).where(eq(tenants.name, 'Cabinet E2E'));
-  if (!tenant) throw new Error('Cabinet E2E not found after onboarding');
+  // Look up tenant via the doctor's unique email to avoid ambiguity when
+  // multiple "Cabinet E2E" tenants exist from previous test runs.
+  const [profile] = await dbAdmin()
+    .select({ tenantId: userProfiles.tenantId })
+    .from(userProfiles)
+    .where(eq(userProfiles.email, email));
+  if (!profile) throw new Error(`User profile not found for ${email}`);
+
+  const [tenant] = await dbAdmin().select().from(tenants).where(eq(tenants.id, profile.tenantId));
+  if (!tenant) throw new Error('Tenant not found after onboarding');
 
   await dbAdmin()
     .update(tenants)

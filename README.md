@@ -59,6 +59,7 @@ See [`docs/superpowers/specs/2026-04-30-doctopus-mvp-design.md`](docs/superpower
 - [x] **Plan 1.C — Consultations** ([plan](docs/superpowers/plans/2026-05-01-doctopus-1c-consultations.md))
 - [x] **Plan 1.D — Medication DB & prescriptions** ([plan](docs/superpowers/plans/2026-05-03-doctopus-1d-medications-prescriptions.md))
 - [x] **Plan 1.E — Audit log & production hardening** ([plan](docs/superpowers/plans/2026-05-03-doctopus-1e-audit-and-hardening.md))
+- [x] **Plan 2.A — LLM chatbot + platform-managed credits** ([plan](docs/superpowers/plans/2026-05-03-doctopus-2a-chatbot-credits.md))
 
 ## Phase 1 complete
 
