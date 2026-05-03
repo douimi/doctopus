@@ -10,6 +10,9 @@ export const envSchema = z.object({
   CRON_SECRET: z.string().min(1),
   SENTRY_DSN: z.string().optional(),
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  MISTRAL_API_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

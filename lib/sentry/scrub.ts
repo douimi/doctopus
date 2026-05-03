@@ -26,6 +26,10 @@ const SENSITIVE_KEYS = new Set([
   'instructions',
   'reason',
   'password',
+  'apiKey',
+  'chatbotApiKey',
+  'provider_api_key',
+  'messages',
 ]);
 
 const CIN_RE = /\b[A-Z]{1,2}\d{2,8}\b/g;

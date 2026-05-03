@@ -47,4 +47,14 @@ describe('scrubEvent', () => {
     const out = scrubEvent(ev);
     expect(out).toEqual(ev);
   });
+
+  it('drops events whose extra carries an apiKey', () => {
+    const ev = { extra: { apiKey: 'sk-test' } };
+    expect(scrubEvent(ev as never)).toBeNull();
+  });
+
+  it('drops events whose extra carries an LLM messages array', () => {
+    const ev = { extra: { messages: [{ role: 'user', content: 'patient context' }] } };
+    expect(scrubEvent(ev as never)).toBeNull();
+  });
 });
