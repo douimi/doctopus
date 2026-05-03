@@ -24,11 +24,16 @@
     "sync:ammps": "tsx scripts/sync-ammps.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.74",
+    "@ai-sdk/mistral": "^3.0.33",
+    "@ai-sdk/openai": "^3.0.58",
+    "@ai-sdk/react": "^3.0.176",
     "@base-ui/react": "^1.4.1",
     "@react-pdf/renderer": "^4.5.1",
     "@sentry/nextjs": "^10.51.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
+    "ai": "^6.0.174",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
