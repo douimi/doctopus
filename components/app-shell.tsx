@@ -18,6 +18,7 @@ export function AppShell({
           <Link href="/today">Aujourd&apos;hui</Link>
           <Link href="/patients">Patients</Link>
           {session.role === 'doctor' ? <Link href="/settings/team">Équipe</Link> : null}
+          {session.role === 'doctor' ? <Link href="/settings/cabinet">Cabinet</Link> : null}
         </nav>
         <div className="ml-auto flex items-center gap-3 text-sm">
           <span>
