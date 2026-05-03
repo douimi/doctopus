@@ -21,7 +21,11 @@
     "db:studio": "drizzle-kit studio --config db/drizzle.config.ts",
     "invite:doctor": "tsx scripts/invite-doctor.ts",
     "import:medications": "tsx scripts/import-medications.ts",
-    "sync:ammps": "tsx scripts/sync-ammps.ts"
+    "sync:ammps": "tsx scripts/sync-ammps.ts",
+    "admin:list-tenants": "tsx scripts/admin-list-tenants.ts",
+    "admin:set-model": "tsx scripts/admin-set-model.ts",
+    "admin:grant-credits": "tsx scripts/admin-grant-credits.ts",
+    "admin:usage-report": "tsx scripts/admin-usage-report.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.74",
