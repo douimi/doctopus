@@ -36,6 +36,13 @@
       "when": 1777845873394,
       "tag": "0004_striped_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777848880446,
+      "tag": "0005_normal_zodiak",
+      "breakpoints": true
     }
   ]
 }
