@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { requireDoctor } from '@/lib/auth/guards';
 import { getConsultationById } from '@/lib/consultations/queries';
 import { getPatientDetail } from '@/lib/patients/queries';
+import { getPrescriptionForConsultation } from '@/lib/prescriptions/queries';
 import { PatientCard } from '@/components/patients/patient-card';
 import { Button } from '@/components/ui/button';
 import { ConsultationEditor } from './editor';
+import { PrescriptionEditor } from './prescription/editor';
 import { finalizeConsultationAction } from './actions';
 
 export default async function ConsultationPage({
@@ -19,6 +21,7 @@ export default async function ConsultationPage({
   if (!detail) notFound();
   const patientData = await getPatientDetail(session.tenantId, detail.consultation.patientId);
   if (!patientData) notFound();
+  const presc = await getPrescriptionForConsultation(session.tenantId, id);
 
   const v = detail.vitals;
   return (
@@ -62,6 +65,14 @@ export default async function ConsultationPage({
           heartRate: v?.heartRate != null ? String(v.heartRate) : '',
           notes: v?.notes ?? '',
         }}
+        prescriptionSlot={
+          <PrescriptionEditor
+            consultationId={id}
+            prescriptionId={presc?.prescription.id ?? null}
+            items={presc?.items ?? []}
+            readOnly={detail.consultation.isFinalized}
+          />
+        }
       />
     </div>
   );

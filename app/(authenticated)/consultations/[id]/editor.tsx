@@ -34,11 +34,13 @@ export function ConsultationEditor({
   readOnly,
   initialSections,
   initialVitals,
+  prescriptionSlot,
 }: {
   consultationId: string;
   readOnly: boolean;
   initialSections: Sections;
   initialVitals: Vitals;
+  prescriptionSlot: React.ReactNode;
 }) {
   const [sections, setSections] = useState<Sections>(initialSections);
   const [vitals, setVitals] = useState<Vitals>(initialVitals);
@@ -217,12 +219,7 @@ export function ConsultationEditor({
         />
       </SectionCard>
 
-      <SectionCard title="Traitement" hint="Ordonnance — ajoutée dans le plan 1.D">
-        <p className="text-sm text-gray-500">
-          L&apos;ordonnance et la recherche de médicaments seront disponibles dans la prochaine
-          version.
-        </p>
-      </SectionCard>
+      <SectionCard title="Traitement (ordonnance)">{prescriptionSlot}</SectionCard>
 
       <SectionCard title="Suite / follow-up">
         <Textarea

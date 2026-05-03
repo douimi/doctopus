@@ -148,7 +148,7 @@ async function main() {
         metadata = EXCLUDED.metadata
       RETURNING (xmax = 0) AS inserted
     `);
-    const wasInsert = (result as Array<{ inserted: boolean }>)[0]?.inserted;
+    const wasInsert = (result as unknown as Array<{ inserted: boolean }>)[0]?.inserted;
     if (wasInsert) inserted += 1;
     else updated += 1;
   }
