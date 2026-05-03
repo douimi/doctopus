@@ -29,6 +29,13 @@
       "when": 1777844100579,
       "tag": "0003_needy_reptil",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777845873394,
+      "tag": "0004_striped_queen_noir",
+      "breakpoints": true
     }
   ]
 }

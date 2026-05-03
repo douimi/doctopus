@@ -6,3 +6,4 @@ export * from './appointments';
 export * from './consultations';
 export * from './medications';
 export * from './prescriptions';
+export * from './audit';
