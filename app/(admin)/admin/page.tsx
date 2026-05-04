@@ -1,5 +1,6 @@
 import { getGlobalUsageReport } from '@/lib/admin/queries';
 import { StatCard } from '@/components/admin/stat-card';
+import { UsageChart } from '@/components/admin/usage-chart';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,11 @@ export default async function AdminDashboardPage() {
           hint={`${r.marginPct}% sur ${r.estRevenueMad30d.toFixed(2)} MAD`}
         />
       </div>
+
+      <section className="space-y-2">
+        <h2 className="font-medium">Activité quotidienne</h2>
+        <UsageChart daily={r.daily} />
+      </section>
 
       <section className="space-y-2">
         <h2 className="font-medium">Par fournisseur</h2>
