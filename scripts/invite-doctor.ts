@@ -3,10 +3,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.local' });
 loadDotenv({ path: '.env' });
 
-import { dbAdmin } from '@/db/client';
-import { tenantInvites } from '@/db/schema';
-import { generateInviteToken, hashInviteToken } from '@/lib/invites/tokens';
-import { env } from '@/lib/env';
+import { createOwnerInvite } from '@/lib/invites/admin';
 
 function parseArgs(argv: string[]) {
   const out: Record<string, string> = {};
@@ -34,21 +31,10 @@ async function main() {
     process.exit(2);
   }
 
-  const token = generateInviteToken();
-  const hash = hashInviteToken(token);
-  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-
-  await dbAdmin().insert(tenantInvites).values({
-    tokenHash: hash,
-    kind: 'tenant_owner',
-    emailHint: email,
-    expiresAt,
-  });
-
-  const url = `${env().APP_URL}/invite/${token}`;
+  const result = await createOwnerInvite(email, days, null);
   console.log(`\n✅ Invitation créée pour ${email}`);
-  console.log(`   Expire le : ${expiresAt.toISOString()}`);
-  console.log(`   Lien      : ${url}\n`);
+  console.log(`   Expire le : ${result.expiresAt.toISOString()}`);
+  console.log(`   Lien      : ${result.url}\n`);
   process.exit(0);
 }
 
