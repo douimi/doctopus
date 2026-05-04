@@ -33,4 +33,23 @@ describe('isAdminEmail', () => {
     process.env.SUPER_ADMIN_EMAILS = 'admin@example.com';
     expect(isAdminEmail('other@example.com')).toBe(false);
   });
+
+  it('wildcard *@domain allows any email on that domain', () => {
+    process.env.SUPER_ADMIN_EMAILS = '*@example.com';
+    expect(isAdminEmail('alice@example.com')).toBe(true);
+    expect(isAdminEmail('bob@example.com')).toBe(true);
+    expect(isAdminEmail('alice@other.com')).toBe(false);
+  });
+
+  it('bare * allows any email', () => {
+    process.env.SUPER_ADMIN_EMAILS = '*';
+    expect(isAdminEmail('anyone@anywhere.org')).toBe(true);
+  });
+
+  it('mixed list with wildcard and literal both work', () => {
+    process.env.SUPER_ADMIN_EMAILS = 'admin@example.com,*@e2e.local';
+    expect(isAdminEmail('admin@example.com')).toBe(true);
+    expect(isAdminEmail('test-user@e2e.local')).toBe(true);
+    expect(isAdminEmail('outsider@other.com')).toBe(false);
+  });
 });

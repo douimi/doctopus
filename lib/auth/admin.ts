@@ -14,7 +14,12 @@ function allowList(): string[] {
 }
 
 export function isAdminEmail(email: string): boolean {
-  return allowList().includes(email.toLowerCase());
+  const lower = email.toLowerCase();
+  return allowList().some((entry) => {
+    if (entry === '*') return true;
+    if (entry.startsWith('*@') && lower.endsWith(entry.slice(1))) return true;
+    return entry === lower;
+  });
 }
 
 export async function loadAdminSession(): Promise<AdminSession | null> {
