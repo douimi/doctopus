@@ -101,3 +101,32 @@ export async function adminSetModelAction(
   revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
   return { error: null, ok: true };
 }
+
+const toggleSchema = tenantIdSchema.extend({
+  desired: z.enum(['enable', 'disable']),
+});
+
+export async function adminToggleChatbotAction(formData: FormData): Promise<void> {
+  const session = await requireAdmin();
+  const parsed = toggleSchema.safeParse({
+    tenantId: formData.get('tenantId'),
+    desired: formData.get('desired'),
+  });
+  if (!parsed.success) return;
+
+  const next = parsed.data.desired === 'enable';
+  await dbAdmin()
+    .update(tenants)
+    .set({ chatbotEnabled: next, updatedAt: new Date() })
+    .where(eq(tenants.id, parsed.data.tenantId));
+
+  await recordAudit({
+    tenantId: parsed.data.tenantId,
+    actorUserId: session.userId,
+    action: next ? 'admin.tenant.enable_chatbot' : 'admin.tenant.disable_chatbot',
+    entityType: 'tenant',
+    entityId: parsed.data.tenantId,
+  });
+
+  revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
+}

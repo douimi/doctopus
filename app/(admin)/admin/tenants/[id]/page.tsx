@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTenantDetail } from '@/lib/admin/queries';
 import { GrantCreditsCard } from './grant-credits-card';
 import { SetModelCard } from './set-model-card';
+import { ToggleChatbotCard } from './toggle-chatbot-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -190,6 +191,7 @@ export default async function AdminTenantDetailPage({
             initialProvider={tenant.chatbotProvider}
             initialModel={tenant.chatbotModel}
           />
+          <ToggleChatbotCard tenantId={tenant.id} enabled={tenant.chatbotEnabled} />
         </aside>
       </div>
     </div>
