@@ -24,7 +24,10 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const requiresAuth =
-    path.startsWith('/today') || path.startsWith('/settings') || path.startsWith('/sign-out');
+    path.startsWith('/today') ||
+    path.startsWith('/settings') ||
+    path.startsWith('/sign-out') ||
+    path.startsWith('/admin');
 
   if (requiresAuth && !data.user) {
     const url = request.nextUrl.clone();
