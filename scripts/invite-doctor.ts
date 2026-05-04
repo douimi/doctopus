@@ -26,8 +26,8 @@ async function main() {
     process.exit(2);
   }
   const days = args.days ? Number(args.days) : 7;
-  if (!Number.isFinite(days) || days <= 0) {
-    console.error('--days must be a positive number');
+  if (!Number.isInteger(days) || days <= 0) {
+    console.error('--days must be a positive integer');
     process.exit(2);
   }
 

@@ -32,4 +32,9 @@ describe('createOwnerInvite', () => {
     await expect(createOwnerInvite('a@b.com', 0, null)).rejects.toThrow();
     await expect(createOwnerInvite('a@b.com', -1, null)).rejects.toThrow();
   });
+
+  it('rejects non-integer expiresInDays', async () => {
+    await expect(createOwnerInvite('a@b.com', 7.5, null)).rejects.toThrow();
+    await expect(createOwnerInvite('a@b.com', NaN, null)).rejects.toThrow();
+  });
 });
