@@ -2,9 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { requireAdmin } from '@/lib/auth/admin';
 import { recordAudit } from '@/lib/audit/record';
 import { grantCredits } from '@/lib/chatbot/credits';
+import { dbAdmin } from '@/db/client';
+import { tenants } from '@/db/schema';
+import { ALLOWED_MODELS_BY_PROVIDER } from '@/lib/chatbot/pricing';
 
 const tenantIdSchema = z.object({ tenantId: z.string().uuid() });
 
@@ -41,5 +45,59 @@ export async function adminGrantCreditsAction(
   revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
   revalidatePath('/admin');
   revalidatePath('/admin/tenants');
+  return { error: null, ok: true };
+}
+
+const setModelSchema = tenantIdSchema.extend({
+  provider: z.enum(['anthropic', 'openai', 'mistral']),
+  model: z.string().min(1),
+});
+
+export type SetModelState = { error: string | null; ok: boolean };
+
+export async function adminSetModelAction(
+  _: SetModelState,
+  formData: FormData,
+): Promise<SetModelState> {
+  const session = await requireAdmin();
+  const parsed = setModelSchema.safeParse({
+    tenantId: formData.get('tenantId'),
+    provider: formData.get('provider'),
+    model: formData.get('model'),
+  });
+  if (!parsed.success) return { error: 'Champs invalides.', ok: false };
+
+  if (!ALLOWED_MODELS_BY_PROVIDER[parsed.data.provider].includes(parsed.data.model)) {
+    return {
+      error: `Modèle non autorisé pour ${parsed.data.provider}. Autorisés: ${ALLOWED_MODELS_BY_PROVIDER[parsed.data.provider].join(', ')}.`,
+      ok: false,
+    };
+  }
+
+  const [before] = await dbAdmin().select().from(tenants).where(eq(tenants.id, parsed.data.tenantId));
+  if (!before) return { error: 'Cabinet introuvable.', ok: false };
+
+  await dbAdmin()
+    .update(tenants)
+    .set({
+      chatbotProvider: parsed.data.provider,
+      chatbotModel: parsed.data.model,
+      updatedAt: new Date(),
+    })
+    .where(eq(tenants.id, parsed.data.tenantId));
+
+  await recordAudit({
+    tenantId: parsed.data.tenantId,
+    actorUserId: session.userId,
+    action: 'admin.tenant.set_model',
+    entityType: 'tenant',
+    entityId: parsed.data.tenantId,
+    metadata: {
+      from: { provider: before.chatbotProvider, model: before.chatbotModel },
+      to: { provider: parsed.data.provider, model: parsed.data.model },
+    },
+  });
+
+  revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
   return { error: null, ok: true };
 }

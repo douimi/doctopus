@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTenantDetail } from '@/lib/admin/queries';
 import { GrantCreditsCard } from './grant-credits-card';
+import { SetModelCard } from './set-model-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -184,7 +185,11 @@ export default async function AdminTenantDetailPage({
         {/* RIGHT — actions */}
         <aside className="space-y-4">
           <GrantCreditsCard tenantId={tenant.id} />
-          {/* Other action cards added in subsequent tasks */}
+          <SetModelCard
+            tenantId={tenant.id}
+            initialProvider={tenant.chatbotProvider}
+            initialModel={tenant.chatbotModel}
+          />
         </aside>
       </div>
     </div>
