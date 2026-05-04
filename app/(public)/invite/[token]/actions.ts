@@ -71,7 +71,7 @@ export async function acceptOwnerInvite(_: OwnerState, formData: FormData): Prom
         .update(tenantInvites)
         .set({ consumedAt: sql`now()` })
         .where(
-          sql`${tenantInvites.tokenHash} = ${tokenHash} AND ${tenantInvites.consumedAt} IS NULL AND ${tenantInvites.expiresAt} > now()`,
+          sql`${tenantInvites.tokenHash} = ${tokenHash} AND ${tenantInvites.consumedAt} IS NULL AND ${tenantInvites.expiresAt} > now() AND ${tenantInvites.revokedAt} IS NULL`,
         )
         .returning();
       if (stillValid.length === 0) throw new Error('invite_no_longer_valid');
@@ -160,7 +160,7 @@ export async function acceptAssistantInvite(
         .update(tenantInvites)
         .set({ consumedAt: sql`now()` })
         .where(
-          sql`${tenantInvites.tokenHash} = ${tokenHash} AND ${tenantInvites.consumedAt} IS NULL AND ${tenantInvites.expiresAt} > now()`,
+          sql`${tenantInvites.tokenHash} = ${tokenHash} AND ${tenantInvites.consumedAt} IS NULL AND ${tenantInvites.expiresAt} > now() AND ${tenantInvites.revokedAt} IS NULL`,
         )
         .returning();
       if (stillValid.length === 0) throw new Error('invite_no_longer_valid');
