@@ -32,6 +32,13 @@ const ICON_COLOR: Record<string, string> = {
   danger: 'text-danger',
 };
 
+const ROLE: Record<string, 'alert' | 'status'> = {
+  info: 'status',
+  success: 'status',
+  warning: 'alert',
+  danger: 'alert',
+};
+
 export type AlertProps = React.ComponentProps<'div'> &
   VariantProps<typeof alertVariants> & {
     title?: React.ReactNode;
@@ -48,7 +55,7 @@ export function Alert({
   return (
     <div
       data-slot="alert"
-      role="alert"
+      role={ROLE[variant!]}
       className={cn(alertVariants({ variant }), className)}
       {...props}
     >
