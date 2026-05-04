@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
+import { Alert } from '@/components/ui/alert';
 import { createPatientAction, type CreatePatientState } from './actions';
 
 const initial: CreatePatientState = { error: null };
@@ -22,8 +24,8 @@ const initial: CreatePatientState = { error: null };
 function Submit() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
-      {pending ? 'Création…' : 'Créer le patient'}
+    <Button type="submit" loading={pending}>
+      Créer le patient
     </Button>
   );
 }
@@ -36,15 +38,13 @@ function NewPatientForm() {
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Nom</Label>
+        <FormField label="Nom">
           <Input id="lastName" name="lastName" required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="firstName">Prénom</Label>
+        </FormField>
+        <FormField label="Prénom">
           <Input id="firstName" name="firstName" required />
-        </div>
-        <div className="space-y-2">
+        </FormField>
+        <div className="space-y-1">
           <Label htmlFor="gender">Sexe</Label>
           <Select name="gender" required>
             <SelectTrigger id="gender">
@@ -56,19 +56,16 @@ function NewPatientForm() {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="dateOfBirth">Date de naissance</Label>
+        <FormField label="Date de naissance">
           <Input id="dateOfBirth" name="dateOfBirth" type="date" required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">Téléphone</Label>
+        </FormField>
+        <FormField label="Téléphone">
           <Input id="phone" name="phone" required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cin">CIN (optionnel)</Label>
+        </FormField>
+        <FormField label="CIN (optionnel)">
           <Input id="cin" name="cin" />
-        </div>
-        <div className="space-y-2">
+        </FormField>
+        <div className="space-y-1">
           <Label htmlFor="coverageType">Couverture</Label>
           <Select name="coverageType">
             <SelectTrigger id="coverageType">
@@ -85,20 +82,17 @@ function NewPatientForm() {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="coverageId">N° d&apos;assuré (optionnel)</Label>
+        <FormField label="N° d'assuré (optionnel)">
           <Input id="coverageId" name="coverageId" />
-        </div>
+        </FormField>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="address">Adresse (optionnel)</Label>
+      <FormField label="Adresse (optionnel)">
         <Input id="address" name="address" />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes (optionnel)</Label>
+      </FormField>
+      <FormField label="Notes (optionnel)">
         <Textarea id="notes" name="notes" rows={3} />
-      </div>
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      </FormField>
+      {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
       <div className="flex gap-2">
         <Submit />
       </div>

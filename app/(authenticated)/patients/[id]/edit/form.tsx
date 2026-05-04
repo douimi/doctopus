@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { FormField } from '@/components/ui/form-field';
+import { Alert } from '@/components/ui/alert';
 import { updatePatientAction, type UpdatePatientState } from './actions';
 
 const initial: UpdatePatientState = { error: null };
@@ -20,8 +22,8 @@ const initial: UpdatePatientState = { error: null };
 function Submit() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
-      {pending ? 'Enregistrement…' : 'Enregistrer'}
+    <Button type="submit" loading={pending}>
+      Enregistrer
     </Button>
   );
 }
@@ -46,15 +48,13 @@ export function EditPatientForm({ patient }: { patient: Patient }) {
     <form action={action} className="space-y-4">
       <input type="hidden" name="id" value={patient.id} />
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Nom</Label>
+        <FormField label="Nom">
           <Input id="lastName" name="lastName" defaultValue={patient.lastName} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="firstName">Prénom</Label>
+        </FormField>
+        <FormField label="Prénom">
           <Input id="firstName" name="firstName" defaultValue={patient.firstName} required />
-        </div>
-        <div className="space-y-2">
+        </FormField>
+        <div className="space-y-1">
           <Label htmlFor="gender">Sexe</Label>
           <Select name="gender" defaultValue={patient.gender} required>
             <SelectTrigger id="gender">
@@ -66,8 +66,7 @@ export function EditPatientForm({ patient }: { patient: Patient }) {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="dateOfBirth">Date de naissance</Label>
+        <FormField label="Date de naissance">
           <Input
             id="dateOfBirth"
             name="dateOfBirth"
@@ -75,16 +74,14 @@ export function EditPatientForm({ patient }: { patient: Patient }) {
             defaultValue={patient.dateOfBirth}
             required
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">Téléphone</Label>
+        </FormField>
+        <FormField label="Téléphone">
           <Input id="phone" name="phone" defaultValue={patient.phone} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cin">CIN</Label>
+        </FormField>
+        <FormField label="CIN">
           <Input id="cin" name="cin" defaultValue={patient.cin} />
-        </div>
-        <div className="space-y-2">
+        </FormField>
+        <div className="space-y-1">
           <Label htmlFor="coverageType">Couverture</Label>
           <Select name="coverageType" defaultValue={patient.coverageType}>
             <SelectTrigger id="coverageType">
@@ -101,20 +98,17 @@ export function EditPatientForm({ patient }: { patient: Patient }) {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="coverageId">N° d&apos;assuré</Label>
+        <FormField label="N° d'assuré">
           <Input id="coverageId" name="coverageId" defaultValue={patient.coverageId} />
-        </div>
+        </FormField>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="address">Adresse</Label>
+      <FormField label="Adresse">
         <Input id="address" name="address" defaultValue={patient.address} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
+      </FormField>
+      <FormField label="Notes">
         <Textarea id="notes" name="notes" rows={3} defaultValue={patient.notes} />
-      </div>
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      </FormField>
+      {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
       <Submit />
     </form>
   );

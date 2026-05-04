@@ -3,6 +3,8 @@ import type { AppointmentWithPatient } from '@/lib/appointments/queries';
 import { ageFromDob } from '@/lib/patients/age';
 import { cancelAppointmentAction } from '@/app/(authenticated)/today/actions';
 import { startConsultationAction } from '@/app/(authenticated)/today/start/actions';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Clock } from 'lucide-react';
 
 function fmtTime(d: Date | null): string {
   if (!d) return '—';
@@ -17,10 +19,15 @@ export function WaitingPanel({
   canStartConsultation: boolean;
 }) {
   if (items.length === 0) {
-    return <p className="text-sm text-gray-500">Salle d&apos;attente vide.</p>;
+    return (
+      <EmptyState
+        icon={Clock}
+        title="Salle d'attente vide."
+      />
+    );
   }
   return (
-    <ul className="divide-y border rounded-md">
+    <ul className="divide-y divide-border border border-border rounded-md">
       {items.map((a, idx) => (
         <li key={a.id} className="p-3 flex items-center gap-3">
           <div className="font-mono text-sm w-8">#{idx + 1}</div>
@@ -28,7 +35,7 @@ export function WaitingPanel({
             <Link href={`/patients/${a.patient.id}`} className="font-medium underline">
               {a.patient.lastName} {a.patient.firstName}
             </Link>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-muted-foreground">
               {ageFromDob(a.patient.dateOfBirth)} ans · arrivé à {fmtTime(a.arrivedAt)}
               {a.kind === 'walkin' ? ' · walk-in' : ''}
               {a.reason ? ` · ${a.reason}` : ''}
@@ -48,7 +55,7 @@ export function WaitingPanel({
             ) : null}
             <form action={cancelAppointmentAction}>
               <input type="hidden" name="id" value={a.id} />
-              <button type="submit" className="text-red-600 underline">
+              <button type="submit" className="text-danger underline">
                 annuler
               </button>
             </form>
