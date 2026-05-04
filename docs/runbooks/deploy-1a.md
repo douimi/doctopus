@@ -46,6 +46,28 @@ APP_URL=https://<your-project>.vercel.app pnpm invite:doctor --email you@example
 
 Open the printed URL → complete onboarding → confirm `/today` loads.
 
+## 6. Medication registry seed (one-time, post-deploy)
+
+The `medications` table ships empty. Run the AMMPS sync against the production DB once after the first deploy:
+
+```bash
+# From a machine with prod DB credentials in .env.production:
+NODE_ENV=production pnpm sync:ammps
+```
+
+The script scrapes `https://ammps.sante.gov.ma/basesdedonnes/listes-medicaments` (~197 pages, ≈5 minutes total at the 100 ms throttle) and upserts ~2 000–4 000 medications. Idempotent — safe to re-run.
+
+Re-run roughly monthly to pick up new registrations / withdrawals. Until cron-automation lands, this is manual.
+
+**Fallback** if AMMPS is unreachable: `pnpm import:medications <path-to-xlsx>` against an offline registry export.
+
+Verify after running:
+
+```sql
+SELECT COUNT(*) FROM medications;             -- expected: 2000–4000
+SELECT * FROM medication_imports ORDER BY imported_at DESC LIMIT 1;
+```
+
 ## Restore from backup (Supabase free tier)
 
 Supabase keeps daily backups for 7 days on the free tier.
