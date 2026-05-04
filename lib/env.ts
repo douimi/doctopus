@@ -13,6 +13,7 @@ export const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   MISTRAL_API_KEY: z.string().optional(),
+  SUPER_ADMIN_EMAILS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
