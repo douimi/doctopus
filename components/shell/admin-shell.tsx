@@ -28,13 +28,13 @@ export function AdminShell({
         footer={<SidebarUser name="Super admin" detail={session.email} />}
       >
         <SidebarNavGroup>
-          <SidebarNavItem href="/admin" icon={BarChart3}>
+          <SidebarNavItem href="/admin" icon={<BarChart3 className="size-4" aria-hidden />}>
             Tableau de bord
           </SidebarNavItem>
-          <SidebarNavItem href="/admin/tenants" icon={Building2}>
+          <SidebarNavItem href="/admin/tenants" icon={<Building2 className="size-4" aria-hidden />}>
             Cabinets
           </SidebarNavItem>
-          <SidebarNavItem href="/admin/invites" icon={Mail}>
+          <SidebarNavItem href="/admin/invites" icon={<Mail className="size-4" aria-hidden />}>
             Invitations
           </SidebarNavItem>
         </SidebarNavGroup>

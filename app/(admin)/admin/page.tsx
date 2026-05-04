@@ -1,6 +1,9 @@
 import { getGlobalUsageReport } from '@/lib/admin/queries';
 import { StatCard } from '@/components/admin/stat-card';
 import { UsageChart } from '@/components/admin/usage-chart';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from '@/components/ui/table';
+import { EmptyState } from '@/components/ui/empty-state';
+import { BarChart3 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +18,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6 max-w-6xl">
       <h1 className="text-xl font-semibold">Tableau de bord</h1>
-      <p className="text-xs text-gray-500">30 derniers jours</p>
+      <p className="text-xs text-muted-foreground">30 derniers jours</p>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <StatCard label="Cabinets actifs" value={String(r.activeTenants)} />
@@ -39,39 +42,37 @@ export default async function AdminDashboardPage() {
 
       <section className="space-y-2">
         <h2 className="font-medium">Par fournisseur</h2>
-        <div className="border rounded-md overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left p-2">Fournisseur</th>
-                <th className="text-left p-2">Cabinets</th>
-                <th className="text-left p-2">Crédits</th>
-                <th className="text-left p-2">Tokens (in/out)</th>
-                <th className="text-left p-2">Coût USD</th>
-                <th className="text-left p-2">Revenu MAD</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="border border-border rounded-md overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fournisseur</TableHead>
+                <TableHead>Cabinets</TableHead>
+                <TableHead>Crédits</TableHead>
+                <TableHead>Tokens (in/out)</TableHead>
+                <TableHead>Coût USD</TableHead>
+                <TableHead>Revenu MAD</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {r.perProvider.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-3 text-center text-gray-500">
-                    Pas encore d&apos;utilisation IA ce mois-ci.
-                  </td>
-                </tr>
+                <TableEmpty colSpan={6}>
+                  <EmptyState icon={BarChart3} title="Pas encore d'utilisation IA ce mois-ci." />
+                </TableEmpty>
               ) : (
                 r.perProvider.map((p) => (
-                  <tr key={p.provider} className="border-b">
-                    <td className="p-2">{PROVIDER_LABEL[p.provider] ?? p.provider}</td>
-                    <td className="p-2">{p.tenants}</td>
-                    <td className="p-2">{p.creditsConsumed}</td>
-                    <td className="p-2">{p.inputTokens.toLocaleString('fr-FR')} / {p.outputTokens.toLocaleString('fr-FR')}</td>
-                    <td className="p-2">${p.estCostUsd.toFixed(2)}</td>
-                    <td className="p-2">{p.estRevenueMad.toFixed(2)}</td>
-                  </tr>
+                  <TableRow key={p.provider}>
+                    <TableCell>{PROVIDER_LABEL[p.provider] ?? p.provider}</TableCell>
+                    <TableCell>{p.tenants}</TableCell>
+                    <TableCell>{p.creditsConsumed}</TableCell>
+                    <TableCell>{p.inputTokens.toLocaleString('fr-FR')} / {p.outputTokens.toLocaleString('fr-FR')}</TableCell>
+                    <TableCell>${p.estCostUsd.toFixed(2)}</TableCell>
+                    <TableCell>{p.estRevenueMad.toFixed(2)}</TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
     </div>

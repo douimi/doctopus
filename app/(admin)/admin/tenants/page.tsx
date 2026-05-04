@@ -2,6 +2,10 @@ import Link from 'next/link';
 import { listTenantsForAdmin } from '@/lib/admin/queries';
 import { Input } from '@/components/ui/input';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from '@/components/ui/table';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Building2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,75 +54,71 @@ export default async function AdminTenantsPage({
         <div className="flex gap-1 text-xs ml-2">
           <Link
             href={`/admin/tenants${q ? `?q=${encodeURIComponent(q)}` : ''}`}
-            className={`px-2 py-1 border rounded ${!statusFilter ? 'bg-gray-100' : ''}`}
+            className={`px-2 py-1 border border-border rounded ${!statusFilter ? 'bg-muted' : ''}`}
           >
             Tous
           </Link>
           <Link
             href={`/admin/tenants?${q ? `q=${encodeURIComponent(q)}&` : ''}status=active`}
-            className={`px-2 py-1 border rounded ${statusFilter === 'active' ? 'bg-gray-100' : ''}`}
+            className={`px-2 py-1 border border-border rounded ${statusFilter === 'active' ? 'bg-muted' : ''}`}
           >
             Actifs
           </Link>
           <Link
             href={`/admin/tenants?${q ? `q=${encodeURIComponent(q)}&` : ''}status=suspended`}
-            className={`px-2 py-1 border rounded ${statusFilter === 'suspended' ? 'bg-gray-100' : ''}`}
+            className={`px-2 py-1 border border-border rounded ${statusFilter === 'suspended' ? 'bg-muted' : ''}`}
           >
             Suspendus
           </Link>
         </div>
       </form>
 
-      <div className="border rounded-md overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left p-2">Cabinet</th>
-              <th className="text-left p-2">Statut</th>
-              <th className="text-left p-2">Médecin</th>
-              <th className="text-left p-2">Assistant IA</th>
-              <th className="text-left p-2">Modèle</th>
-              <th className="text-left p-2">Crédits</th>
-              <th className="text-left p-2">Dernière IA</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+      <div className="border border-border rounded-md overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cabinet</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Médecin</TableHead>
+              <TableHead>Assistant IA</TableHead>
+              <TableHead>Modèle</TableHead>
+              <TableHead>Crédits</TableHead>
+              <TableHead>Dernière IA</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="p-4 text-center text-gray-500">
-                  Aucun cabinet.{' '}
-                  <Link href="/admin/invites" className="underline">
-                    Créez une invitation médecin pour commencer.
-                  </Link>
-                </td>
-              </tr>
+              <TableEmpty colSpan={8}>
+                <EmptyState
+                  icon={Building2}
+                  title="Aucun cabinet."
+                />
+              </TableEmpty>
             ) : (
               rows.map((r) => (
-                <tr key={r.id} className="border-b">
-                  <td className="p-2 font-medium">{r.name}</td>
-                  <td className="p-2">
-                    <span
-                      className={`inline-flex items-center gap-1 text-xs ${r.status === 'active' ? 'text-green-700' : 'text-red-700'}`}
-                    >
-                      ● {r.status === 'active' ? 'actif' : 'suspendu'}
-                    </span>
-                  </td>
-                  <td className="p-2 text-xs">{r.doctorEmail ?? '—'}</td>
-                  <td className="p-2 text-xs">{r.chatbotEnabled ? '✓ activé' : '✗'}</td>
-                  <td className="p-2 text-xs">{r.chatbotModel ?? '—'}</td>
-                  <td className="p-2">~{r.chatbotCreditsBalance}</td>
-                  <td className="p-2 text-xs text-gray-600">{fmtRelative(r.lastAiUse)}</td>
-                  <td className="p-2 text-right">
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell>
+                    <StatusBadge variant={r.status === 'active' ? 'success' : 'danger'}>
+                      {r.status === 'active' ? 'actif' : 'suspendu'}
+                    </StatusBadge>
+                  </TableCell>
+                  <TableCell className="text-xs">{r.doctorEmail ?? '—'}</TableCell>
+                  <TableCell className="text-xs">{r.chatbotEnabled ? '✓ activé' : '✗'}</TableCell>
+                  <TableCell className="text-xs">{r.chatbotModel ?? '—'}</TableCell>
+                  <TableCell>~{r.chatbotCreditsBalance}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{fmtRelative(r.lastAiUse)}</TableCell>
+                  <TableCell className="text-right">
                     <Link href={`/admin/tenants/${r.id}`} className="text-xs underline">
                       Ouvrir
                     </Link>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

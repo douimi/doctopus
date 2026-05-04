@@ -37,22 +37,22 @@ export function DoctorShell({
         }
       >
         <SidebarNavGroup label="Cabinet">
-          <SidebarNavItem href="/today" icon={CalendarDays}>
+          <SidebarNavItem href="/today" icon={<CalendarDays className="size-4" aria-hidden />}>
             Aujourd&apos;hui
           </SidebarNavItem>
-          <SidebarNavItem href="/patients" icon={Users}>
+          <SidebarNavItem href="/patients" icon={<Users className="size-4" aria-hidden />}>
             Patients
           </SidebarNavItem>
         </SidebarNavGroup>
         {isDoctor ? (
           <SidebarNavGroup label="Compte">
-            <SidebarNavItem href="/settings/team" icon={Users2}>
+            <SidebarNavItem href="/settings/team" icon={<Users2 className="size-4" aria-hidden />}>
               Équipe
             </SidebarNavItem>
-            <SidebarNavItem href="/settings/cabinet" icon={Settings}>
+            <SidebarNavItem href="/settings/cabinet" icon={<Settings className="size-4" aria-hidden />}>
               Cabinet
             </SidebarNavItem>
-            <SidebarNavItem href="/settings/audit" icon={History}>
+            <SidebarNavItem href="/settings/audit" icon={<History className="size-4" aria-hidden />}>
               Journal
             </SidebarNavItem>
           </SidebarNavGroup>

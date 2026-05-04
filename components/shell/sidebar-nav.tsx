@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export function SidebarNavGroup({
@@ -26,11 +26,11 @@ export function SidebarNavGroup({
 
 export function SidebarNavItem({
   href,
-  icon: Icon,
+  icon,
   children,
 }: {
   href: string;
-  icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+  icon: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -51,7 +51,7 @@ export function SidebarNavItem({
       )}
       style={{ transitionDuration: 'var(--duration-fast)' }}
     >
-      <Icon className="size-4" aria-hidden />
+      {icon}
       <span>{children}</span>
     </Link>
   );
