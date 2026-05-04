@@ -6,19 +6,7 @@ loadDotenv({ path: '.env' });
 import { randomBytes } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/lib/env';
-
-function parseArgs(argv: string[]) {
-  const out: Record<string, string> = {};
-  for (let i = 2; i < argv.length; i++) {
-    const a = argv[i];
-    if (a.startsWith('--')) {
-      const key = a.slice(2);
-      const value = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : '';
-      out[key] = value;
-    }
-  }
-  return out;
-}
+import { parseArgs } from './admin-shared';
 
 async function main() {
   const args = parseArgs(process.argv);
@@ -46,7 +34,7 @@ async function main() {
 
   console.log(`\n✅ Super admin user created.`);
   console.log(`   Email    : ${email}`);
-  console.log(`   Password : ${password}`);
+  console.log(`   Password : ${password}  ← copy this now; it will not be shown again`);
   console.log(`\nNext steps:`);
   console.log(`   1. Add ${email} to the SUPER_ADMIN_EMAILS env var (locally and in Vercel).`);
   console.log(`   2. Sign in at /sign-in with the password above.`);
