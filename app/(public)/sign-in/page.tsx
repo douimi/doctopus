@@ -3,10 +3,11 @@
 import { Suspense, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
+import { AuthCard } from '@/components/auth/auth-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
+import { Alert } from '@/components/ui/alert';
 import { signInAction, type SignInState } from './actions';
 
 const initial: SignInState = { error: null };
@@ -14,8 +15,8 @@ const initial: SignInState = { error: null };
 function Submit() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? 'Connexion…' : 'Se connecter'}
+    <Button type="submit" loading={pending} className="w-full">
+      Se connecter
     </Button>
   );
 }
@@ -28,12 +29,11 @@ function SignInForm() {
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+      {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
+      <FormField label="Email">
         <Input id="email" name="email" type="email" required autoComplete="email" />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Mot de passe</Label>
+      </FormField>
+      <FormField label="Mot de passe">
         <Input
           id="password"
           name="password"
@@ -41,8 +41,7 @@ function SignInForm() {
           required
           autoComplete="current-password"
         />
-      </div>
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      </FormField>
       <Submit />
     </form>
   );
@@ -50,17 +49,10 @@ function SignInForm() {
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Doctopus</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={null}>
-            <SignInForm />
-          </Suspense>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthCard title="Connexion">
+      <Suspense fallback={null}>
+        <SignInForm />
+      </Suspense>
+    </AuthCard>
   );
 }
