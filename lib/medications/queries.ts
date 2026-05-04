@@ -9,6 +9,7 @@ export type MedicationSearchHit = {
   dosage: string | null;
   forme: string | null;
   laboratoire: string | null;
+  ppv: string | null;
 };
 
 export async function searchMedications(query: string): Promise<MedicationSearchHit[]> {
@@ -23,8 +24,9 @@ export async function searchMedications(query: string): Promise<MedicationSearch
     dosage: string | null;
     forme: string | null;
     laboratoire: string | null;
+    ppv: string | null;
   }>(sql`
-    SELECT id, nom_commercial, dci, dosage, forme, laboratoire
+    SELECT id, nom_commercial, dci, dosage, forme, laboratoire, ppv
     FROM medications
     WHERE is_active = true
       AND (nom_commercial ILIKE ${pattern} OR dci ILIKE ${pattern})
@@ -38,6 +40,7 @@ export async function searchMedications(query: string): Promise<MedicationSearch
     dosage: r.dosage,
     forme: r.forme,
     laboratoire: r.laboratoire,
+    ppv: r.ppv,
   }));
 }
 
