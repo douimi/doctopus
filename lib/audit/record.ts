@@ -14,7 +14,15 @@ export type AuditAction =
   | 'consultation.finalize'
   | 'prescription.item_added'
   | 'prescription.printed'
-  | 'ai.chat_message_sent';
+  | 'ai.chat_message_sent'
+  | 'admin.tenant.grant_credits'
+  | 'admin.tenant.set_model'
+  | 'admin.tenant.enable_chatbot'
+  | 'admin.tenant.disable_chatbot'
+  | 'admin.tenant.suspend'
+  | 'admin.tenant.reactivate'
+  | 'admin.invite.create'
+  | 'admin.invite.revoke';
 
 export type RecordAuditInput = {
   tenantId: string;

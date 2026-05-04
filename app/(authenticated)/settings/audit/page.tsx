@@ -14,6 +14,14 @@ const ACTION_LABEL: Record<string, string> = {
   'consultation.finalize': 'Consultation terminée',
   'prescription.item_added': 'Médicament ajouté à l’ordonnance',
   'prescription.printed': 'Ordonnance imprimée',
+  'admin.tenant.grant_credits': 'Crédits IA accordés (admin)',
+  'admin.tenant.set_model':     'Modèle IA modifié (admin)',
+  'admin.tenant.enable_chatbot':  'Assistant IA activé (admin)',
+  'admin.tenant.disable_chatbot': 'Assistant IA désactivé (admin)',
+  'admin.tenant.suspend':       'Cabinet suspendu (admin)',
+  'admin.tenant.reactivate':    'Cabinet réactivé (admin)',
+  'admin.invite.create':        'Invitation médecin créée (admin)',
+  'admin.invite.revoke':        'Invitation révoquée (admin)',
 };
 
 function fmt(d: Date): string {
