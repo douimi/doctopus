@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTenantDetail } from '@/lib/admin/queries';
-import { ALLOWED_MODELS_BY_PROVIDER } from '@/lib/chatbot/pricing';
+import { GrantCreditsCard } from './grant-credits-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -181,12 +181,10 @@ export default async function AdminTenantDetailPage({
           </section>
         </div>
 
-        {/* RIGHT — actions (placeholder; wired in next tasks) */}
-        <aside className="space-y-3">
-          <p className="text-xs text-gray-500">
-            Actions admin disponibles dans les tâches suivantes : crédits, modèle, activer/désactiver, suspendre.
-            (Modèles autorisés : {Object.values(ALLOWED_MODELS_BY_PROVIDER).flat().length})
-          </p>
+        {/* RIGHT — actions */}
+        <aside className="space-y-4">
+          <GrantCreditsCard tenantId={tenant.id} />
+          {/* Other action cards added in subsequent tasks */}
         </aside>
       </div>
     </div>
