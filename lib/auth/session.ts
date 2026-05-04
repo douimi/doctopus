@@ -11,6 +11,7 @@ export type Session = {
   role: 'doctor' | 'assistant';
   fullName: string;
   email: string;
+  tenantName: string;
 };
 
 export async function loadSession(): Promise<Session | null> {
@@ -33,6 +34,7 @@ export async function loadSession(): Promise<Session | null> {
     role: profile.role,
     fullName: profile.fullName,
     email: profile.email,
+    tenantName: tenant.name,
   };
 }
 
