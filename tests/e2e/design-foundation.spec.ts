@@ -59,7 +59,7 @@ test('admin sees the orange sidebar and /admin/design route', async ({ page }) =
 
   await page.goto('/sign-in');
   await page.getByLabel('Email').fill(adminEmail);
-  await page.getByLabel('Mot de passe').fill(adminPassword);
+  await page.getByLabel('Mot de passe').fill(adminPassword!);
   await page.getByRole('button', { name: 'Se connecter' }).click();
   await page.waitForURL('**/admin');
 

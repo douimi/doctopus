@@ -61,6 +61,7 @@ See [`docs/superpowers/specs/2026-04-30-doctopus-mvp-design.md`](docs/superpower
 - [x] **Plan 1.E — Audit log & production hardening** ([plan](docs/superpowers/plans/2026-05-03-doctopus-1e-audit-and-hardening.md))
 - [x] **Plan 2.A — LLM chatbot + platform-managed credits** ([plan](docs/superpowers/plans/2026-05-03-doctopus-2a-chatbot-credits.md))
 - [x] **Plan 2.B (revised) — Platform admin web UI** ([plan](docs/superpowers/plans/2026-05-03-doctopus-2b-admin-ui.md))
+- [x] **Phase A (UI rework) — Foundation** ([plan](docs/superpowers/plans/2026-05-04-phase-a-ui-foundation.md))
 
 ## Phase 1 complete
 
