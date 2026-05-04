@@ -13,7 +13,7 @@ test.afterAll(async () => {
 
 test('admin can log in, see dashboard, grant credits, and revoke an invite', async ({ page }) => {
   // 1. Create a super admin user in auth.users.
-  const adminEmail = `admin-${crypto.randomUUID()}@e2e.local`;
+  const adminEmail = `admin-${crypto.randomUUID()}@admin.e2e.local`;
   const adminPassword = 'AdminTestPass-1234';
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE!;
@@ -32,7 +32,7 @@ test('admin can log in, see dashboard, grant credits, and revoke an invite', asy
   // or a known email. If unset, skip with a clear message.
 
   const allowList = (process.env.SUPER_ADMIN_EMAILS ?? '').toLowerCase().split(',').map((s) => s.trim());
-  if (!allowList.includes(adminEmail.toLowerCase()) && !allowList.some((a) => a === '*' || a === '*@e2e.local')) {
+  if (!allowList.includes(adminEmail.toLowerCase()) && !allowList.some((a) => a === '*' || a === '*@admin.e2e.local')) {
     test.skip(
       true,
       `Set SUPER_ADMIN_EMAILS in .env.local to include "${adminEmail}" or extend isAdminEmail to support a wildcard.`,
