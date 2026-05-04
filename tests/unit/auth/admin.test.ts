@@ -1,11 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { isAdminEmail } from '@/lib/auth/admin';
 
 describe('isAdminEmail', () => {
   const original = process.env.SUPER_ADMIN_EMAILS;
-  beforeEach(() => {
-    // Clear env cache so each test sees the new value.
-  });
   afterEach(() => {
     if (original === undefined) delete process.env.SUPER_ADMIN_EMAILS;
     else process.env.SUPER_ADMIN_EMAILS = original;

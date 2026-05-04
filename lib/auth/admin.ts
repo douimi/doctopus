@@ -4,6 +4,8 @@ import { getSupabaseServerClient } from '@/lib/supabase/server';
 
 export type AdminSession = { userId: string; email: string };
 
+// Reads process.env directly (not the cached env() getter) so that the
+// allowlist reflects mutations in tests and respects runtime changes.
 function allowList(): string[] {
   return (process.env.SUPER_ADMIN_EMAILS ?? '')
     .split(',')
