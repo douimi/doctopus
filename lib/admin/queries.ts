@@ -195,14 +195,12 @@ export async function getGlobalUsageReport(days = 30): Promise<GlobalUsageReport
            COALESCE(SUM(u.input_tokens), 0)::int AS in_tok,
            COALESCE(SUM(u.output_tokens), 0)::int AS out_tok,
            COALESCE(SUM(u.estimated_cost_microusd), 0)::bigint AS cost_usd_micro,
-           (SELECT COUNT(*)::int FROM chatbot_credit_ledger l
+           (SELECT COUNT(DISTINCT l.consultation_id)::int
+              FROM chatbot_credit_ledger l
+              JOIN chatbot_usage u2 ON u2.consultation_id = l.consultation_id
               WHERE l.reason = 'debit'
-              AND l.created_at >= now() - interval '${interval} days'
-              AND l.tenant_id IN (
-                SELECT DISTINCT tenant_id FROM chatbot_usage u2
-                WHERE u2.provider = u.provider
-                AND u2.created_at >= now() - interval '${interval} days'
-              )) AS credits
+                AND u2.provider = u.provider
+                AND l.created_at >= now() - interval '${interval} days') AS credits
     FROM chatbot_usage u
     WHERE u.created_at >= now() - interval '${interval} days'
     GROUP BY u.provider
@@ -210,14 +208,24 @@ export async function getGlobalUsageReport(days = 30): Promise<GlobalUsageReport
   `);
 
   const daily = await dbAdmin().execute<{ d: string; consumed: number; cost_usd_micro: number }>(sql`
-    SELECT date_trunc('day', l.created_at)::date::text AS d,
-           COUNT(*)::int AS consumed,
-           COALESCE(SUM(u.estimated_cost_microusd)::bigint, 0)::int AS cost_usd_micro
-    FROM chatbot_credit_ledger l
-    LEFT JOIN chatbot_usage u ON date_trunc('day', u.created_at) = date_trunc('day', l.created_at)
-    WHERE l.reason = 'debit' AND l.created_at >= now() - interval '${interval} days'
-    GROUP BY d
-    ORDER BY d
+    SELECT
+      daily.d::text AS d,
+      daily.consumed,
+      COALESCE(cost.cost_usd_micro, 0)::int AS cost_usd_micro
+    FROM (
+      SELECT date_trunc('day', created_at)::date AS d, COUNT(*)::int AS consumed
+      FROM chatbot_credit_ledger
+      WHERE reason = 'debit' AND created_at >= now() - interval '${interval} days'
+      GROUP BY 1
+    ) daily
+    LEFT JOIN (
+      SELECT date_trunc('day', created_at)::date AS d,
+             COALESCE(SUM(estimated_cost_microusd), 0)::bigint AS cost_usd_micro
+      FROM chatbot_usage
+      WHERE created_at >= now() - interval '${interval} days'
+      GROUP BY 1
+    ) cost ON cost.d = daily.d
+    ORDER BY daily.d
   `);
 
   const costUsd30d = Number(usageTotals?.cost_usd_micro ?? 0) / 1_000_000;
