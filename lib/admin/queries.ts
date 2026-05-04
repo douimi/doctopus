@@ -13,7 +13,7 @@ import {
   type ChatbotUsageRow,
   type Tenant,
 } from '@/db/schema';
-import { MAD_PER_CREDIT, PRICING_USD_PER_MTOKEN } from '@/lib/chatbot/pricing';
+import { MAD_PER_CREDIT } from '@/lib/chatbot/pricing';
 
 const USD_TO_MAD = 10; // rough rate; same as admin-usage-report.ts
 
@@ -195,7 +195,7 @@ export async function getGlobalUsageReport(days = 30): Promise<GlobalUsageReport
            COALESCE(SUM(u.input_tokens), 0)::int AS in_tok,
            COALESCE(SUM(u.output_tokens), 0)::int AS out_tok,
            COALESCE(SUM(u.estimated_cost_microusd), 0)::bigint AS cost_usd_micro,
-           (SELECT COUNT(DISTINCT l.consultation_id)::int
+           (SELECT COUNT(*)::int
               FROM chatbot_credit_ledger l
               JOIN chatbot_usage u2 ON u2.consultation_id = l.consultation_id
               WHERE l.reason = 'debit'
@@ -211,7 +211,7 @@ export async function getGlobalUsageReport(days = 30): Promise<GlobalUsageReport
     SELECT
       daily.d::text AS d,
       daily.consumed,
-      COALESCE(cost.cost_usd_micro, 0)::int AS cost_usd_micro
+      COALESCE(cost.cost_usd_micro, 0)::bigint AS cost_usd_micro
     FROM (
       SELECT date_trunc('day', created_at)::date AS d, COUNT(*)::int AS consumed
       FROM chatbot_credit_ledger
@@ -288,5 +288,3 @@ export async function listInvitesForAdmin(opts: { limit?: number } = {}): Promis
   });
 }
 
-// Reference re-exports so unused-import lint doesn't trigger:
-export const _refs = { PRICING_USD_PER_MTOKEN };
