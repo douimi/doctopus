@@ -7,6 +7,7 @@ import { dbAdmin } from '@/db/client';
 import { userProfiles } from '@/db/schema';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { recordAudit, recordAuditUnscoped } from '@/lib/audit/record';
+import { isAdminEmail } from '@/lib/auth/admin';
 
 const schema = z.object({
   email: z.string().email(),
@@ -35,6 +36,16 @@ export async function signInAction(_: SignInState, formData: FormData): Promise<
   }
 
   const { data: userData } = await supabase.auth.getUser();
+
+  if (userData.user?.email && isAdminEmail(userData.user.email)) {
+    recordAuditUnscoped('auth.sign_in_success', {
+      email: userData.user.email,
+      kind: 'admin',
+    });
+    const target = parsed.data.next?.startsWith('/admin') ? parsed.data.next : '/admin';
+    redirect(target);
+  }
+
   if (userData.user) {
     const profile = await dbAdmin().query.userProfiles.findFirst({
       where: eq(userProfiles.id, userData.user.id),
