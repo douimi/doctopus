@@ -46,6 +46,30 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-tint: var(--primary-tint);
+  --color-primary-tint-strong: var(--primary-tint-strong);
+  --color-admin: var(--admin);
+  --color-admin-foreground: var(--admin-foreground);
+  --color-admin-hover: var(--admin-hover);
+  --color-admin-tint: var(--admin-tint);
+  --color-admin-tint-strong: var(--admin-tint-strong);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-tint: var(--success-tint);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-tint: var(--warning-tint);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-tint: var(--danger-tint);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-tint: var(--info-tint);
+  --radius-tight: var(--radius-tight);
+  --radius-pill: var(--radius-pill);
+  --shadow-card: var(--shadow-card);
+  --shadow-popover: var(--shadow-popover);
 }
 
 :root {
@@ -55,8 +79,12 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* === Phase A primary (sky-blue, replaces neutral primary) === */
+  --primary: oklch(0.588 0.158 241.966);
   --primary-foreground: oklch(0.985 0 0);
+  --primary-hover: oklch(0.500 0.134 242.749);
+  --primary-tint: oklch(0.951 0.026 236.824);
+  --primary-tint-strong: oklch(0.901 0.058 230.902);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -81,6 +109,55 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* === Phase A admin accent (orange, used by AdminShell only) === */
+  --admin: oklch(0.646 0.222 41.116);
+  --admin-foreground: oklch(0.985 0 0);
+  --admin-hover: oklch(0.553 0.195 38.402);
+  --admin-tint: oklch(0.954 0.038 75.164);
+  --admin-tint-strong: oklch(0.901 0.076 70.697);
+
+  /* === Phase A status palette === */
+  --success: oklch(0.626 0.194 149.214);
+  --success-foreground: oklch(0.985 0 0);
+  --success-tint: oklch(0.962 0.045 156.743);
+
+  --warning: oklch(0.769 0.188 70.080);
+  --warning-foreground: oklch(0.205 0 0);
+  --warning-tint: oklch(0.987 0.022 95.277);
+
+  --danger: oklch(0.577 0.245 27.325);
+  --danger-foreground: oklch(0.985 0 0);
+  --danger-tint: oklch(0.971 0.013 17.380);
+
+  --info: var(--primary);
+  --info-foreground: var(--primary-foreground);
+  --info-tint: var(--primary-tint);
+
+  /* === Phase A type scale (Tailwind v4 uses DOUBLE-hyphen for line-height modifier) === */
+  --text-display: 1.875rem;
+  --text-display--line-height: 2.25rem;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.75rem;
+  --text-heading: 1rem;
+  --text-heading--line-height: 1.5rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-small: 0.75rem;
+  --text-small--line-height: 1rem;
+
+  /* === Phase A radius === */
+  --radius-tight: 0.25rem;
+  --radius-pill: 9999px;
+
+  /* === Phase A shadows === */
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+  --shadow-popover: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+
+  /* === Phase A motion === */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
 }
 
 .dark {
@@ -115,6 +192,15 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @layer base {
