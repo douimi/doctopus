@@ -27,14 +27,14 @@ export function PatientCard({
           <div className="text-lg font-semibold">
             {patient.lastName} {patient.firstName}
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {ageFromDob(patient.dateOfBirth)} ans · {patient.gender === 'm' ? 'H' : 'F'}{' '}
             {patient.phone ? `· ${patient.phone}` : ''}
             {patient.cin ? ` · CIN ${patient.cin}` : ''}
           </div>
         </div>
         {patient.coverageType ? (
-          <div className="text-sm rounded bg-gray-100 px-2 py-1">
+          <div className="text-sm rounded bg-muted px-2 py-1">
             {COVERAGE_LABEL[patient.coverageType] ?? patient.coverageType}
             {patient.coverageId ? ` · ${patient.coverageId}` : ''}
           </div>
@@ -43,7 +43,7 @@ export function PatientCard({
       {allergies.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {allergies.map((a) => (
-            <span key={a.id} className="rounded bg-red-100 text-red-800 text-xs px-2 py-1">
+            <span key={a.id} className="rounded bg-danger-tint text-danger text-xs px-2 py-1">
               ⚠ Allergie : {a.label}
             </span>
           ))}

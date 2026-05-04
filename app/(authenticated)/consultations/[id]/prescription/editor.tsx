@@ -36,7 +36,7 @@ export function PrescriptionEditor({
   return (
     <div className="space-y-3">
       {items.length === 0 ? (
-        <p className="text-sm text-gray-500">Aucun médicament prescrit.</p>
+        <p className="text-sm text-muted-foreground">Aucun médicament prescrit.</p>
       ) : (
         <ul className="space-y-2">
           {items.map((it, idx) => (
@@ -74,7 +74,7 @@ export function PrescriptionEditor({
                     <form action={removeItemAction}>
                       <input type="hidden" name="consultationId" value={consultationId} />
                       <input type="hidden" name="itemId" value={it.id} />
-                      <button type="submit" className="text-red-600 underline">
+                      <button type="submit" className="text-danger underline">
                         retirer
                       </button>
                     </form>
@@ -82,7 +82,7 @@ export function PrescriptionEditor({
                 ) : null}
               </div>
               {readOnly ? (
-                <div className="text-xs text-gray-600 space-y-0.5">
+                <div className="text-xs text-muted-foreground space-y-0.5">
                   {it.posologie ? <div>Posologie : {it.posologie}</div> : null}
                   {it.duration ? <div>Durée : {it.duration}</div> : null}
                   {it.quantity ? <div>Quantité : {it.quantity}</div> : null}

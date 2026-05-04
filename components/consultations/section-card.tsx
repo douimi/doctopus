@@ -11,7 +11,7 @@ export function SectionCard({
     <details className="rounded-md border" open>
       <summary className="cursor-pointer list-none px-3 py-2 font-medium border-b flex items-center justify-between">
         <span>{title}</span>
-        {hint ? <span className="text-xs text-gray-500">{hint}</span> : null}
+        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
       </summary>
       <div className="p-3">{children}</div>
     </details>

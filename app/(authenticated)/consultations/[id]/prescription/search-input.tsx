@@ -44,7 +44,7 @@ export function MedicationSearchInput({
             <li key={h.id}>
               <button
                 type="button"
-                className="w-full text-left px-2 py-1 hover:bg-gray-100"
+                className="w-full text-left px-2 py-1 hover:bg-muted"
                 onClick={() => {
                   onPick(h);
                   setQuery('');
@@ -54,9 +54,9 @@ export function MedicationSearchInput({
                 <span className="font-medium">{h.nomCommercial}</span>
                 {h.dosage ? ` ${h.dosage}` : ''}
                 {h.forme ? ` · ${h.forme}` : ''}
-                <span className="text-gray-500"> — {h.dci}</span>
+                <span className="text-muted-foreground"> — {h.dci}</span>
                 {h.laboratoire ? (
-                  <span className="text-xs text-gray-400"> ({h.laboratoire})</span>
+                  <span className="text-xs text-muted-foreground"> ({h.laboratoire})</span>
                 ) : null}
               </button>
             </li>

@@ -1,6 +1,18 @@
+import { History } from 'lucide-react';
 import { requireDoctor } from '@/lib/auth/guards';
 import { listAuditLog } from '@/lib/audit/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/shell/page-header';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+} from '@/components/ui/table';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const ACTION_LABEL: Record<string, string> = {
   'auth.sign_in_success': 'Connexion',
@@ -12,7 +24,7 @@ const ACTION_LABEL: Record<string, string> = {
   'patient.archive': 'Patient archivé',
   'consultation.start': 'Consultation démarrée',
   'consultation.finalize': 'Consultation terminée',
-  'prescription.item_added': 'Médicament ajouté à l’ordonnance',
+  'prescription.item_added': "Médicament ajouté à l’ordonnance",
   'prescription.printed': 'Ordonnance imprimée',
   'admin.tenant.grant_credits': 'Crédits IA accordés (admin)',
   'admin.tenant.set_model': 'Modèle IA modifié (admin)',
@@ -40,47 +52,56 @@ export default async function AuditPage() {
   const page = await listAuditLog(session.tenantId, { limit: 100 });
 
   return (
-    <div className="max-w-4xl space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Journal d&apos;audit</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {page.rows.length === 0 ? (
-            <p className="text-sm text-gray-500">Aucun événement enregistré.</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="border-b bg-gray-50">
-                <tr>
-                  <th className="text-left p-2 w-44">Date</th>
-                  <th className="text-left p-2">Action</th>
-                  <th className="text-left p-2">Entité</th>
-                  <th className="text-left p-2">Acteur</th>
-                </tr>
-              </thead>
-              <tbody>
-                {page.rows.map((r) => (
-                  <tr key={r.id} className="border-b">
-                    <td className="p-2 font-mono text-xs">{fmt(r.at)}</td>
-                    <td className="p-2">{ACTION_LABEL[r.action] ?? r.action}</td>
-                    <td className="p-2 text-xs text-gray-600">
-                      {r.entityType ?? '—'} {r.entityId ? `#${r.entityId.slice(0, 8)}` : ''}
-                    </td>
-                    <td className="p-2 text-xs text-gray-600">
-                      {r.actorUserId ? `#${r.actorUserId.slice(0, 8)}` : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          {page.hasMore ? (
-            <p className="text-xs text-gray-500 mt-2">
-              Plus de 100 entrées. La pagination complète sera ajoutée dans une version ultérieure.
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <PageHeader title="Journal d'audit" />
+      <div className="px-6 py-6 max-w-4xl space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Événements récents</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-44">Date</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Entité</TableHead>
+                  <TableHead>Acteur</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {page.rows.length === 0 ? (
+                  <TableEmpty colSpan={4}>
+                    <EmptyState
+                      icon={History}
+                      title="Aucun événement"
+                      description="Aucun événement enregistré pour l'instant."
+                    />
+                  </TableEmpty>
+                ) : (
+                  page.rows.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-mono text-xs">{fmt(r.at)}</TableCell>
+                      <TableCell>{ACTION_LABEL[r.action] ?? r.action}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {r.entityType ?? '—'} {r.entityId ? `#${r.entityId.slice(0, 8)}` : ''}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {r.actorUserId ? `#${r.actorUserId.slice(0, 8)}` : '—'}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+            {page.hasMore ? (
+              <p className="text-xs text-muted-foreground mt-2">
+                Plus de 100 entrées. La pagination complète sera ajoutée dans une version ultérieure.
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }

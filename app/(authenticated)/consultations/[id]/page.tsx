@@ -9,6 +9,7 @@ import { dbAdmin } from '@/db/client';
 import { tenants } from '@/db/schema';
 import { PatientCard } from '@/components/patients/patient-card';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shell/page-header';
 import { ConsultationEditor } from './editor';
 import { PrescriptionEditor } from './prescription/editor';
 import { finalizeConsultationAction } from './actions';
@@ -50,23 +51,29 @@ export default async function ConsultationPage({
           } as const);
 
   const v = detail.vitals;
+  const patientName = `${patientData.patient.lastName} ${patientData.patient.firstName}`;
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="space-y-4 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <Link href="/today" className="text-sm underline">
+    <>
+      <PageHeader
+        title={patientName}
+        description={
+          <Link href="/today" className="underline">
             ← Aujourd&apos;hui
           </Link>
-          {!detail.consultation.isFinalized ? (
+        }
+        actions={
+          !detail.consultation.isFinalized ? (
             <form action={finalizeConsultationAction}>
               <input type="hidden" name="id" value={id} />
               <Button type="submit">Terminer la consultation</Button>
             </form>
           ) : (
-            <span className="text-sm text-gray-600">Consultation terminée</span>
-          )}
-        </div>
-
+            <span className="text-sm text-muted-foreground">Consultation terminée</span>
+          )
+        }
+      />
+      <div className="px-6 py-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="space-y-4 min-w-0">
         <PatientCard
           patient={patientData.patient}
           allergies={patientData.allergies}
@@ -110,5 +117,6 @@ export default async function ConsultationPage({
         />
       </div>
     </div>
+    </>
   );
 }

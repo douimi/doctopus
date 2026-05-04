@@ -101,7 +101,7 @@ export function ConsultationEditor({
   return (
     <div className="space-y-3">
       <div
-        className={`text-xs ${status === 'error' ? 'text-red-600' : 'text-gray-500'}`}
+        className={`text-xs ${status === 'error' ? 'text-danger' : 'text-muted-foreground'}`}
         aria-live="polite"
       >
         {statusLabel}

@@ -9,9 +9,9 @@ export function StatCard({
 }) {
   return (
     <div className="rounded-md border p-4 space-y-1">
-      <div className="text-xs text-gray-500 uppercase tracking-wide">{label}</div>
+      <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
       <div className="text-2xl font-semibold">{value}</div>
-      {hint ? <div className="text-xs text-gray-500">{hint}</div> : null}
+      {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
     </div>
   );
 }

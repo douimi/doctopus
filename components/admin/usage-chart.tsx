@@ -21,7 +21,7 @@ export function UsageChart({ daily }: { daily: DailyPoint[] }) {
   }));
   if (data.length === 0) {
     return (
-      <p className="text-sm text-gray-500 p-4">
+      <p className="text-sm text-muted-foreground p-4">
         Pas encore d&apos;utilisation IA ce mois-ci.
       </p>
     );
