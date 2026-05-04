@@ -1,7 +1,11 @@
 import { requireSession } from '@/lib/auth/session';
-import { AppShell } from '@/components/app-shell';
+import { DoctorShell } from '@/components/shell/doctor-shell';
 
-export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+export default async function AuthenticatedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const session = await requireSession();
-  return <AppShell session={session}>{children}</AppShell>;
+  return <DoctorShell session={session}>{children}</DoctorShell>;
 }
