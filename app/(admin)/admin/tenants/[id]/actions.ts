@@ -130,3 +130,33 @@ export async function adminToggleChatbotAction(formData: FormData): Promise<void
 
   revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
 }
+
+const suspensionSchema = tenantIdSchema.extend({
+  desired: z.enum(['suspend', 'reactivate']),
+});
+
+export async function adminToggleSuspensionAction(formData: FormData): Promise<void> {
+  const session = await requireAdmin();
+  const parsed = suspensionSchema.safeParse({
+    tenantId: formData.get('tenantId'),
+    desired: formData.get('desired'),
+  });
+  if (!parsed.success) return;
+
+  const nextStatus = parsed.data.desired === 'suspend' ? 'suspended' : 'active';
+  await dbAdmin()
+    .update(tenants)
+    .set({ status: nextStatus, updatedAt: new Date() })
+    .where(eq(tenants.id, parsed.data.tenantId));
+
+  await recordAudit({
+    tenantId: parsed.data.tenantId,
+    actorUserId: session.userId,
+    action: parsed.data.desired === 'suspend' ? 'admin.tenant.suspend' : 'admin.tenant.reactivate',
+    entityType: 'tenant',
+    entityId: parsed.data.tenantId,
+  });
+
+  revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
+  revalidatePath('/admin/tenants');
+}

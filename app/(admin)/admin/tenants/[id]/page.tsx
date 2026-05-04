@@ -4,6 +4,7 @@ import { getTenantDetail } from '@/lib/admin/queries';
 import { GrantCreditsCard } from './grant-credits-card';
 import { SetModelCard } from './set-model-card';
 import { ToggleChatbotCard } from './toggle-chatbot-card';
+import { ToggleSuspensionCard } from './toggle-suspension-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -192,6 +193,7 @@ export default async function AdminTenantDetailPage({
             initialModel={tenant.chatbotModel}
           />
           <ToggleChatbotCard tenantId={tenant.id} enabled={tenant.chatbotEnabled} />
+          <ToggleSuspensionCard tenantId={tenant.id} status={tenant.status as 'active' | 'suspended'} />
         </aside>
       </div>
     </div>
