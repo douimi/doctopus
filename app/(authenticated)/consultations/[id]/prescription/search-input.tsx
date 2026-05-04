@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
 import { searchMedicationsAction } from './actions';
+import { formatMad } from '@/lib/medications/format';
 import type { MedicationSearchHit } from '@/lib/medications/queries';
 
 export function MedicationSearchInput({
@@ -44,20 +45,25 @@ export function MedicationSearchInput({
             <li key={h.id}>
               <button
                 type="button"
-                className="w-full text-left px-2 py-1 hover:bg-muted"
+                className="w-full text-left px-2 py-1 hover:bg-muted flex items-baseline gap-3"
                 onClick={() => {
                   onPick(h);
                   setQuery('');
                   setHits([]);
                 }}
               >
-                <span className="font-medium">{h.nomCommercial}</span>
-                {h.dosage ? ` ${h.dosage}` : ''}
-                {h.forme ? ` · ${h.forme}` : ''}
-                <span className="text-muted-foreground"> — {h.dci}</span>
-                {h.laboratoire ? (
-                  <span className="text-xs text-muted-foreground"> ({h.laboratoire})</span>
-                ) : null}
+                <span className="flex-1 min-w-0 truncate">
+                  <span className="font-medium">{h.nomCommercial}</span>
+                  {h.dosage ? ` ${h.dosage}` : ''}
+                  {h.forme ? ` · ${h.forme}` : ''}
+                  <span className="text-muted-foreground"> — {h.dci}</span>
+                  {h.laboratoire ? (
+                    <span className="text-xs text-muted-foreground"> ({h.laboratoire})</span>
+                  ) : null}
+                </span>
+                <span className="shrink-0 pl-3 text-right tabular-nums text-muted-foreground">
+                  {formatMad(h.ppv)}
+                </span>
               </button>
             </li>
           ))}
