@@ -16,6 +16,7 @@ export async function lookupInvite(rawToken: string): Promise<InviteLookupResult
   });
   if (!row) return { ok: false, reason: 'not_found' };
   if (row.consumedAt) return { ok: false, reason: 'consumed' };
+  if (row.revokedAt) return { ok: false, reason: 'consumed' }; // surface as 'consumed' to keep the user-facing message simple
   if (row.expiresAt.getTime() < Date.now()) return { ok: false, reason: 'expired' };
   return { ok: true, invite: row };
 }

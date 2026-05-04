@@ -43,6 +43,13 @@
       "when": 1777848880446,
       "tag": "0005_normal_zodiak",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777854244220,
+      "tag": "0006_milky_gateway",
+      "breakpoints": true
     }
   ]
 }
