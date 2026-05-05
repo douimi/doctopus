@@ -1,4 +1,4 @@
-import { Wallet, ChevronDown } from 'lucide-react';
+import { CheckCircle2, Wallet } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Section } from '@/components/ui/section';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -33,24 +33,38 @@ export function PaymentsPanel({
   role: 'doctor' | 'assistant';
 }) {
   return (
-    <Section icon={Wallet} title="Paiements" count={awaiting.length}>
-      <div className="space-y-3">
+    <>
+      <Section icon={Wallet} title="Paiements à encaisser" count={awaiting.length}>
         {awaiting.length === 0 ? (
-          <EmptyState
-            icon={Wallet}
-            title="Aucun paiement en attente"
-            description="Les consultations clôturées apparaîtront ici."
-          />
+          <div className="rounded-xl border border-border bg-card shadow-card">
+            <EmptyState
+              icon={Wallet}
+              title="Aucun paiement en attente"
+              description="Les consultations clôturées apparaîtront ici."
+            />
+          </div>
         ) : (
-          <ul role="list" className="divide-y divide-border rounded-xl border border-border bg-card shadow-card overflow-hidden">
+          <ul
+            role="list"
+            className="divide-y divide-border rounded-xl border border-border bg-card shadow-card overflow-hidden"
+          >
             {awaiting.map((r) => (
-              <li key={r.consultationId} className="flex items-center gap-3 px-4 py-3">
-                <Avatar name={r.patientFullName} size="md" tone="primary" />
+              <li
+                key={r.consultationId}
+                className="group/row flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40"
+                style={{ transitionDuration: 'var(--duration-fast)' }}
+              >
+                <Avatar name={r.patientFullName} size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="text-body font-medium truncate">{r.patientFullName}</div>
-                  <div className="text-small text-muted-foreground">{fmtRelative(r.finalizedAt)}</div>
+                  <div className="text-small text-muted-foreground">
+                    {fmtRelative(r.finalizedAt)}
+                  </div>
                 </div>
-                <div className="text-body font-medium tabular-nums shrink-0">
+                <StatusBadge variant="warning" className="hidden sm:inline-flex">
+                  En attente
+                </StatusBadge>
+                <div className="text-body font-semibold tabular-nums shrink-0">
                   {formatMad(r.priceMad)}
                 </div>
                 {role === 'assistant' ? (
@@ -64,52 +78,60 @@ export function PaymentsPanel({
             ))}
           </ul>
         )}
+      </Section>
 
-        <details
-          open={collectedToday.length > 0}
-          className="rounded-xl border border-border bg-card shadow-card overflow-hidden group"
-        >
-          <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-            <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
-            <span className="text-body font-medium">Encaissés aujourd&apos;hui</span>
-            <span className="text-small text-muted-foreground tabular-nums ml-auto">{collectedToday.length}</span>
-          </summary>
-          <div>
-            {collectedToday.length === 0 ? (
-              <div className="px-4 pb-4">
-                <EmptyState icon={Wallet} title="Aucun paiement aujourd'hui" />
-              </div>
-            ) : (
-              <ul role="list" className="divide-y divide-border border-t border-border">
-                {collectedToday.map((r) => (
-                  <li key={r.consultationId} className="flex items-center gap-3 px-4 py-3">
-                    <Avatar name={r.patientFullName} size="md" tone="primary" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-body font-medium truncate">{r.patientFullName}</div>
-                      <div className="text-small text-muted-foreground">
-                        {r.paidAt ? fmtTime(r.paidAt) : ''}
-                        {r.paidByName ? ` · encaissé par ${r.paidByName}` : ''}
-                      </div>
-                    </div>
-                    {r.isFree ? (
-                      <StatusBadge variant="neutral">Gratuit</StatusBadge>
-                    ) : (
-                      <>
-                        <div className="text-body font-medium tabular-nums shrink-0">
-                          {formatMad(r.priceMad)}
-                        </div>
-                        <StatusBadge variant="success">
-                          {r.paymentMethod ? (PAYMENT_METHOD_LABELS[r.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS] ?? '—') : '—'}
-                        </StatusBadge>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+      <Section
+        icon={CheckCircle2}
+        title="Encaissés aujourd'hui"
+        count={collectedToday.length}
+      >
+        {collectedToday.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card shadow-card">
+            <EmptyState
+              icon={CheckCircle2}
+              title="Aucun encaissement aujourd'hui"
+              description="Les paiements encaissés sur la journée apparaîtront ici."
+            />
           </div>
-        </details>
-      </div>
-    </Section>
+        ) : (
+          <ul
+            role="list"
+            className="divide-y divide-border rounded-xl border border-border bg-card shadow-card overflow-hidden"
+          >
+            {collectedToday.map((r) => (
+              <li
+                key={r.consultationId}
+                className="group/row flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40"
+                style={{ transitionDuration: 'var(--duration-fast)' }}
+              >
+                <Avatar name={r.patientFullName} size="md" tone="primary" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-body font-medium truncate">{r.patientFullName}</div>
+                  <div className="text-small text-muted-foreground">
+                    {r.paidAt ? fmtTime(r.paidAt) : ''}
+                    {r.paidByName ? ` · encaissé par ${r.paidByName}` : ''}
+                  </div>
+                </div>
+                {r.isFree ? (
+                  <StatusBadge variant="neutral">Gratuit</StatusBadge>
+                ) : (
+                  <>
+                    <StatusBadge variant="success" className="hidden sm:inline-flex">
+                      {r.paymentMethod
+                        ? PAYMENT_METHOD_LABELS[r.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS] ??
+                          '—'
+                        : '—'}
+                    </StatusBadge>
+                    <div className="text-body font-semibold tabular-nums shrink-0">
+                      {formatMad(r.priceMad)}
+                    </div>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+    </>
   );
 }

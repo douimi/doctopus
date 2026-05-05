@@ -5,15 +5,17 @@ import { requireSession } from '@/lib/auth/session';
 import { walkIn } from '@/lib/appointments/mutations';
 import { walkInSchema } from '@/lib/appointments/schemas';
 
-export type WalkInState = { error: string | null };
-
-export async function walkInAction(_: WalkInState, formData: FormData): Promise<WalkInState> {
+/**
+ * One-click "Mettre en salle d'attente" — fired from a per-row Button on
+ * /today/walk-in. No motif: the doctor can edit it later from the
+ * consultation. Redirects back to /today on success.
+ */
+export async function walkInDirectAction(formData: FormData): Promise<void> {
   const session = await requireSession();
   const parsed = walkInSchema.safeParse({
     patientId: formData.get('patientId'),
-    reason: formData.get('reason'),
   });
-  if (!parsed.success) return { error: 'Patient invalide.' };
+  if (!parsed.success) return;
   await walkIn(session.tenantId, session.userId, parsed.data);
   redirect('/today');
 }

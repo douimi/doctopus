@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
 import { patients, patientAllergies, patientChronicConditions } from '@/db/schema';
 
@@ -55,6 +55,72 @@ export async function searchPatients(
       .orderBy(desc(patients.createdAt))
       .limit(limit);
     return rows;
+  });
+}
+
+export type PatientPage = {
+  rows: PatientListRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+/**
+ * Paginated variant of searchPatients. Returns the slice plus the total
+ * row count for the current filter so the caller can render pagination
+ * controls. `page` is 1-indexed; out-of-range pages clamp to a valid value.
+ */
+export async function searchPatientsPage(
+  tenantId: string,
+  query: string,
+  opts: { includeArchived?: boolean; page?: number; pageSize?: number } = {},
+): Promise<PatientPage> {
+  const pageSize = Math.min(Math.max(opts.pageSize ?? 25, 1), 100);
+  const trimmed = query.trim();
+
+  return withTenantTx(tenantId, async (tx) => {
+    const where = trimmed
+      ? and(
+          opts.includeArchived ? undefined : eq(patients.isArchived, false),
+          or(
+            ilike(patients.firstName, `%${escapeIlike(trimmed)}%`),
+            ilike(patients.lastName, `%${escapeIlike(trimmed)}%`),
+            ilike(patients.phone, `%${escapeIlike(trimmed)}%`),
+            ilike(patients.cin, `%${escapeIlike(trimmed)}%`),
+          ),
+        )
+      : opts.includeArchived
+      ? undefined
+      : eq(patients.isArchived, false);
+
+    const [{ count }] = await tx
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(patients)
+      .where(where);
+
+    const total = Number(count) || 0;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(Math.max(opts.page ?? 1, 1), totalPages);
+    const offset = (page - 1) * pageSize;
+
+    const rows = await tx
+      .select({
+        id: patients.id,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        phone: patients.phone,
+        cin: patients.cin,
+        dateOfBirth: patients.dateOfBirth,
+        isArchived: patients.isArchived,
+      })
+      .from(patients)
+      .where(where)
+      .orderBy(desc(patients.createdAt))
+      .limit(pageSize)
+      .offset(offset);
+
+    return { rows, total, page, pageSize, totalPages };
   });
 }
 
