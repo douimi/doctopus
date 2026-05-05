@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/shell/page-header';
 import { cn } from '@/lib/utils';
+import { ApiKeyCard } from './api-key-card';
 import { GrantCreditsCard } from './grant-credits-card';
 import { SetModelCard } from './set-model-card';
 import { ToggleChatbotCard } from './toggle-chatbot-card';
@@ -63,7 +64,7 @@ export default async function AdminTenantDetailPage({
           </span>
         }
       />
-      <div className="px-6 py-6 max-w-6xl">
+      <div className="px-6 py-6">
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4">
           <div className="space-y-4 min-w-0">
             <Card>
@@ -274,12 +275,17 @@ export default async function AdminTenantDetailPage({
           </div>
 
           <aside className="space-y-4">
-            <GrantCreditsCard tenantId={tenant.id} />
             <SetModelCard
               tenantId={tenant.id}
               initialProvider={tenant.chatbotProvider}
               initialModel={tenant.chatbotModel}
             />
+            <ApiKeyCard
+              tenantId={tenant.id}
+              provider={tenant.chatbotProvider}
+              last4={tenant.chatbotApiKeyLast4 ?? null}
+            />
+            <GrantCreditsCard tenantId={tenant.id} />
             <ToggleChatbotCard tenantId={tenant.id} enabled={tenant.chatbotEnabled} />
             <ToggleSuspensionCard
               tenantId={tenant.id}

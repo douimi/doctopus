@@ -27,6 +27,8 @@ export type AuditAction =
   | 'admin.tenant.disable_chatbot'
   | 'admin.tenant.suspend'
   | 'admin.tenant.reactivate'
+  | 'admin.tenant.api_key_set'
+  | 'admin.tenant.api_key_cleared'
   | 'admin.invite.create'
   | 'admin.invite.revoke';
 

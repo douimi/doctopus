@@ -16,6 +16,7 @@ import {
   getModel,
   type Provider,
 } from '@/lib/chatbot/provider';
+import { getTenantApiKey } from '@/lib/chatbot/byo-key';
 import { computeCostMicrousd } from '@/lib/chatbot/cost';
 import {
   MAX_OUTPUT_TOKENS_PER_TURN,
@@ -89,12 +90,24 @@ export async function POST(req: Request) {
   const cumulativeTokens = cumRow?.total ?? 0;
   if (cumulativeTokens >= MAX_TOKENS_PER_CONSULTATION) return jsonError('token_cap', 429);
 
-  // Atomic debit on first turn.
+  // Resolve per-tenant BYO API key (null = use platform fallback).
+  let byoApiKey: string | null = null;
   try {
-    await debitOneCredit(session.tenantId, consultationId);
-  } catch (err) {
-    if (err instanceof NoCreditsError) return jsonError('no_credits', 402);
-    throw err;
+    byoApiKey = await getTenantApiKey(session.tenantId);
+  } catch {
+    byoApiKey = null;
+  }
+  const usesByoKey = byoApiKey !== null;
+
+  // Atomic debit on first turn — only when the platform is paying for it.
+  // Tenants bringing their own key are billed by their provider directly.
+  if (!usesByoKey) {
+    try {
+      await debitOneCredit(session.tenantId, consultationId);
+    } catch (err) {
+      if (err instanceof NoCreditsError) return jsonError('no_credits', 402);
+      throw err;
+    }
   }
 
   // Build context.
@@ -106,10 +119,10 @@ export async function POST(req: Request) {
     throw err;
   }
 
-  // Get model.
+  // Get model — passes BYO key when present, otherwise falls back to env.
   let model;
   try {
-    model = getModel(tenantRow.chatbot_provider, tenantRow.chatbot_model);
+    model = getModel(tenantRow.chatbot_provider, tenantRow.chatbot_model, byoApiKey);
   } catch (err) {
     if (err instanceof ProviderNotConfiguredError || err instanceof ModelNotAllowedError) {
       return jsonError('not_configured', 500);
@@ -180,7 +193,8 @@ export async function POST(req: Request) {
             model: modelName,
             input_tokens: inputTokens,
             output_tokens: outputTokens,
-            credit_debited: priorTurns === 0,
+            credit_debited: priorTurns === 0 && !usesByoKey,
+            byo_key: usesByoKey,
           },
         });
       } catch (err) {

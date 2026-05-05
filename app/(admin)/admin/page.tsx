@@ -31,7 +31,7 @@ export default async function AdminDashboardPage() {
         title="Tableau de bord"
         description="Vue d'ensemble de l'activité de la plateforme."
       />
-      <div className="px-6 py-6 space-y-8 max-w-6xl">
+      <div className="px-6 py-6 space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             icon={Building2}

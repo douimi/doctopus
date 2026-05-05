@@ -41,7 +41,7 @@ export default async function AdminInvitesPage() {
         title="Invitations"
         description="Créez et gérez les invitations médecin pour la plateforme."
       />
-      <div className="px-6 py-6 space-y-4 max-w-5xl">
+      <div className="px-6 py-6 space-y-4">
         <CreateInviteForm />
 
         <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">

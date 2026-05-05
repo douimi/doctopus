@@ -6,6 +6,11 @@ import { eq } from 'drizzle-orm';
 import { requireAdmin } from '@/lib/auth/admin';
 import { recordAudit } from '@/lib/audit/record';
 import { grantCredits } from '@/lib/chatbot/credits';
+import {
+  EncryptionKeyMissingError,
+  clearTenantApiKey,
+  setTenantApiKey,
+} from '@/lib/chatbot/byo-key';
 import { dbAdmin } from '@/db/client';
 import { tenants } from '@/db/schema';
 import { ALLOWED_MODELS_BY_PROVIDER } from '@/lib/chatbot/pricing';
@@ -159,4 +164,67 @@ export async function adminToggleSuspensionAction(formData: FormData): Promise<v
 
   revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
   revalidatePath('/admin/tenants');
+}
+
+const setKeySchema = tenantIdSchema.extend({
+  apiKey: z.string().trim().min(8).max(2000),
+});
+
+export type SetApiKeyState = { error: string | null; ok: boolean };
+
+export async function adminSetApiKeyAction(
+  _: SetApiKeyState,
+  formData: FormData,
+): Promise<SetApiKeyState> {
+  const session = await requireAdmin();
+  const parsed = setKeySchema.safeParse({
+    tenantId: formData.get('tenantId'),
+    apiKey: formData.get('apiKey'),
+  });
+  if (!parsed.success) {
+    return { error: 'Clé invalide (min. 8 caractères).', ok: false };
+  }
+
+  try {
+    await setTenantApiKey(parsed.data.tenantId, parsed.data.apiKey);
+  } catch (err) {
+    if (err instanceof EncryptionKeyMissingError) {
+      return {
+        error:
+          "CHATBOT_KEY_ENCRYPTION_KEY n'est pas configurée côté serveur. Définissez-la pour activer les clés API par cabinet.",
+        ok: false,
+      };
+    }
+    throw err;
+  }
+
+  await recordAudit({
+    tenantId: parsed.data.tenantId,
+    actorUserId: session.userId,
+    action: 'admin.tenant.api_key_set',
+    entityType: 'tenant',
+    entityId: parsed.data.tenantId,
+    metadata: { last4: parsed.data.apiKey.slice(-4) },
+  });
+
+  revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
+  return { error: null, ok: true };
+}
+
+export async function adminClearApiKeyAction(formData: FormData): Promise<void> {
+  const session = await requireAdmin();
+  const parsed = tenantIdSchema.safeParse({ tenantId: formData.get('tenantId') });
+  if (!parsed.success) return;
+
+  await clearTenantApiKey(parsed.data.tenantId);
+
+  await recordAudit({
+    tenantId: parsed.data.tenantId,
+    actorUserId: session.userId,
+    action: 'admin.tenant.api_key_cleared',
+    entityType: 'tenant',
+    entityId: parsed.data.tenantId,
+  });
+
+  revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
 }

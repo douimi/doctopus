@@ -16,6 +16,10 @@ export const tenants = pgTable('tenants', {
   chatbotEnabled: boolean('chatbot_enabled').notNull().default(false),
   chatbotCreditsBalance: integer('chatbot_credits_balance').notNull().default(0),
   chatbotDisclaimerAcknowledgedAt: timestamp('chatbot_disclaimer_acknowledged_at', { withTimezone: true }),
+  // Last 4 chars of the per-cabinet BYO API key, for display in admin UI.
+  // The full ciphertext lives in chatbot_api_key_ciphertext bytea — accessed
+  // only via raw SQL in lib/chatbot/byo-key.ts using pgp_sym_encrypt/decrypt.
+  chatbotApiKeyLast4: text('chatbot_api_key_last4'),
   defaultConsultationPriceMad: numeric('default_consultation_price_mad', { precision: 10, scale: 2 }),
   logoUrl: text('logo_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

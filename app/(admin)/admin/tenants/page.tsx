@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { ArrowRight, Building2, Check, Mail, Search, X } from 'lucide-react';
+import { ArrowRight, Building2, Mail, Search, Sparkles } from 'lucide-react';
 import { listTenantsForAdmin } from '@/lib/admin/queries';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { FilterPill } from '@/components/ui/filter-pill';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import {
@@ -16,7 +17,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/shell/page-header';
-import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,31 +30,6 @@ function fmtRelative(d: Date | null): string {
   if (hours < 24) return `il y a ${hours}h`;
   const days = Math.floor(hours / 24);
   return `il y a ${days}j`;
-}
-
-function FilterPill({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'px-2.5 py-1 rounded-pill border text-small transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40',
-        active
-          ? 'bg-foreground text-background border-foreground'
-          : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground',
-      )}
-      style={{ transitionDuration: 'var(--duration-fast)' }}
-    >
-      {children}
-    </Link>
-  );
 }
 
 export default async function AdminTenantsPage({
@@ -79,7 +54,7 @@ export default async function AdminTenantsPage({
           </Link>
         }
       />
-      <div className="px-6 py-6 space-y-4 max-w-6xl">
+      <div className="px-6 py-6 space-y-4">
         <form
           className="flex flex-wrap items-center gap-2"
           action="/admin/tenants"
@@ -167,21 +142,11 @@ export default async function AdminTenantsPage({
                     </TableCell>
                     <TableCell>
                       {r.chatbotEnabled ? (
-                        <span
-                          className="inline-flex items-center gap-1 text-small text-success"
-                          title="Activé"
-                        >
-                          <Check className="size-3.5" aria-hidden />
+                        <StatusBadge variant="info" icon={Sparkles}>
                           Activé
-                        </span>
+                        </StatusBadge>
                       ) : (
-                        <span
-                          className="inline-flex items-center gap-1 text-small text-muted-foreground"
-                          title="Désactivé"
-                        >
-                          <X className="size-3.5" aria-hidden />
-                          Désactivé
-                        </span>
+                        <StatusBadge variant="neutral">Désactivé</StatusBadge>
                       )}
                     </TableCell>
                     <TableCell className="text-small text-muted-foreground tabular-nums">
