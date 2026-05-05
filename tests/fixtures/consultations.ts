@@ -15,6 +15,11 @@ export async function seedConsultation(
       appointmentId,
       patientId,
       doctorId,
+      // Default price ensures the row satisfies the
+      // consultations_awaiting_requires_priced_nonfree CHECK introduced
+      // in migration 0007. Override priceMad/isFree/paymentStatus when a
+      // test cares about a specific pricing scenario.
+      priceMad: '300.00',
       ...overrides,
     })
     .returning();
