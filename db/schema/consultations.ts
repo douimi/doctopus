@@ -41,7 +41,7 @@ export const consultations = pgTable(
       enum: ['especes', 'carte', 'cheque', 'virement', 'autre'],
     }),
     paidAt: timestamp('paid_at', { withTimezone: true }),
-    paidBy: uuid('paid_by').references(() => userProfiles.id),
+    paidBy: uuid('paid_by').references(() => userProfiles.id, { onDelete: 'set null' }),
     paymentNote: text('payment_note'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
