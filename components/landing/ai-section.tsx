@@ -1,3 +1,5 @@
+'use client';
+
 import { SectionFrame } from './section-frame';
 import { AIMockup } from './ai-mockup';
 

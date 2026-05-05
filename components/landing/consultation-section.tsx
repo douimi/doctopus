@@ -1,3 +1,5 @@
+'use client';
+
 import { SectionFrame } from './section-frame';
 import { ConsultationMockup } from './consultation-mockup';
 
