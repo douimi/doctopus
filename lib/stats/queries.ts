@@ -2,7 +2,7 @@ import 'server-only';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { dbAdmin } from '@/db/client';
 import { consultations, patients } from '@/db/schema';
-import { rangeBoundsUtc, type StatsRange } from '@/lib/time';
+import { CABINET_TZ, rangeBoundsUtc, type StatsRange } from '@/lib/time';
 
 export type RevenueSummary = {
   totalRevenue: string;
@@ -69,7 +69,7 @@ export async function getRevenueByDay(tenantId: string, range: StatsRange): Prom
   const { startUtc, endUtc } = rangeBoundsUtc(range);
   const rows = await dbAdmin().execute<{ date: string; revenue: string; count: number }>(sql`
     SELECT
-      to_char(date_trunc('day', paid_at AT TIME ZONE 'Africa/Casablanca'), 'YYYY-MM-DD') AS date,
+      to_char(date_trunc('day', paid_at AT TIME ZONE ${CABINET_TZ}), 'YYYY-MM-DD') AS date,
       COALESCE(SUM(price_mad), 0)::text                                                  AS revenue,
       COUNT(*)::int                                                                       AS count
     FROM consultations

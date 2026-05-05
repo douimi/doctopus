@@ -133,6 +133,17 @@ describe('stats queries', () => {
       const totalRev = rows.reduce((sum, r) => sum + Number(r.revenue), 0);
       expect(totalRev).toBeCloseTo(900);
     });
+
+    it('attributes revenue to the correct Casablanca-local day buckets', async () => {
+      const rows = await getRevenueByDay(tenantId, '30d');
+      const byDate = Object.fromEntries(rows.map((r) => [r.date, Number(r.revenue)]));
+      const todayLocal = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Casablanca' });
+      const yesterdayLocal = new Date(Date.now() - 86_400_000).toLocaleDateString('en-CA', {
+        timeZone: 'Africa/Casablanca',
+      });
+      expect(byDate[todayLocal]).toBeCloseTo(550); // 250 + 300
+      expect(byDate[yesterdayLocal]).toBeCloseTo(350);
+    });
   });
 
   describe('getRevenueByMethod', () => {
