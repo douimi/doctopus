@@ -2,9 +2,6 @@ import 'server-only';
 import { searchAnamMedications, type AnamRow } from './anam';
 import type { MedicationSearchHit } from './types';
 
-export type { MedicationSearchHit } from './types';
-export { formatMedicationLabel } from './types';
-
 function fmt(n: number | null | undefined): string | null {
   if (n == null || !Number.isFinite(n)) return null;
   return Number(n).toFixed(2);
