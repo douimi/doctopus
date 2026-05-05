@@ -1,9 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('undici', () => ({
+  fetch: vi.fn(),
+  Agent: class {
+    constructor(_opts?: unknown) {}
+  },
+}));
+
+import * as undiciModule from 'undici';
 import {
   getAnamNames,
   getAnamRowsByName,
   searchAnamMedications,
 } from '@/lib/medications/anam';
+
+const undiciFetch = undiciModule.fetch as unknown as ReturnType<typeof vi.fn>;
 
 const ROW_DOLI = {
   codeEan13: '6118000040286',
@@ -42,35 +53,30 @@ function jsonResponse(body: unknown, init?: ResponseInit): Response {
 }
 
 describe('ANAM client', () => {
-  let originalFetch: typeof globalThis.fetch;
-
   beforeEach(() => {
-    originalFetch = globalThis.fetch;
+    undiciFetch.mockReset();
   });
 
   afterEach(() => {
-    globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
   });
 
   describe('getAnamNames', () => {
     it('returns [] for queries shorter than 2 chars without calling fetch', async () => {
-      const fetchSpy = vi.fn();
-      globalThis.fetch = fetchSpy as unknown as typeof fetch;
       expect(await getAnamNames('d')).toEqual([]);
       expect(await getAnamNames(' ')).toEqual([]);
-      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(undiciFetch).not.toHaveBeenCalled();
     });
 
     it('strips the "0" sentinel ANAM uses for empty results', async () => {
-      globalThis.fetch = vi.fn(async () => jsonResponse(['0'])) as unknown as typeof fetch;
+      undiciFetch.mockResolvedValueOnce(jsonResponse(['0']));
       expect(await getAnamNames('zzz')).toEqual([]);
     });
 
     it('returns the list of distinct medication names', async () => {
-      globalThis.fetch = vi.fn(async () =>
+      undiciFetch.mockResolvedValueOnce(
         jsonResponse(['DOLIPRANE', 'DOLICOX 90 MG', 'DOLI PEDIATRIQUE']),
-      ) as unknown as typeof fetch;
+      );
       expect(await getAnamNames('doli')).toEqual([
         'DOLIPRANE',
         'DOLICOX 90 MG',
@@ -79,45 +85,40 @@ describe('ANAM client', () => {
     });
 
     it('throws on non-2xx responses so callers can fall back', async () => {
-      globalThis.fetch = vi.fn(async () =>
-        new Response('boom', { status: 503 }),
-      ) as unknown as typeof fetch;
+      undiciFetch.mockResolvedValueOnce(new Response('boom', { status: 503 }));
       await expect(getAnamNames('doli')).rejects.toThrow('ANAM 503');
     });
   });
 
   describe('getAnamRowsByName', () => {
     it('returns the parsed ANAM rows', async () => {
-      globalThis.fetch = vi.fn(async () =>
-        jsonResponse([ROW_DOLI, ROW_DOLICOX]),
-      ) as unknown as typeof fetch;
+      undiciFetch.mockResolvedValueOnce(jsonResponse([ROW_DOLI, ROW_DOLICOX]));
       const rows = await getAnamRowsByName('DOLIPRANE');
       expect(rows).toHaveLength(2);
       expect(rows[0].codeEan13).toBe('6118000040286');
     });
 
     it('handles unknown names (ANAM returns [])', async () => {
-      globalThis.fetch = vi.fn(async () => jsonResponse([])) as unknown as typeof fetch;
+      undiciFetch.mockResolvedValueOnce(jsonResponse([]));
       expect(await getAnamRowsByName('NOPE')).toEqual([]);
     });
   });
 
   describe('searchAnamMedications', () => {
     it('fans out to GetMedicament for each name and dedupes by codeEan13', async () => {
-      const fetchSpy = vi.fn(async (input: RequestInfo | URL) => {
-        const url = typeof input === 'string' ? input : input.toString();
+      undiciFetch.mockImplementation(async (input: unknown) => {
+        const url = String(input);
         if (url.includes('/GetMedicamentClause/')) {
           return jsonResponse(['DOLIPRANE', 'DOLICOX 90 MG']);
         }
         if (url.includes('/GetMedicament/DOLIPRANE/')) {
-          return jsonResponse([ROW_DOLI, ROW_DOLI]); // duplicate row to test dedupe
+          return jsonResponse([ROW_DOLI, ROW_DOLI]); // duplicate to test dedupe
         }
         if (url.includes('/GetMedicament/DOLICOX')) {
           return jsonResponse([ROW_DOLICOX]);
         }
         throw new Error(`unexpected url: ${url}`);
       });
-      globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
       const out = await searchAnamMedications('doli');
 
@@ -125,12 +126,12 @@ describe('ANAM client', () => {
         '6118000040286',
         '6118000041955',
       ]);
-      expect(fetchSpy).toHaveBeenCalledTimes(3);
+      expect(undiciFetch).toHaveBeenCalledTimes(3);
     });
 
     it('tolerates failures on individual name fetches', async () => {
-      globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
-        const url = typeof input === 'string' ? input : input.toString();
+      undiciFetch.mockImplementation(async (input: unknown) => {
+        const url = String(input);
         if (url.includes('/GetMedicamentClause/')) {
           return jsonResponse(['DOLIPRANE', 'BROKEN']);
         }
@@ -138,7 +139,7 @@ describe('ANAM client', () => {
           return jsonResponse([ROW_DOLI]);
         }
         return new Response('boom', { status: 500 });
-      }) as unknown as typeof fetch;
+      });
 
       const out = await searchAnamMedications('doli');
       expect(out.map((r) => r.codeEan13)).toEqual(['6118000040286']);

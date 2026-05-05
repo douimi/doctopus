@@ -1,9 +1,14 @@
 import 'server-only';
+import { fetch as undiciFetch, Agent } from 'undici';
 
 const BASE = 'https://e-services.anam.ma/eServices/api/Medicament';
 const TIMEOUT_MS = 4500;
 const MAX_NAMES = 8;
 const MAX_HITS = 30;
+
+// ANAM serves an incomplete TLS certificate chain (UNABLE_TO_VERIFY_LEAF_SIGNATURE).
+// Bypass chain validation for this host only — every other outbound fetch keeps strict TLS.
+const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
 
 export type AnamRow = {
   codeEan13: string;
@@ -23,10 +28,10 @@ async function fetchJson<T>(url: string): Promise<T> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
+    const res = await undiciFetch(url, {
       headers: { Accept: 'application/json' },
       signal: ctrl.signal,
-      cache: 'no-store',
+      dispatcher: insecureAgent,
     });
     if (!res.ok) throw new Error(`ANAM ${res.status}`);
     return (await res.json()) as T;
