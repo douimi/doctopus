@@ -1,6 +1,5 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireDoctor } from '@/lib/auth/guards';
@@ -11,6 +10,7 @@ import {
   updateConsultationVitals,
 } from '@/lib/consultations/mutations';
 import { recordAudit } from '@/lib/audit/record';
+import { finalizePricingSchema } from '@/lib/payments/schemas';
 
 const idSchema = z.object({ id: z.string().uuid() });
 
@@ -42,18 +42,42 @@ export async function saveVitalsAction(
   return { ok: true };
 }
 
-export async function finalizeConsultationAction(formData: FormData) {
+export type FinalizeResult = { ok: boolean; error?: string };
+
+export async function finalizeConsultationAction(formData: FormData): Promise<FinalizeResult> {
   const session = await requireDoctor();
-  const parsed = idSchema.safeParse({ id: formData.get('id') });
-  if (!parsed.success) return;
-  await finalizeConsultation(session.tenantId, parsed.data.id);
+  const parsed = finalizePricingSchema.safeParse({
+    consultationId: formData.get('consultationId'),
+    isFree: formData.get('isFree') === 'true',
+    priceMad: (formData.get('priceMad') as string | null) ?? undefined,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Données invalides.' };
+  }
+
+  const ok = await finalizeConsultation(session.tenantId, parsed.data.consultationId, {
+    isFree: parsed.data.isFree,
+    priceMad: parsed.data.isFree ? undefined : parsed.data.priceMad,
+    doctorId: session.userId,
+  });
+  if (!ok) return { ok: false, error: 'Consultation déjà finalisée ou introuvable.' };
+
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'consultation.price_set',
+    entityType: 'consultation',
+    entityId: parsed.data.consultationId,
+    metadata: { priceMad: parsed.data.priceMad ?? null, isFree: parsed.data.isFree },
+  });
   await recordAudit({
     tenantId: session.tenantId,
     actorUserId: session.userId,
     action: 'consultation.finalize',
     entityType: 'consultation',
-    entityId: parsed.data.id,
+    entityId: parsed.data.consultationId,
   });
+
   revalidatePath('/today');
-  redirect('/today');
+  return { ok: true };
 }

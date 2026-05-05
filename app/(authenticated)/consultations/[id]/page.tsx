@@ -8,11 +8,9 @@ import { getPrescriptionForConsultation } from '@/lib/prescriptions/queries';
 import { dbAdmin } from '@/db/client';
 import { tenants } from '@/db/schema';
 import { PatientCard } from '@/components/patients/patient-card';
-import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shell/page-header';
 import { ConsultationEditor } from './editor';
 import { PrescriptionEditor } from './prescription/editor';
-import { finalizeConsultationAction } from './actions';
 import { AssistantPanel } from './assistant/panel';
 
 export default async function ConsultationPage({
@@ -62,14 +60,9 @@ export default async function ConsultationPage({
           </Link>
         }
         actions={
-          !detail.consultation.isFinalized ? (
-            <form action={finalizeConsultationAction}>
-              <input type="hidden" name="id" value={id} />
-              <Button type="submit">Terminer la consultation</Button>
-            </form>
-          ) : (
+          detail.consultation.isFinalized ? (
             <span className="text-sm text-muted-foreground">Consultation terminée</span>
-          )
+          ) : null
         }
       />
       <div className="px-6 py-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">

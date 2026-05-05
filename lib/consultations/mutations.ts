@@ -131,7 +131,17 @@ export async function updateConsultationVitals(
   });
 }
 
-export async function finalizeConsultation(tenantId: string, id: string): Promise<boolean> {
+export type FinalizeConsultationOptions = {
+  isFree: boolean;
+  priceMad?: string;
+  doctorId: string;
+};
+
+export async function finalizeConsultation(
+  tenantId: string,
+  id: string,
+  opts: FinalizeConsultationOptions,
+): Promise<boolean> {
   return withTenantTx(tenantId, async (tx) => {
     const [c] = await tx.select().from(consultations).where(eq(consultations.id, id));
     if (!c || c.isFinalized) return false;
@@ -144,9 +154,30 @@ export async function finalizeConsultation(tenantId: string, id: string): Promis
     const now = new Date();
     const patch = applyTransition(appt.status, 'finalize', now);
 
+    const pricingPatch = opts.isFree
+      ? {
+          priceMad: null,
+          isFree: true,
+          paymentStatus: 'free' as const,
+          paidAt: now,
+          paidBy: opts.doctorId,
+        }
+      : {
+          priceMad: opts.priceMad ?? null,
+          isFree: false,
+          paymentStatus: 'awaiting' as const,
+          paidAt: null,
+          paidBy: null,
+        };
+
     await tx
       .update(consultations)
-      .set({ isFinalized: true, finalizedAt: now, updatedAt: now })
+      .set({
+        isFinalized: true,
+        finalizedAt: now,
+        updatedAt: now,
+        ...pricingPatch,
+      })
       .where(eq(consultations.id, id));
 
     await tx
