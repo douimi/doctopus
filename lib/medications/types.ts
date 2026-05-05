@@ -1,3 +1,7 @@
+export type SearchMedicationsResult =
+  | { ok: true; hits: MedicationSearchHit[] }
+  | { ok: false; error: string };
+
 export type MedicationSearchHit = {
   codeEan13: string;
   nomCommercial: string;

@@ -14,12 +14,9 @@ import {
   reorderPrescriptionItem,
   updatePrescriptionItem,
 } from '@/lib/prescriptions/mutations';
-import { searchMedications, type MedicationSearchHit } from '@/lib/medications/queries';
+import { searchMedications } from '@/lib/medications/queries';
+import type { SearchMedicationsResult } from '@/lib/medications/types';
 import { recordAudit } from '@/lib/audit/record';
-
-export type SearchMedicationsResult =
-  | { ok: true; hits: MedicationSearchHit[] }
-  | { ok: false; error: string };
 
 export async function addItemActionFromForm(formData: FormData): Promise<void> {
   const session = await requireDoctor();
