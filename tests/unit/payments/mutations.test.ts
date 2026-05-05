@@ -3,6 +3,7 @@ import { dbAdmin } from '@/db/client';
 import { eq } from 'drizzle-orm';
 import { consultations, appointments, patients, userProfiles, tenants } from '@/db/schema';
 import { finalizeConsultation } from '@/lib/consultations/mutations';
+import { recordPayment } from '@/lib/payments/mutations';
 
 describe('finalizeConsultation (extended)', () => {
   let tenantId: string;
@@ -104,5 +105,156 @@ describe('finalizeConsultation (extended)', () => {
       doctorId,
     });
     expect(outcome).toBe('already_finalized');
+  });
+});
+
+describe('recordPayment', () => {
+  let tenantId: string;
+  let doctorId: string;
+  let assistantId: string;
+  let patientId: string;
+  let appointmentId: string;
+  let consultationId: string;
+
+  beforeEach(async () => {
+    const [t] = await dbAdmin().insert(tenants).values({ name: 'Pay Tenant' }).returning();
+    tenantId = t.id;
+
+    const [d] = await dbAdmin()
+      .insert(userProfiles)
+      .values({
+        id: crypto.randomUUID(),
+        tenantId,
+        role: 'doctor',
+        fullName: 'Dr. Pay',
+        email: `dp-${Date.now()}-${Math.random().toString(36).slice(2)}@test.example`,
+      })
+      .returning();
+    doctorId = d.id;
+
+    const [a] = await dbAdmin()
+      .insert(userProfiles)
+      .values({
+        id: crypto.randomUUID(),
+        tenantId,
+        role: 'assistant',
+        fullName: 'A. Test',
+        email: `ap-${Date.now()}-${Math.random().toString(36).slice(2)}@test.example`,
+      })
+      .returning();
+    assistantId = a.id;
+
+    const [p] = await dbAdmin()
+      .insert(patients)
+      .values({ tenantId, lastName: 'PayTest', firstName: 'P', gender: 'f', dateOfBirth: '1985-06-01' })
+      .returning();
+    patientId = p.id;
+
+    const [appt] = await dbAdmin()
+      .insert(appointments)
+      .values({
+        tenantId,
+        patientId,
+        status: 'in_consultation',
+        kind: 'walkin',
+        createdBy: doctorId,
+        startedAt: new Date(),
+      })
+      .returning();
+    appointmentId = appt.id;
+
+    const [c] = await dbAdmin()
+      .insert(consultations)
+      .values({
+        tenantId,
+        appointmentId,
+        patientId,
+        doctorId,
+        isFinalized: true,
+        finalizedAt: new Date(),
+        priceMad: '250.00',
+        isFree: false,
+        paymentStatus: 'awaiting',
+      })
+      .returning();
+    consultationId = c.id;
+  });
+
+  it('marks an awaiting consultation as paid with method and recorder', async () => {
+    const outcome = await recordPayment(tenantId, {
+      consultationId,
+      paymentMethod: 'especes',
+      paymentNote: null,
+      assistantId,
+    });
+    expect(outcome).toBe('ok');
+
+    const [row] = await dbAdmin().select().from(consultations).where(eq(consultations.id, consultationId));
+    expect(row.paymentStatus).toBe('paid');
+    expect(row.paymentMethod).toBe('especes');
+    expect(row.paidAt).not.toBeNull();
+    expect(row.paidBy).toBe(assistantId);
+    expect(row.paymentNote).toBeNull();
+  });
+
+  it('persists a note when method is autre', async () => {
+    const outcome = await recordPayment(tenantId, {
+      consultationId,
+      paymentMethod: 'autre',
+      paymentNote: 'split: 100 espèces + 150 carte',
+      assistantId,
+    });
+    expect(outcome).toBe('ok');
+
+    const [row] = await dbAdmin().select().from(consultations).where(eq(consultations.id, consultationId));
+    expect(row.paymentMethod).toBe('autre');
+    expect(row.paymentNote).toBe('split: 100 espèces + 150 carte');
+  });
+
+  it('returns not_awaiting on an already-paid consultation', async () => {
+    await recordPayment(tenantId, {
+      consultationId,
+      paymentMethod: 'especes',
+      paymentNote: null,
+      assistantId,
+    });
+    const outcome = await recordPayment(tenantId, {
+      consultationId,
+      paymentMethod: 'carte',
+      paymentNote: null,
+      assistantId,
+    });
+    expect(outcome).toBe('not_awaiting');
+  });
+
+  it('returns not_awaiting on a free consultation', async () => {
+    await dbAdmin()
+      .update(consultations)
+      .set({
+        paymentStatus: 'free',
+        isFree: true,
+        priceMad: null,
+        paidAt: new Date(),
+        paidBy: doctorId,
+      })
+      .where(eq(consultations.id, consultationId));
+    const outcome = await recordPayment(tenantId, {
+      consultationId,
+      paymentMethod: 'especes',
+      paymentNote: null,
+      assistantId,
+    });
+    expect(outcome).toBe('not_awaiting');
+  });
+
+  it('returns not_found when consultation is in another tenant', async () => {
+    const [other] = await dbAdmin().insert(tenants).values({ name: 'Other' }).returning();
+    const outcome = await recordPayment(other.id, {
+      consultationId,
+      paymentMethod: 'especes',
+      paymentNote: null,
+      assistantId,
+    });
+    expect(outcome).toBe('not_found');
   });
 });
