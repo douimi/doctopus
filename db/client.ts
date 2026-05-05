@@ -48,8 +48,23 @@ export function dbUser() {
 }
 
 /**
- * Service-role connection used by CLI scripts and cron handlers ONLY.
- * Bypasses RLS. NEVER use inside app/(authenticated)/**.
+ * Service-role connection. Bypasses RLS — every query MUST include an
+ * explicit `tenant_id = $tenantId` predicate (or equivalent), where the
+ * tenantId comes from a server-resolved Session, never from user input.
+ *
+ * Acceptable uses:
+ * - CLI scripts and cron handlers (no Session context).
+ * - Server queries that aggregate across rows where RLS would force one
+ *   `set_config('app.tenant_id', ...)` per query (see lib/payments/queries.ts,
+ *   lib/stats/queries.ts, lib/admin/queries.ts).
+ * - Settings / admin pages where the route guard already pinned the tenantId.
+ *
+ * Forbidden uses:
+ * - Anywhere the tenantId comes from URL params, FormData, or other
+ *   user-controlled input without prior validation against the Session.
+ *
+ * Prefer withTenantTx in lib/with-tenant.ts when you don't need raw SQL
+ * aggregation — it sets the RLS GUC and gives you defense in depth.
  */
 export function dbAdmin() {
   if (!pools.adminClient) {

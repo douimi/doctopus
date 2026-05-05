@@ -65,7 +65,10 @@ export function PaymentsPanel({
           </ul>
         )}
 
-        <details className="rounded-xl border border-border bg-card shadow-card overflow-hidden group">
+        <details
+          open={collectedToday.length > 0}
+          className="rounded-xl border border-border bg-card shadow-card overflow-hidden group"
+        >
           <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
             <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
             <span className="text-body font-medium">Encaissés aujourd&apos;hui</span>
