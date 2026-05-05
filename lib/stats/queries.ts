@@ -117,6 +117,10 @@ export async function getOutstandingPayments(tenantId: string, range: StatsRange
       and(
         eq(consultations.tenantId, tenantId),
         eq(consultations.paymentStatus, 'awaiting'),
+        // Exclude in-progress consultations (also payment_status='awaiting'
+        // by default per migration 0008); only finalized rows are truly
+        // awaiting payment.
+        eq(consultations.isFinalized, true),
         gte(consultations.finalizedAt, startUtc),
       ),
     )

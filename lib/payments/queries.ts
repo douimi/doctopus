@@ -47,6 +47,10 @@ export async function getPaymentsForToday(
       and(
         eq(consultations.tenantId, tenantId),
         eq(consultations.paymentStatus, 'awaiting'),
+        // In-progress consultations also default to payment_status='awaiting'
+        // (per migration 0008's relaxed CHECK). They aren't waiting for
+        // payment yet — only finalized awaiting rows belong here.
+        eq(consultations.isFinalized, true),
       ),
     )
     .orderBy(desc(consultations.finalizedAt));
