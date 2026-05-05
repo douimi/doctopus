@@ -21,30 +21,39 @@ describe('finalizePricingSchema', () => {
     expect(r.success).toBe(true);
   });
 
-  it('rejects neither price nor free', () => {
+  it('rejects neither price nor free with "Prix requis" message', () => {
     const r = finalizePricingSchema.safeParse({
       consultationId: okId,
       isFree: false,
     });
     expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues[0].message).toBe('Prix requis (ou cocher Gratuit).');
+    }
   });
 
-  it('rejects price <= 0 when not free', () => {
+  it('rejects price <= 0 with "supérieur à 0" message', () => {
     const r = finalizePricingSchema.safeParse({
       consultationId: okId,
       isFree: false,
       priceMad: '0',
     });
     expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues[0].message).toBe('Le prix doit être supérieur à 0.');
+    }
   });
 
-  it('rejects non-numeric price', () => {
+  it('rejects non-numeric price with "doit être un nombre" message', () => {
     const r = finalizePricingSchema.safeParse({
       consultationId: okId,
       isFree: false,
       priceMad: 'abc',
     });
     expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues[0].message).toBe('Le prix doit être un nombre.');
+    }
   });
 
   it('rejects an invalid uuid', () => {

@@ -7,8 +7,16 @@ export const finalizePricingSchema = z
     priceMad: z.string().optional(),
   })
   .refine(
-    (d) => d.isFree || (d.priceMad != null && d.priceMad !== '' && Number.isFinite(Number(d.priceMad)) && Number(d.priceMad) > 0),
-    { message: 'Prix requis (ou cocher Gratuit).' },
+    (d) => d.isFree || (d.priceMad != null && d.priceMad !== ''),
+    { message: 'Prix requis (ou cocher Gratuit).', path: ['priceMad'] },
+  )
+  .refine(
+    (d) => d.isFree || d.priceMad == null || d.priceMad === '' || Number.isFinite(Number(d.priceMad)),
+    { message: 'Le prix doit être un nombre.', path: ['priceMad'] },
+  )
+  .refine(
+    (d) => d.isFree || d.priceMad == null || d.priceMad === '' || Number(d.priceMad) > 0,
+    { message: 'Le prix doit être supérieur à 0.', path: ['priceMad'] },
   );
 
 export type FinalizePricingInput = z.infer<typeof finalizePricingSchema>;
@@ -28,3 +36,11 @@ export const recordPaymentSchema = z
   );
 
 export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  especes: 'Espèces',
+  carte: 'Carte',
+  cheque: 'Chèque',
+  virement: 'Virement',
+  autre: 'Autre',
+};
