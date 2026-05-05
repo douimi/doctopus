@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { PrescriptionItem } from '@/db/schema';
 import type { MedicationSearchHit } from '@/lib/medications/queries';
+import type { AutocompleteSuggestions } from '@/lib/prescriptions/autocomplete';
 import {
   addItemActionFromForm,
   removeItemAction,
@@ -31,11 +32,13 @@ export function PrescriptionEditor({
   prescriptionId,
   items,
   readOnly,
+  suggestions,
 }: {
   consultationId: string;
   prescriptionId: string | null;
   items: PrescriptionItem[];
   readOnly: boolean;
+  suggestions: AutocompleteSuggestions;
 }) {
   const [pickedHit, setPickedHit] = useState<MedicationSearchHit | null>(null);
   const [freeLabel, setFreeLabel] = useState('');
@@ -43,6 +46,16 @@ export function PrescriptionEditor({
 
   return (
     <div className="space-y-3">
+      <datalist id="posologie-suggestions">
+        {suggestions.posologies.map((s) => (
+          <option key={s} value={s} />
+        ))}
+      </datalist>
+      <datalist id="duration-suggestions">
+        {suggestions.durations.map((s) => (
+          <option key={s} value={s} />
+        ))}
+      </datalist>
       {items.length === 0 ? (
         <p className="text-body text-muted-foreground italic">
           Aucun médicament prescrit.
@@ -149,6 +162,7 @@ export function PrescriptionEditor({
                       name="posologie"
                       defaultValue={it.posologie ?? ''}
                       placeholder="ex. 1 cp matin et soir"
+                      list="posologie-suggestions"
                     />
                   </div>
                   <div className="space-y-1">
@@ -160,6 +174,7 @@ export function PrescriptionEditor({
                       name="duration"
                       defaultValue={it.duration ?? ''}
                       placeholder="ex. 7 jours"
+                      list="duration-suggestions"
                     />
                   </div>
                   <div className="space-y-1">
@@ -272,13 +287,13 @@ export function PrescriptionEditor({
                   <Label className="text-small" htmlFor="new-pos">
                     Posologie
                   </Label>
-                  <Input id="new-pos" name="posologie" placeholder="ex. 1 cp matin et soir" />
+                  <Input id="new-pos" name="posologie" placeholder="ex. 1 cp matin et soir" list="posologie-suggestions" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-small" htmlFor="new-dur">
                     Durée
                   </Label>
-                  <Input id="new-dur" name="duration" placeholder="ex. 7 jours" />
+                  <Input id="new-dur" name="duration" placeholder="ex. 7 jours" list="duration-suggestions" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-small" htmlFor="new-qty">

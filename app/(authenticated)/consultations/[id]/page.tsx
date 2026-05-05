@@ -5,6 +5,7 @@ import { requireDoctor } from '@/lib/auth/guards';
 import { getConsultationById } from '@/lib/consultations/queries';
 import { getPatientDetail } from '@/lib/patients/queries';
 import { getPrescriptionForConsultation } from '@/lib/prescriptions/queries';
+import { getAutocompleteSuggestions } from '@/lib/prescriptions/autocomplete';
 import { dbAdmin } from '@/db/client';
 import { tenants } from '@/db/schema';
 import { PatientCard } from '@/components/patients/patient-card';
@@ -39,6 +40,8 @@ export default async function ConsultationPage({
     })
     .from(tenants)
     .where(eq(tenants.id, session.tenantId));
+
+  const suggestions = await getAutocompleteSuggestions(session.tenantId, session.userId);
 
   const assistantState =
     !tenant?.enabled || !tenant.provider || !tenant.model
@@ -111,6 +114,7 @@ export default async function ConsultationPage({
               prescriptionId={presc?.prescription.id ?? null}
               items={presc?.items ?? []}
               readOnly={detail.consultation.isFinalized}
+              suggestions={suggestions}
             />
           }
         />
