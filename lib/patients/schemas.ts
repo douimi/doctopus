@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { COVERAGE_VALUES } from './coverage';
 
 const cinRegex = /^[A-Z]{1,2}[0-9]{1,8}$/i;
+const COVERAGE_VALUE_SET = new Set(COVERAGE_VALUES);
 
 export const patientCreateSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
@@ -10,7 +12,10 @@ export const patientCreateSchema = z.object({
   phone: z.string().trim().min(1).max(40),
   cin: z.string().trim().regex(cinRegex, 'CIN invalide').optional().or(z.literal('')),
   coverageType: z
-    .enum(['cnss', 'cnops', 'amo', 'ramed', 'mutuelle', 'none', 'other'])
+    .string()
+    .refine((v) => v === '' || COVERAGE_VALUE_SET.has(v), {
+      message: 'Type de couverture invalide.',
+    })
     .optional()
     .or(z.literal('')),
   coverageId: z.string().trim().max(80).optional().or(z.literal('')),

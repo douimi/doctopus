@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { PageHeader } from '@/components/shell/page-header';
+import { COVERAGE_GROUPS } from '@/lib/patients/coverage';
 import { createPatientAction, type CreatePatientState } from './actions';
 
 const initial: CreatePatientState = { error: null };
@@ -111,13 +112,21 @@ function NewPatientForm() {
                 <SelectValue placeholder="—" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cnss">CNSS</SelectItem>
-                <SelectItem value="cnops">CNOPS</SelectItem>
-                <SelectItem value="amo">AMO</SelectItem>
-                <SelectItem value="ramed">RAMED</SelectItem>
-                <SelectItem value="mutuelle">Mutuelle</SelectItem>
-                <SelectItem value="none">Sans</SelectItem>
-                <SelectItem value="other">Autre</SelectItem>
+                {COVERAGE_GROUPS.map((g, idx) => (
+                  <div key={g.group}>
+                    {idx > 0 ? (
+                      <div className="my-1 h-px bg-border" aria-hidden />
+                    ) : null}
+                    <div className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                      {g.label}
+                    </div>
+                    {g.options.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </div>
+                ))}
               </SelectContent>
             </Select>
           </div>

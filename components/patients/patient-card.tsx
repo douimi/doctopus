@@ -1,19 +1,10 @@
 import { AlertTriangle, HeartPulse, IdCard, Phone, ShieldCheck } from 'lucide-react';
 import { ageFromDob } from '@/lib/patients/age';
+import { coverageLabel } from '@/lib/patients/coverage';
 import { Avatar } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { Patient, PatientAllergy, PatientChronicCondition } from '@/db/schema';
-
-const COVERAGE_LABEL: Record<string, string> = {
-  cnss: 'CNSS',
-  cnops: 'CNOPS',
-  amo: 'AMO',
-  ramed: 'RAMED',
-  mutuelle: 'Mutuelle',
-  none: 'Sans',
-  other: 'Autre',
-};
 
 export function PatientCard({
   patient,
@@ -56,7 +47,7 @@ export function PatientCard({
           </div>
           {patient.coverageType ? (
             <StatusBadge variant="info" icon={ShieldCheck} className="shrink-0">
-              {COVERAGE_LABEL[patient.coverageType] ?? patient.coverageType}
+              {coverageLabel(patient.coverageType)}
               {patient.coverageId ? ` · ${patient.coverageId}` : ''}
             </StatusBadge>
           ) : null}

@@ -42,8 +42,7 @@ export function CabinetForms({
   initial,
 }: {
   initial: {
-    rpmNumber: string;
-    cnomNumber: string;
+    inpeNumber: string;
     prescriptionHeaderHtml: string;
     signatureUrl: string | null;
     stampUrl: string | null;
@@ -61,11 +60,17 @@ export function CabinetForms({
   return (
     <div className="space-y-6">
       <form action={textAction} className="space-y-3">
-        <FormField label="N° RPM">
-          <Input id="rpmNumber" name="rpmNumber" defaultValue={initial.rpmNumber} />
-        </FormField>
-        <FormField label="N° CNOM">
-          <Input id="cnomNumber" name="cnomNumber" defaultValue={initial.cnomNumber} />
+        <FormField
+          label="Code INPE"
+          description="Identifiant National des Professionnels de Santé. Apparaît sur les ordonnances."
+        >
+          <Input
+            id="inpeNumber"
+            name="inpeNumber"
+            defaultValue={initial.inpeNumber}
+            placeholder="ex. 12345678"
+            autoComplete="off"
+          />
         </FormField>
         <FormField label="En-tête personnalisé (texte ou HTML)">
           <Textarea

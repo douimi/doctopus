@@ -10,9 +10,9 @@ export const patients = pgTable('patients', {
   dateOfBirth: date('date_of_birth').notNull(),
   phone: text('phone'),
   cin: text('cin'),
-  coverageType: text('coverage_type', {
-    enum: ['cnss', 'cnops', 'amo', 'ramed', 'mutuelle', 'none', 'other'],
-  }),
+  // Free-form text — validated at the Zod layer against COVERAGE_VALUES so
+  // we can grow the list (mutuelles, private insurers) without a migration.
+  coverageType: text('coverage_type'),
   coverageId: text('coverage_id'),
   address: text('address'),
   notes: text('notes'),

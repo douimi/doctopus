@@ -25,8 +25,7 @@ export default async function CabinetSettingsPage() {
           <CardContent>
             <CabinetForms
               initial={{
-                rpmNumber: tenant.rpmNumber ?? '',
-                cnomNumber: tenant.cnomNumber ?? '',
+                inpeNumber: tenant.inpeNumber ?? '',
                 prescriptionHeaderHtml: tenant.prescriptionHeaderHtml ?? '',
                 signatureUrl: tenant.signatureUrl ?? null,
                 stampUrl: tenant.stampUrl ?? null,

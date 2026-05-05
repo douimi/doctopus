@@ -10,8 +10,7 @@ import { uploadCabinetAsset } from '@/lib/storage/upload';
 import { recordAudit } from '@/lib/audit/record';
 
 const textSchema = z.object({
-  rpmNumber: z.string().trim().max(80).optional().or(z.literal('')),
-  cnomNumber: z.string().trim().max(80).optional().or(z.literal('')),
+  inpeNumber: z.string().trim().max(80).optional().or(z.literal('')),
   prescriptionHeaderHtml: z.string().trim().max(5000).optional().or(z.literal('')),
   defaultConsultationPriceMad: z
     .string()
@@ -31,8 +30,7 @@ export async function saveCabinetTextAction(
 ): Promise<SaveTextState> {
   const session = await requireDoctor();
   const parsed = textSchema.safeParse({
-    rpmNumber: formData.get('rpmNumber'),
-    cnomNumber: formData.get('cnomNumber'),
+    inpeNumber: formData.get('inpeNumber'),
     prescriptionHeaderHtml: formData.get('prescriptionHeaderHtml'),
     defaultConsultationPriceMad: formData.get('defaultConsultationPriceMad') ?? '',
   });
@@ -51,8 +49,7 @@ export async function saveCabinetTextAction(
   await dbAdmin()
     .update(tenants)
     .set({
-      rpmNumber: parsed.data.rpmNumber || null,
-      cnomNumber: parsed.data.cnomNumber || null,
+      inpeNumber: parsed.data.inpeNumber || null,
       prescriptionHeaderHtml: parsed.data.prescriptionHeaderHtml || null,
       defaultConsultationPriceMad: newPrice,
       updatedAt: new Date(),

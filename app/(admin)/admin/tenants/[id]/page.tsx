@@ -76,11 +76,10 @@ export default async function AdminTenantDetailPage({
                     {tenant.address ? (
                       <p className="text-small text-muted-foreground">{tenant.address}</p>
                     ) : null}
-                    {tenant.phone || tenant.rpmNumber || tenant.cnomNumber ? (
+                    {tenant.phone || tenant.inpeNumber ? (
                       <p className="text-small text-muted-foreground tabular-nums">
                         {tenant.phone ? `Tél: ${tenant.phone}` : ''}
-                        {tenant.rpmNumber ? ` · RPM: ${tenant.rpmNumber}` : ''}
-                        {tenant.cnomNumber ? ` · CNOM: ${tenant.cnomNumber}` : ''}
+                        {tenant.inpeNumber ? ` · INPE: ${tenant.inpeNumber}` : ''}
                       </p>
                     ) : null}
                   </div>

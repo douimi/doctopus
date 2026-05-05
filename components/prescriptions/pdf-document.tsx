@@ -81,11 +81,8 @@ export function PrescriptionPdfDocument({
               <Text style={styles.doctorLine}>Dr. {doctor.fullName}</Text>
               {tenant.address ? <Text style={styles.cabinetMeta}>{tenant.address}</Text> : null}
               {tenant.phone ? <Text style={styles.cabinetMeta}>Tél: {tenant.phone}</Text> : null}
-              {tenant.rpmNumber ? (
-                <Text style={styles.cabinetMeta}>RPM: {tenant.rpmNumber}</Text>
-              ) : null}
-              {tenant.cnomNumber ? (
-                <Text style={styles.cabinetMeta}>CNOM: {tenant.cnomNumber}</Text>
+              {tenant.inpeNumber ? (
+                <Text style={styles.cabinetMeta}>INPE : {tenant.inpeNumber}</Text>
               ) : null}
             </View>
           </View>
