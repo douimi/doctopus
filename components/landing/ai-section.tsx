@@ -23,8 +23,8 @@ export function AISection() {
           <Parallax className="w-full flex flex-col items-center">
             <AIMockup revealed={revealed} />
           </Parallax>
-          <p className="text-sm text-white/50 mt-6 text-center">
-            Anthropic · OpenAI · Mistral, au choix. Données patient anonymisées avant transmission.
+          <p className="text-sm text-white/50 mt-6 text-center max-w-2xl">
+            Modèle propriétaire entraîné sur du contexte et des données du Maroc — terminologie clinique, pratiques locales, AMO/RAMED. Données patient anonymisées avant transmission.
           </p>
         </>
       )}
