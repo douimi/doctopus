@@ -12,6 +12,8 @@ import { PageHeader } from '@/components/shell/page-header';
 import { ConsultationEditor } from './editor';
 import { PrescriptionEditor } from './prescription/editor';
 import { AssistantPanel } from './assistant/panel';
+import { FinalizePricingDialog } from '@/components/payments/finalize-pricing-dialog';
+import { FinalizedTarificationBadge } from '@/components/payments/finalized-tarification-badge';
 
 export default async function ConsultationPage({
   params,
@@ -33,6 +35,7 @@ export default async function ConsultationPage({
       model: tenants.chatbotModel,
       balance: tenants.chatbotCreditsBalance,
       ackAt: tenants.chatbotDisclaimerAcknowledgedAt,
+      defaultConsultationPriceMad: tenants.defaultConsultationPriceMad,
     })
     .from(tenants)
     .where(eq(tenants.id, session.tenantId));
@@ -61,8 +64,18 @@ export default async function ConsultationPage({
         }
         actions={
           detail.consultation.isFinalized ? (
-            <span className="text-sm text-muted-foreground">Consultation terminée</span>
-          ) : null
+            <FinalizedTarificationBadge
+              isFree={detail.consultation.isFree}
+              priceMad={detail.consultation.priceMad}
+              paymentStatus={detail.consultation.paymentStatus as 'awaiting' | 'paid' | 'free'}
+              paymentMethod={detail.consultation.paymentMethod}
+            />
+          ) : (
+            <FinalizePricingDialog
+              consultationId={id}
+              defaultPriceMad={tenant?.defaultConsultationPriceMad ?? null}
+            />
+          )
         }
       />
       <div className="px-6 py-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
