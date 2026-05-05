@@ -1,4 +1,8 @@
+import { AlertTriangle, HeartPulse, IdCard, Phone, ShieldCheck } from 'lucide-react';
 import { ageFromDob } from '@/lib/patients/age';
+import { Avatar } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+import { StatusBadge } from '@/components/ui/status-badge';
 import type { Patient, PatientAllergy, PatientChronicCondition } from '@/db/schema';
 
 const COVERAGE_LABEL: Record<string, string> = {
@@ -20,45 +24,65 @@ export function PatientCard({
   allergies: PatientAllergy[];
   conditions: PatientChronicCondition[];
 }) {
+  const fullName = `${patient.lastName} ${patient.firstName}`;
   return (
-    <div className="rounded-md border p-4 space-y-2">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <div className="text-lg font-semibold">
-            {patient.lastName} {patient.firstName}
+    <Card>
+      <CardContent className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <Avatar name={fullName} size="lg" />
+            <div className="min-w-0">
+              <div className="text-title font-semibold leading-tight truncate">
+                {fullName}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted-foreground mt-1">
+                <span className="tabular-nums">
+                  {ageFromDob(patient.dateOfBirth)} ans · {patient.gender === 'm' ? 'Homme' : 'Femme'}
+                </span>
+                {patient.phone ? (
+                  <span className="inline-flex items-center gap-1 tabular-nums">
+                    <Phone className="size-3" aria-hidden />
+                    {patient.phone}
+                  </span>
+                ) : null}
+                {patient.cin ? (
+                  <span className="inline-flex items-center gap-1 tabular-nums">
+                    <IdCard className="size-3" aria-hidden />
+                    {patient.cin}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </div>
-          <div className="text-sm text-muted-foreground">
-            {ageFromDob(patient.dateOfBirth)} ans · {patient.gender === 'm' ? 'H' : 'F'}{' '}
-            {patient.phone ? `· ${patient.phone}` : ''}
-            {patient.cin ? ` · CIN ${patient.cin}` : ''}
-          </div>
+          {patient.coverageType ? (
+            <StatusBadge variant="info" icon={ShieldCheck} className="shrink-0">
+              {COVERAGE_LABEL[patient.coverageType] ?? patient.coverageType}
+              {patient.coverageId ? ` · ${patient.coverageId}` : ''}
+            </StatusBadge>
+          ) : null}
         </div>
-        {patient.coverageType ? (
-          <div className="text-sm rounded bg-muted px-2 py-1">
-            {COVERAGE_LABEL[patient.coverageType] ?? patient.coverageType}
-            {patient.coverageId ? ` · ${patient.coverageId}` : ''}
+
+        {allergies.length > 0 || conditions.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 border-t border-border pt-3">
+            {allergies.map((a) => (
+              <StatusBadge key={a.id} variant="danger" icon={AlertTriangle}>
+                Allergie : {a.label}
+              </StatusBadge>
+            ))}
+            {conditions.map((c) => (
+              <StatusBadge key={c.id} variant="warning" icon={HeartPulse}>
+                {c.label}
+              </StatusBadge>
+            ))}
           </div>
         ) : null}
-      </div>
-      {allergies.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
-          {allergies.map((a) => (
-            <span key={a.id} className="rounded bg-danger-tint text-danger text-xs px-2 py-1">
-              ⚠ Allergie : {a.label}
-            </span>
-          ))}
-        </div>
-      ) : null}
-      {conditions.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
-          {conditions.map((c) => (
-            <span key={c.id} className="rounded bg-amber-100 text-amber-800 text-xs px-2 py-1">
-              {c.label}
-            </span>
-          ))}
-        </div>
-      ) : null}
-      {patient.notes ? <p className="text-sm whitespace-pre-wrap">{patient.notes}</p> : null}
-    </div>
+
+        {patient.notes ? (
+          <p className="text-body whitespace-pre-wrap text-muted-foreground border-t border-border pt-3">
+            {patient.notes}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }

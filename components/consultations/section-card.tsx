@@ -1,3 +1,5 @@
+import { ChevronRight } from 'lucide-react';
+
 export function SectionCard({
   title,
   hint,
@@ -8,12 +10,23 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <details className="rounded-md border" open>
-      <summary className="cursor-pointer list-none px-3 py-2 font-medium border-b flex items-center justify-between">
-        <span>{title}</span>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+    <details
+      className="group/section rounded-xl border border-border bg-card shadow-card overflow-hidden"
+      open
+    >
+      <summary className="cursor-pointer list-none px-4 py-3 font-medium text-heading border-b border-border bg-muted/30 flex items-center justify-between gap-2 transition-colors hover:bg-muted/50">
+        <span className="flex items-center gap-2">
+          <ChevronRight
+            className="size-4 text-muted-foreground transition-transform group-open/section:rotate-90"
+            aria-hidden
+          />
+          {title}
+        </span>
+        {hint ? (
+          <span className="text-small text-muted-foreground">{hint}</span>
+        ) : null}
       </summary>
-      <div className="p-3">{children}</div>
+      <div className="p-4">{children}</div>
     </details>
   );
 }

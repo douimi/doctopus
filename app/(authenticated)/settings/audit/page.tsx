@@ -53,7 +53,10 @@ export default async function AuditPage() {
 
   return (
     <>
-      <PageHeader title="Journal d'audit" />
+      <PageHeader
+        title="Journal d'audit"
+        description="Trace de toutes les actions effectuées sur votre cabinet."
+      />
       <div className="px-6 py-6 max-w-4xl space-y-4">
         <Card>
           <CardHeader>
@@ -81,13 +84,24 @@ export default async function AuditPage() {
                 ) : (
                   page.rows.map((r) => (
                     <TableRow key={r.id}>
-                      <TableCell className="font-mono text-xs">{fmt(r.at)}</TableCell>
-                      <TableCell>{ACTION_LABEL[r.action] ?? r.action}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {r.entityType ?? '—'} {r.entityId ? `#${r.entityId.slice(0, 8)}` : ''}
+                      <TableCell className="font-mono text-small text-muted-foreground tabular-nums">
+                        {fmt(r.at)}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {r.actorUserId ? `#${r.actorUserId.slice(0, 8)}` : '—'}
+                      <TableCell className="font-medium">
+                        {ACTION_LABEL[r.action] ?? r.action}
+                      </TableCell>
+                      <TableCell className="text-small text-muted-foreground tabular-nums">
+                        {r.entityType ?? '—'}{' '}
+                        {r.entityId ? (
+                          <code className="text-xs">#{r.entityId.slice(0, 8)}</code>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="text-small text-muted-foreground tabular-nums">
+                        {r.actorUserId ? (
+                          <code className="text-xs">#{r.actorUserId.slice(0, 8)}</code>
+                        ) : (
+                          '—'
+                        )}
                       </TableCell>
                     </TableRow>
                   ))

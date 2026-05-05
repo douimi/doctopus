@@ -1,9 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  ArrowDown,
+  ArrowUp,
+  FileDown,
+  Plus,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import type { PrescriptionItem } from '@/db/schema';
 import type { MedicationSearchHit } from '@/lib/medications/queries';
 import {
@@ -36,64 +44,104 @@ export function PrescriptionEditor({
   return (
     <div className="space-y-3">
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun médicament prescrit.</p>
+        <p className="text-body text-muted-foreground italic">
+          Aucun médicament prescrit.
+        </p>
       ) : (
         <ul className="space-y-2">
           {items.map((it, idx) => (
-            <li key={it.id} className="rounded-md border p-3 space-y-2">
+            <li
+              key={it.id}
+              className="rounded-lg border border-border bg-background p-3 space-y-2"
+            >
               <div className="flex items-start gap-2">
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{it.medicationLabelSnapshot}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-body">
+                    {it.medicationLabelSnapshot}
+                  </div>
                 </div>
                 {!readOnly ? (
-                  <div className="flex gap-1 text-xs">
+                  <div className="flex items-center gap-0.5 shrink-0">
                     <form action={reorderItemAction}>
                       <input type="hidden" name="consultationId" value={consultationId} />
                       <input type="hidden" name="itemId" value={it.id} />
                       <input type="hidden" name="direction" value="up" />
-                      <button
+                      <Button
                         type="submit"
+                        size="icon-xs"
+                        variant="ghost"
                         disabled={idx === 0}
-                        className="underline disabled:opacity-30"
+                        aria-label="Monter"
+                        title="Monter"
                       >
-                        ↑
-                      </button>
+                        <ArrowUp aria-hidden />
+                      </Button>
                     </form>
                     <form action={reorderItemAction}>
                       <input type="hidden" name="consultationId" value={consultationId} />
                       <input type="hidden" name="itemId" value={it.id} />
                       <input type="hidden" name="direction" value="down" />
-                      <button
+                      <Button
                         type="submit"
+                        size="icon-xs"
+                        variant="ghost"
                         disabled={idx === items.length - 1}
-                        className="underline disabled:opacity-30"
+                        aria-label="Descendre"
+                        title="Descendre"
                       >
-                        ↓
-                      </button>
+                        <ArrowDown aria-hidden />
+                      </Button>
                     </form>
                     <form action={removeItemAction}>
                       <input type="hidden" name="consultationId" value={consultationId} />
                       <input type="hidden" name="itemId" value={it.id} />
-                      <button type="submit" className="text-danger underline">
-                        retirer
-                      </button>
+                      <Button
+                        type="submit"
+                        size="icon-xs"
+                        variant="ghost"
+                        aria-label="Retirer le médicament"
+                        title="Retirer"
+                        className="text-muted-foreground hover:text-danger"
+                      >
+                        <X aria-hidden />
+                      </Button>
                     </form>
                   </div>
                 ) : null}
               </div>
               {readOnly ? (
-                <div className="text-xs text-muted-foreground space-y-0.5">
-                  {it.posologie ? <div>Posologie : {it.posologie}</div> : null}
-                  {it.duration ? <div>Durée : {it.duration}</div> : null}
-                  {it.quantity ? <div>Quantité : {it.quantity}</div> : null}
-                  {it.instructions ? <div>Notes : {it.instructions}</div> : null}
-                </div>
+                <dl className="text-small text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+                  {it.posologie ? (
+                    <div className="contents">
+                      <dt className="font-medium text-foreground">Posologie</dt>
+                      <dd>{it.posologie}</dd>
+                    </div>
+                  ) : null}
+                  {it.duration ? (
+                    <div className="contents">
+                      <dt className="font-medium text-foreground">Durée</dt>
+                      <dd>{it.duration}</dd>
+                    </div>
+                  ) : null}
+                  {it.quantity ? (
+                    <div className="contents">
+                      <dt className="font-medium text-foreground">Quantité</dt>
+                      <dd>{it.quantity}</dd>
+                    </div>
+                  ) : null}
+                  {it.instructions ? (
+                    <div className="contents">
+                      <dt className="font-medium text-foreground">Notes</dt>
+                      <dd>{it.instructions}</dd>
+                    </div>
+                  ) : null}
+                </dl>
               ) : (
                 <form action={updateItemAction} className="grid grid-cols-2 gap-2">
                   <input type="hidden" name="consultationId" value={consultationId} />
                   <input type="hidden" name="itemId" value={it.id} />
                   <div className="space-y-1">
-                    <Label className="text-xs" htmlFor={`pos-${it.id}`}>
+                    <Label className="text-small" htmlFor={`pos-${it.id}`}>
                       Posologie
                     </Label>
                     <Input
@@ -104,7 +152,7 @@ export function PrescriptionEditor({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs" htmlFor={`dur-${it.id}`}>
+                    <Label className="text-small" htmlFor={`dur-${it.id}`}>
                       Durée
                     </Label>
                     <Input
@@ -115,7 +163,7 @@ export function PrescriptionEditor({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs" htmlFor={`qty-${it.id}`}>
+                    <Label className="text-small" htmlFor={`qty-${it.id}`}>
                       Quantité
                     </Label>
                     <Input
@@ -126,7 +174,7 @@ export function PrescriptionEditor({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs" htmlFor={`ins-${it.id}`}>
+                    <Label className="text-small" htmlFor={`ins-${it.id}`}>
                       Notes
                     </Label>
                     <Input
@@ -148,27 +196,47 @@ export function PrescriptionEditor({
       )}
 
       {!readOnly ? (
-        <div className="rounded-md border p-3 space-y-3">
-          <div className="font-medium text-sm">Ajouter un médicament</div>
-          <div className="flex gap-2 text-xs">
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+          <div className="font-medium text-heading">Ajouter un médicament</div>
+          <div
+            role="tablist"
+            aria-label="Mode d'ajout"
+            className="inline-flex p-0.5 rounded-md bg-muted text-small"
+          >
             <button
               type="button"
+              role="tab"
+              aria-selected={!isFree}
               onClick={() => setIsFree(false)}
-              className={`underline ${!isFree ? 'font-semibold' : ''}`}
+              className={cn(
+                'px-2.5 py-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40',
+                !isFree
+                  ? 'bg-card text-foreground shadow-card'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+              style={{ transitionDuration: 'var(--duration-fast)' }}
             >
               Depuis la base
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={isFree}
               onClick={() => setIsFree(true)}
-              className={`underline ${isFree ? 'font-semibold' : ''}`}
+              className={cn(
+                'px-2.5 py-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40',
+                isFree
+                  ? 'bg-card text-foreground shadow-card'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+              style={{ transitionDuration: 'var(--duration-fast)' }}
             >
               Médicament libre
             </button>
           </div>
           {isFree ? (
             <div className="space-y-1">
-              <Label htmlFor="free-label" className="text-xs">
+              <Label htmlFor="free-label" className="text-small">
                 Libellé
               </Label>
               <Input
@@ -183,7 +251,7 @@ export function PrescriptionEditor({
           )}
 
           {pickedHit || (isFree && freeLabel.trim().length > 0) ? (
-            <form action={addItemActionFromForm} className="space-y-2 border-t pt-3">
+            <form action={addItemActionFromForm} className="space-y-2 border-t border-border pt-3">
               <input type="hidden" name="consultationId" value={consultationId} />
               {!isFree && pickedHit ? (
                 <input type="hidden" name="medicationId" value={pickedHit.id} />
@@ -193,37 +261,40 @@ export function PrescriptionEditor({
                 name="label"
                 value={isFree ? freeLabel : pickedHit ? formatLabel(pickedHit) : ''}
               />
-              <div className="text-sm">
-                <span className="font-medium">À ajouter : </span>
-                <span>{isFree ? freeLabel : pickedHit ? formatLabel(pickedHit) : ''}</span>
+              <div className="text-body">
+                <span className="text-muted-foreground">À ajouter :</span>{' '}
+                <span className="font-medium">
+                  {isFree ? freeLabel : pickedHit ? formatLabel(pickedHit) : ''}
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label className="text-xs" htmlFor="new-pos">
+                  <Label className="text-small" htmlFor="new-pos">
                     Posologie
                   </Label>
                   <Input id="new-pos" name="posologie" placeholder="ex. 1 cp matin et soir" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs" htmlFor="new-dur">
+                  <Label className="text-small" htmlFor="new-dur">
                     Durée
                   </Label>
                   <Input id="new-dur" name="duration" placeholder="ex. 7 jours" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs" htmlFor="new-qty">
+                  <Label className="text-small" htmlFor="new-qty">
                     Quantité
                   </Label>
                   <Input id="new-qty" name="quantity" placeholder="ex. 1 boîte" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs" htmlFor="new-ins">
+                  <Label className="text-small" htmlFor="new-ins">
                     Notes
                   </Label>
                   <Input id="new-ins" name="instructions" />
                 </div>
               </div>
               <Button type="submit" size="sm">
+                <Plus aria-hidden />
                 Ajouter
               </Button>
             </form>
@@ -236,9 +307,11 @@ export function PrescriptionEditor({
           href={`/api/prescriptions/${prescriptionId}/pdf`}
           target="_blank"
           rel="noreferrer"
-          className="text-sm underline"
+          className="inline-flex items-center gap-1.5 text-body font-medium text-primary hover:text-primary-hover transition-colors focus-visible:outline-none focus-visible:underline"
+          style={{ transitionDuration: 'var(--duration-fast)' }}
         >
-          📄 Imprimer l&apos;ordonnance (PDF)
+          <FileDown className="size-4" aria-hidden />
+          Imprimer l&apos;ordonnance (PDF)
         </a>
       ) : null}
     </div>

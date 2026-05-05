@@ -1,11 +1,13 @@
 import Link from 'next/link';
+import { ArrowLeft, Plus, Search, UserSearch } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import { searchPatients } from '@/lib/patients/queries';
 import { ageFromDob } from '@/lib/patients/age';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { FormField } from '@/components/ui/form-field';
 import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/shell/page-header';
 import { BookForm } from './form';
 
@@ -20,22 +22,41 @@ export default async function BookPage({ searchParams }: Props) {
 
   return (
     <>
-      <PageHeader title="Nouveau rendez-vous" />
+      <PageHeader
+        eyebrow={
+          <Link
+            href="/today"
+            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+            style={{ transitionDuration: 'var(--duration-fast)' }}
+          >
+            <ArrowLeft className="size-3" aria-hidden />
+            Aujourd&apos;hui
+          </Link>
+        }
+        title="Nouveau rendez-vous"
+        description="Recherchez un patient existant pour planifier un rendez-vous."
+      />
 
       <div className="px-6 py-6">
         <div className="max-w-2xl space-y-4">
-          <Link href="/today" className="text-sm underline">
-            ← Aujourd&apos;hui
-          </Link>
-
           <Card>
-            <CardContent className="space-y-4 pt-6">
-              <form className="flex items-end gap-2" action="/today/book">
-                <div className="flex-1">
-                  <FormField label="Recherche patient">
-                    <Input id="q" name="q" defaultValue={q} placeholder="nom, prénom, téléphone, CIN" />
-                  </FormField>
-                </div>
+            <CardContent className="space-y-4">
+              <form className="flex flex-wrap items-end gap-2" action="/today/book">
+                <FormField label="Recherche patient" className="flex-1 min-w-[240px]">
+                  <div className="relative">
+                    <Search
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"
+                      aria-hidden
+                    />
+                    <Input
+                      id="q"
+                      name="q"
+                      defaultValue={q}
+                      placeholder="nom, prénom, téléphone, CIN"
+                      className="pl-8"
+                    />
+                  </div>
+                </FormField>
                 <Button type="submit" variant="secondary">
                   Rechercher
                 </Button>
@@ -43,20 +64,24 @@ export default async function BookPage({ searchParams }: Props) {
                   href={`/patients/new?next=${encodeURIComponent('/today/book')}`}
                   className={buttonVariants()}
                 >
-                  + Nouveau patient
+                  <Plus aria-hidden />
+                  Nouveau patient
                 </Link>
               </form>
 
               {q.trim() ? (
                 results.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucun résultat.</p>
+                  <EmptyState
+                    icon={UserSearch}
+                    title="Aucun résultat"
+                    description={`Aucun patient ne correspond à « ${q} ».`}
+                  />
                 ) : (
                   <BookForm
                     results={results.map((r) => ({
                       id: r.id,
-                      label: `${r.lastName} ${r.firstName} · ${ageFromDob(r.dateOfBirth)} ans${
-                        r.phone ? ` · ${r.phone}` : ''
-                      }`,
+                      name: `${r.lastName} ${r.firstName}`,
+                      meta: `${ageFromDob(r.dateOfBirth)} ans${r.phone ? ` · ${r.phone}` : ''}`,
                     }))}
                   />
                 )

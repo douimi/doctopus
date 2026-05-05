@@ -3,21 +3,48 @@ import postgres from 'postgres';
 import { env } from '@/lib/env';
 import * as schema from './schema';
 
-let userClient: PostgresJsDatabase<typeof schema> | null = null;
-let userSql: ReturnType<typeof postgres> | null = null;
-let adminClient: PostgresJsDatabase<typeof schema> | null = null;
-let adminSql: ReturnType<typeof postgres> | null = null;
+/**
+ * Connection pools are cached on `globalThis` so they survive Next.js
+ * module HMR reloads in dev — without this, every hot reload would leak
+ * a full pool of idle Postgres connections and exhaust max_connections
+ * within a few minutes.
+ */
+type Pools = {
+  userSql: ReturnType<typeof postgres> | null;
+  userClient: PostgresJsDatabase<typeof schema> | null;
+  adminSql: ReturnType<typeof postgres> | null;
+  adminClient: PostgresJsDatabase<typeof schema> | null;
+};
+
+const globalForDb = globalThis as unknown as { __doctopusDbPools?: Pools };
+const pools: Pools =
+  globalForDb.__doctopusDbPools ??
+  (globalForDb.__doctopusDbPools = {
+    userSql: null,
+    userClient: null,
+    adminSql: null,
+    adminClient: null,
+  });
+
+const POSTGRES_OPTS = {
+  prepare: false,
+  // Keep pools small — the local Supabase Postgres caps non-superuser
+  // connections aggressively. App pool + admin pool + Supabase Auth +
+  // Realtime + Storage all share the same limit.
+  idle_timeout: 20,
+  max_lifetime: 60 * 30,
+} as const;
 
 /**
  * Connection used by request handlers. Every query MUST be wrapped in
  * withTenantTx — direct use is forbidden in app/(authenticated)/**.
  */
 export function dbUser() {
-  if (!userClient) {
-    userSql = postgres(env().DATABASE_URL, { prepare: false, max: 10 });
-    userClient = drizzle(userSql, { schema });
+  if (!pools.userClient) {
+    pools.userSql = postgres(env().DATABASE_URL, { ...POSTGRES_OPTS, max: 5 });
+    pools.userClient = drizzle(pools.userSql, { schema });
   }
-  return userClient;
+  return pools.userClient;
 }
 
 /**
@@ -25,23 +52,23 @@ export function dbUser() {
  * Bypasses RLS. NEVER use inside app/(authenticated)/**.
  */
 export function dbAdmin() {
-  if (!adminClient) {
-    adminSql = postgres(env().DATABASE_URL_DIRECT, { prepare: false, max: 4 });
-    adminClient = drizzle(adminSql, { schema });
+  if (!pools.adminClient) {
+    pools.adminSql = postgres(env().DATABASE_URL_DIRECT, { ...POSTGRES_OPTS, max: 3 });
+    pools.adminClient = drizzle(pools.adminSql, { schema });
   }
-  return adminClient;
+  return pools.adminClient;
 }
 
 /** For tests only. Closes both pools. */
 export async function __closeDbForTests() {
-  if (userSql) {
-    await userSql.end({ timeout: 1 });
-    userSql = null;
-    userClient = null;
+  if (pools.userSql) {
+    await pools.userSql.end({ timeout: 1 });
+    pools.userSql = null;
+    pools.userClient = null;
   }
-  if (adminSql) {
-    await adminSql.end({ timeout: 1 });
-    adminSql = null;
-    adminClient = null;
+  if (pools.adminSql) {
+    await pools.adminSql.end({ timeout: 1 });
+    pools.adminSql = null;
+    pools.adminClient = null;
   }
 }

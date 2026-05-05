@@ -1,12 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Check, Copy, UserPlus } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/shell/page-header';
 import { inviteAssistant, type InviteAssistantState } from './actions';
 
@@ -16,7 +17,32 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" loading={pending}>
-      Inviter l&apos;assistant(e)
+      <UserPlus aria-hidden />
+      Inviter
+    </Button>
+  );
+}
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="secondary"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          /* noop */
+        }
+      }}
+      aria-label="Copier le lien"
+    >
+      {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
+      {copied ? 'Copié' : 'Copier'}
     </Button>
   );
 }
@@ -25,7 +51,10 @@ export default function TeamSettingsPage() {
   const [state, action] = useActionState(inviteAssistant, initial);
   return (
     <>
-      <PageHeader title="Équipe" />
+      <PageHeader
+        title="Équipe"
+        description="Invitez des assistant(e)s à rejoindre votre cabinet."
+      />
       <div className="px-6 py-6">
         <Card className="max-w-xl">
           <CardHeader>
@@ -34,21 +63,32 @@ export default function TeamSettingsPage() {
           <CardContent className="space-y-4">
             <form action={action} className="flex items-end gap-2">
               <FormField label="Email" className="flex-1">
-                <Input id="email" name="email" type="email" required />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="assistante@cabinet.ma"
+                />
               </FormField>
               <Submit />
             </form>
-            {state.error ? (
-              <Alert variant="danger">{state.error}</Alert>
-            ) : null}
+            {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
             {state.lastUrl ? (
-              <div className="rounded border border-border p-3 text-sm">
-                <p className="font-medium">Lien d&apos;invitation (valide 7 jours)</p>
-                <code className="block break-all text-xs mt-1">{state.lastUrl}</code>
-                <p className="mt-1 text-muted-foreground">
-                  Copiez ce lien et envoyez-le à votre assistant(e).
-                </p>
-              </div>
+              <Alert variant="success" title="Lien d'invitation créé (valide 7 jours)">
+                <div className="space-y-2 mt-2">
+                  <code className="block break-all text-small bg-card border border-border rounded-md px-2 py-1.5 text-foreground tabular-nums">
+                    {state.lastUrl}
+                  </code>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CopyButton value={state.lastUrl} />
+                    <span className="text-small text-muted-foreground">
+                      Envoyez ce lien à votre assistant(e).
+                    </span>
+                  </div>
+                </div>
+              </Alert>
             ) : null}
           </CardContent>
         </Card>

@@ -26,7 +26,8 @@
     "admin:set-model": "tsx scripts/admin-set-model.ts",
     "admin:grant-credits": "tsx scripts/admin-grant-credits.ts",
     "admin:usage-report": "tsx scripts/admin-usage-report.ts",
-    "admin:create-super-admin": "tsx scripts/admin-create-super-admin.ts"
+    "admin:create-super-admin": "tsx scripts/admin-create-super-admin.ts",
+    "admin:set-password": "tsx scripts/admin-set-password.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.74",

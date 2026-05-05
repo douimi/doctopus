@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Session } from '@/lib/auth/session';
+import { BrandLockup } from '@/components/ui/brand';
 import { Sidebar } from './sidebar';
 import { SidebarNavGroup, SidebarNavItem } from './sidebar-nav';
 import { SidebarUser } from './sidebar-user';
@@ -24,9 +25,11 @@ export function DoctorShell({
       <Sidebar
         theme="sky"
         brand={
-          <div className="space-y-0.5">
-            <div className="font-semibold text-heading">Doctopus</div>
-            <div className="text-small text-muted-foreground">{session.tenantName}</div>
+          <div className="space-y-2 min-w-0">
+            <BrandLockup size={120} className="mx-auto" />
+            <div className="text-small text-muted-foreground truncate text-center">
+              {session.tenantName}
+            </div>
           </div>
         }
         footer={
@@ -58,7 +61,7 @@ export function DoctorShell({
           </SidebarNavGroup>
         ) : null}
       </Sidebar>
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0 bg-app-surface">{children}</main>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { SectionCard } from '@/components/consultations/section-card';
+import { cn } from '@/lib/utils';
 import { saveSectionsAction, saveVitalsAction } from './actions';
 
 type Sections = {
@@ -101,9 +102,31 @@ export function ConsultationEditor({
   return (
     <div className="space-y-3">
       <div
-        className={`text-xs ${status === 'error' ? 'text-danger' : 'text-muted-foreground'}`}
+        className={cn(
+          'inline-flex items-center gap-1.5 text-small px-2 py-1 rounded-pill border tabular-nums',
+          status === 'error'
+            ? 'text-danger bg-danger-tint border-danger/20'
+            : status === 'pending'
+              ? 'text-warning-foreground bg-warning-tint border-warning/30'
+              : status === 'saved'
+                ? 'text-success bg-success-tint border-success/20'
+                : 'text-muted-foreground bg-muted border-border',
+        )}
         aria-live="polite"
       >
+        <span
+          aria-hidden
+          className={cn(
+            'size-1.5 rounded-pill',
+            status === 'error'
+              ? 'bg-danger'
+              : status === 'pending'
+                ? 'bg-warning animate-pulse'
+                : status === 'saved'
+                  ? 'bg-success'
+                  : 'bg-muted-foreground',
+          )}
+        />
         {statusLabel}
       </div>
 

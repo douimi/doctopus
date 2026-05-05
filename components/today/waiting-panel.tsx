@@ -1,15 +1,14 @@
 import Link from 'next/link';
+import { ChevronRight, Clock, Play, XCircle } from 'lucide-react';
 import type { AppointmentWithPatient } from '@/lib/appointments/queries';
 import { ageFromDob } from '@/lib/patients/age';
 import { cancelAppointmentAction } from '@/app/(authenticated)/today/actions';
 import { startConsultationAction } from '@/app/(authenticated)/today/start/actions';
+import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Clock } from 'lucide-react';
-
-function fmtTime(d: Date | null): string {
-  if (!d) return '—';
-  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-}
+import { StatusBadge } from '@/components/ui/status-badge';
+import { WaitTime } from './wait-time';
 
 export function WaitingPanel({
   items,
@@ -20,48 +19,95 @@ export function WaitingPanel({
 }) {
   if (items.length === 0) {
     return (
-      <EmptyState
-        icon={Clock}
-        title="Salle d'attente vide."
-      />
+      <div className="rounded-xl border border-border bg-card shadow-card">
+        <EmptyState
+          icon={Clock}
+          title="Salle d'attente vide"
+          description="Les patients arrivés au cabinet apparaîtront ici."
+        />
+      </div>
     );
   }
   return (
-    <ul className="divide-y divide-border border border-border rounded-md">
-      {items.map((a, idx) => (
-        <li key={a.id} className="p-3 flex items-center gap-3">
-          <div className="font-mono text-sm w-8">#{idx + 1}</div>
-          <div className="flex-1">
-            <Link href={`/patients/${a.patient.id}`} className="font-medium underline">
-              {a.patient.lastName} {a.patient.firstName}
-            </Link>
-            <div className="text-xs text-muted-foreground">
-              {ageFromDob(a.patient.dateOfBirth)} ans · arrivé à {fmtTime(a.arrivedAt)}
-              {a.kind === 'walkin' ? ' · walk-in' : ''}
-              {a.reason ? ` · ${a.reason}` : ''}
+    <ul
+      role="list"
+      className="divide-y divide-border rounded-xl border border-border bg-card shadow-card overflow-hidden"
+    >
+      {items.map((a, idx) => {
+        const fullName = `${a.patient.lastName} ${a.patient.firstName}`;
+        return (
+          <li
+            key={a.id}
+            className="group/row flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40"
+            style={{ transitionDuration: 'var(--duration-fast)' }}
+          >
+            <div className="flex items-center justify-center size-9 shrink-0 rounded-pill bg-warning-tint text-warning-foreground text-small font-semibold tabular-nums">
+              {idx + 1}
             </div>
-          </div>
-          <div className="flex gap-2 text-xs items-center">
-            {canStartConsultation ? (
-              <form action={startConsultationAction}>
-                <input type="hidden" name="appointmentId" value={a.id} />
-                <button
+            <Avatar name={fullName} size="md" />
+            <div className="flex-1 min-w-0">
+              <Link
+                href={`/patients/${a.patient.id}`}
+                className="inline-flex items-center gap-1 text-body font-medium text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:underline"
+                style={{ transitionDuration: 'var(--duration-fast)' }}
+              >
+                <span className="truncate">{fullName}</span>
+                <ChevronRight
+                  className="size-3 text-muted-foreground opacity-0 -translate-x-1 transition-all group-hover/row:opacity-100 group-hover/row:translate-x-0"
+                  aria-hidden
+                />
+              </Link>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-small text-muted-foreground">
+                <span className="tabular-nums">
+                  {ageFromDob(a.patient.dateOfBirth)} ans
+                </span>
+                {a.reason ? (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="truncate">{a.reason}</span>
+                  </>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {a.arrivedAt ? <WaitTime since={a.arrivedAt} /> : null}
+              {a.kind === 'walkin' ? (
+                <StatusBadge variant="neutral" className="hidden md:inline-flex">
+                  Walk-in
+                </StatusBadge>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {canStartConsultation ? (
+                <form action={startConsultationAction}>
+                  <input type="hidden" name="appointmentId" value={a.id} />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    aria-label={`Commencer la consultation de ${fullName}`}
+                  >
+                    <Play aria-hidden />
+                    Commencer
+                  </Button>
+                </form>
+              ) : null}
+              <form action={cancelAppointmentAction}>
+                <input type="hidden" name="id" value={a.id} />
+                <Button
                   type="submit"
-                  className="rounded bg-primary px-2 py-1 text-primary-foreground text-xs"
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={`Annuler le rendez-vous de ${fullName}`}
+                  title="Annuler"
+                  className="text-muted-foreground hover:text-danger"
                 >
-                  Commencer
-                </button>
+                  <XCircle aria-hidden />
+                </Button>
               </form>
-            ) : null}
-            <form action={cancelAppointmentAction}>
-              <input type="hidden" name="id" value={a.id} />
-              <button type="submit" className="text-danger underline">
-                annuler
-              </button>
-            </form>
-          </div>
-        </li>
-      ))}
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

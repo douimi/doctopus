@@ -1,6 +1,7 @@
 import { BarChart3, Building2, Mail } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AdminSession } from '@/lib/auth/admin';
+import { BrandLockup } from '@/components/ui/brand';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Sidebar } from './sidebar';
 import { SidebarNavGroup, SidebarNavItem } from './sidebar-nav';
@@ -18,9 +19,12 @@ export function AdminShell({
       <Sidebar
         theme="orange"
         brand={
-          <div className="space-y-1">
-            <div className="font-semibold text-heading">Doctopus</div>
-            <StatusBadge variant="warning" className="bg-admin text-admin-foreground border-admin/40">
+          <div className="space-y-2 min-w-0 flex flex-col items-center">
+            <BrandLockup size={120} />
+            <StatusBadge
+              variant="warning"
+              className="bg-admin text-admin-foreground border-admin/40"
+            >
               ADMIN
             </StatusBadge>
           </div>
@@ -39,7 +43,7 @@ export function AdminShell({
           </SidebarNavItem>
         </SidebarNavGroup>
       </Sidebar>
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0 bg-app-surface">{children}</main>
     </div>
   );
 }

@@ -13,7 +13,10 @@ export default async function CabinetSettingsPage() {
 
   return (
     <>
-      <PageHeader title="Cabinet" />
+      <PageHeader
+        title="Cabinet"
+        description="Identifiants professionnels, en-tête d'ordonnance et signature."
+      />
       <div className="px-6 py-6 max-w-2xl space-y-4">
         <Card>
           <CardHeader>

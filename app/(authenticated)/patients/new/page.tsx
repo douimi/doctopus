@@ -2,11 +2,15 @@
 
 import { Suspense, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -14,9 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormField } from '@/components/ui/form-field';
-import { Alert } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { PageHeader } from '@/components/shell/page-header';
 import { createPatientAction, type CreatePatientState } from './actions';
 
 const initial: CreatePatientState = { error: null };
@@ -30,71 +33,116 @@ function Submit() {
   );
 }
 
+function FormSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <fieldset className="space-y-3">
+      <legend className="text-small font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+        {title}
+      </legend>
+      {children}
+    </fieldset>
+  );
+}
+
 function NewPatientForm() {
   const params = useSearchParams();
   const next = params.get('next') ?? '';
   const [state, action] = useActionState(createPatientAction, initial);
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-6">
       <input type="hidden" name="next" value={next} />
-      <div className="grid grid-cols-2 gap-4">
-        <FormField label="Nom">
-          <Input id="lastName" name="lastName" required />
-        </FormField>
-        <FormField label="Prénom">
-          <Input id="firstName" name="firstName" required />
-        </FormField>
-        <div className="space-y-1">
-          <Label htmlFor="gender">Sexe</Label>
-          <Select name="gender" required>
-            <SelectTrigger id="gender">
-              <SelectValue placeholder="—" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="m">Homme</SelectItem>
-              <SelectItem value="f">Femme</SelectItem>
-            </SelectContent>
-          </Select>
+
+      <FormSection title="Identité">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="Nom">
+            <Input id="lastName" name="lastName" required autoComplete="family-name" />
+          </FormField>
+          <FormField label="Prénom">
+            <Input id="firstName" name="firstName" required autoComplete="given-name" />
+          </FormField>
+          <div className="space-y-1">
+            <Label htmlFor="gender" className="text-small font-medium">
+              Sexe
+            </Label>
+            <Select name="gender" required>
+              <SelectTrigger id="gender">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="m">Homme</SelectItem>
+                <SelectItem value="f">Femme</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <FormField label="Date de naissance">
+            <Input id="dateOfBirth" name="dateOfBirth" type="date" required />
+          </FormField>
         </div>
-        <FormField label="Date de naissance">
-          <Input id="dateOfBirth" name="dateOfBirth" type="date" required />
-        </FormField>
-        <FormField label="Téléphone">
-          <Input id="phone" name="phone" required />
-        </FormField>
-        <FormField label="CIN (optionnel)">
-          <Input id="cin" name="cin" />
-        </FormField>
-        <div className="space-y-1">
-          <Label htmlFor="coverageType">Couverture</Label>
-          <Select name="coverageType">
-            <SelectTrigger id="coverageType">
-              <SelectValue placeholder="—" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="cnss">CNSS</SelectItem>
-              <SelectItem value="cnops">CNOPS</SelectItem>
-              <SelectItem value="amo">AMO</SelectItem>
-              <SelectItem value="ramed">RAMED</SelectItem>
-              <SelectItem value="mutuelle">Mutuelle</SelectItem>
-              <SelectItem value="none">Sans</SelectItem>
-              <SelectItem value="other">Autre</SelectItem>
-            </SelectContent>
-          </Select>
+      </FormSection>
+
+      <FormSection title="Contact">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="Téléphone">
+            <Input id="phone" name="phone" required type="tel" autoComplete="tel" />
+          </FormField>
+          <FormField label="CIN (optionnel)">
+            <Input id="cin" name="cin" />
+          </FormField>
         </div>
-        <FormField label="N° d'assuré (optionnel)">
-          <Input id="coverageId" name="coverageId" />
+        <FormField label="Adresse (optionnel)">
+          <Input id="address" name="address" autoComplete="street-address" />
         </FormField>
-      </div>
-      <FormField label="Adresse (optionnel)">
-        <Input id="address" name="address" />
-      </FormField>
-      <FormField label="Notes (optionnel)">
-        <Textarea id="notes" name="notes" rows={3} />
-      </FormField>
+      </FormSection>
+
+      <FormSection title="Couverture">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="coverageType" className="text-small font-medium">
+              Type
+            </Label>
+            <Select name="coverageType">
+              <SelectTrigger id="coverageType">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cnss">CNSS</SelectItem>
+                <SelectItem value="cnops">CNOPS</SelectItem>
+                <SelectItem value="amo">AMO</SelectItem>
+                <SelectItem value="ramed">RAMED</SelectItem>
+                <SelectItem value="mutuelle">Mutuelle</SelectItem>
+                <SelectItem value="none">Sans</SelectItem>
+                <SelectItem value="other">Autre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <FormField label="N° d'assuré (optionnel)">
+            <Input id="coverageId" name="coverageId" />
+          </FormField>
+        </div>
+      </FormSection>
+
+      <FormSection title="Notes">
+        <FormField label="Notes (optionnel)">
+          <Textarea id="notes" name="notes" rows={3} />
+        </FormField>
+      </FormSection>
+
       {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2 pt-2 border-t border-border">
         <Submit />
+        <Link
+          href={next || '/patients'}
+          className="text-small text-muted-foreground hover:text-foreground transition-colors"
+          style={{ transitionDuration: 'var(--duration-fast)' }}
+        >
+          Annuler
+        </Link>
       </div>
     </form>
   );
@@ -102,15 +150,30 @@ function NewPatientForm() {
 
 export default function NewPatientPage() {
   return (
-    <Card className="max-w-2xl">
-      <CardHeader>
-        <CardTitle>Nouveau patient</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Suspense fallback={null}>
-          <NewPatientForm />
-        </Suspense>
-      </CardContent>
-    </Card>
+    <>
+      <PageHeader
+        eyebrow={
+          <Link
+            href="/patients"
+            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+            style={{ transitionDuration: 'var(--duration-fast)' }}
+          >
+            <ArrowLeft className="size-3" aria-hidden />
+            Patients
+          </Link>
+        }
+        title="Nouveau patient"
+        description="Créez le dossier d'un nouveau patient pour votre cabinet."
+      />
+      <div className="px-6 py-6">
+        <Card className="max-w-2xl">
+          <CardContent className="space-y-4">
+            <Suspense fallback={null}>
+              <NewPatientForm />
+            </Suspense>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }

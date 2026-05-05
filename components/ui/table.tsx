@@ -53,7 +53,7 @@ export function TableRow({
     <tr
       data-slot="table-row"
       className={cn(
-        'border-b border-border transition-colors hover:bg-muted/50',
+        'border-b border-border transition-colors hover:bg-muted/40',
         className,
       )}
       style={{ transitionDuration: 'var(--duration-fast)' }}

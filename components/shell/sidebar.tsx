@@ -33,13 +33,13 @@ export function Sidebar({
       data-theme={theme}
       style={THEME_VARS[theme]}
       className={cn(
-        'hidden md:flex md:flex-col md:w-[220px] md:shrink-0 md:h-screen md:sticky md:top-0',
-        'bg-card border-r border-border shadow-card',
+        'hidden md:flex md:flex-col md:w-[232px] md:shrink-0 md:h-screen md:sticky md:top-0',
+        'bg-card border-r border-border',
         className,
       )}
     >
       <div className="px-4 py-4 border-b border-border">{brand}</div>
-      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-3">{children}</nav>
+      <nav className="flex-1 overflow-y-auto px-1 py-3 space-y-3">{children}</nav>
       <div className="border-t border-border">{footer}</div>
     </aside>
   );

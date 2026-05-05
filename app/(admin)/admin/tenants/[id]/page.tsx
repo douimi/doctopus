@@ -1,14 +1,27 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ArrowLeft, BarChart3, History, ShieldCheck } from 'lucide-react';
 import { getTenantDetail } from '@/lib/admin/queries';
+import { Avatar } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Section } from '@/components/ui/section';
+import { StatusBadge } from '@/components/ui/status-badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableEmpty,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { PageHeader } from '@/components/shell/page-header';
+import { cn } from '@/lib/utils';
 import { GrantCreditsCard } from './grant-credits-card';
 import { SetModelCard } from './set-model-card';
 import { ToggleChatbotCard } from './toggle-chatbot-card';
 import { ToggleSuspensionCard } from './toggle-suspension-card';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from '@/components/ui/table';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { EmptyState } from '@/components/ui/empty-state';
-import { History, BarChart3 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,169 +42,240 @@ export default async function AdminTenantDetailPage({
   const { tenant, doctor, assistants, ledger, recentUsage, adminAudit } = detail;
 
   return (
-    <div className="space-y-4 max-w-6xl">
-      <Link href="/admin/tenants" className="text-sm underline">
-        ← Cabinets
-      </Link>
+    <>
+      <PageHeader
+        eyebrow={
+          <Link
+            href="/admin/tenants"
+            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+            style={{ transitionDuration: 'var(--duration-fast)' }}
+          >
+            <ArrowLeft className="size-3" aria-hidden />
+            Cabinets
+          </Link>
+        }
+        title={
+          <span className="inline-flex items-center gap-3">
+            <span>{tenant.name}</span>
+            <StatusBadge variant={tenant.status === 'active' ? 'success' : 'danger'}>
+              {tenant.status === 'active' ? 'Actif' : 'Suspendu'}
+            </StatusBadge>
+          </span>
+        }
+      />
+      <div className="px-6 py-6 max-w-6xl">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4">
+          <div className="space-y-4 min-w-0">
+            <Card>
+              <CardContent className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Avatar name={tenant.name} size="lg" tone="admin" />
+                  <div className="min-w-0 space-y-1">
+                    <div className="text-title font-semibold leading-tight">{tenant.name}</div>
+                    {tenant.address ? (
+                      <p className="text-small text-muted-foreground">{tenant.address}</p>
+                    ) : null}
+                    {tenant.phone || tenant.rpmNumber || tenant.cnomNumber ? (
+                      <p className="text-small text-muted-foreground tabular-nums">
+                        {tenant.phone ? `Tél: ${tenant.phone}` : ''}
+                        {tenant.rpmNumber ? ` · RPM: ${tenant.rpmNumber}` : ''}
+                        {tenant.cnomNumber ? ` · CNOM: ${tenant.cnomNumber}` : ''}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
 
-      <div className="grid lg:grid-cols-[1fr_360px] gap-4">
-        {/* LEFT — state + history */}
-        <div className="space-y-4 min-w-0">
-          <section className="rounded-md border border-border p-4 space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold">{tenant.name}</h1>
-              <StatusBadge variant={tenant.status === 'active' ? 'success' : 'danger'}>
-                {tenant.status === 'active' ? 'actif' : 'suspendu'}
-              </StatusBadge>
-            </div>
-            <p className="text-sm text-muted-foreground">{tenant.address ?? ''}</p>
-            <p className="text-sm text-muted-foreground">
-              {tenant.phone ? `Tél: ${tenant.phone}` : ''}
-              {tenant.rpmNumber ? ` · RPM: ${tenant.rpmNumber}` : ''}
-              {tenant.cnomNumber ? ` · CNOM: ${tenant.cnomNumber}` : ''}
-            </p>
-            <p className="text-sm">
-              Médecin :{' '}
-              {doctor ? (
-                <>
-                  {doctor.fullName} (<code className="text-xs">{doctor.email}</code>)
-                </>
-              ) : (
-                <span className="text-muted-foreground">aucun</span>
-              )}
-            </p>
-            {assistants.length > 0 ? (
-              <p className="text-sm">
-                Assistant(e)s : {assistants.map((a) => a.email).join(', ')}
-              </p>
-            ) : null}
-            <p className="text-xs text-muted-foreground">
-              Crédits IA: ~{tenant.chatbotCreditsBalance} · Modèle :{' '}
-              {tenant.chatbotProvider ?? '—'} / {tenant.chatbotModel ?? '—'} ·{' '}
-              {tenant.chatbotEnabled ? 'Assistant activé' : 'Assistant désactivé'}
-            </p>
-          </section>
+                <div className="border-t border-border pt-3 space-y-2 text-body">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-small text-muted-foreground min-w-24">
+                      Médecin
+                    </span>
+                    {doctor ? (
+                      <span>
+                        <span className="font-medium">{doctor.fullName}</span>{' '}
+                        <code className="text-small text-muted-foreground">
+                          {doctor.email}
+                        </code>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground italic">Aucun</span>
+                    )}
+                  </div>
+                  {assistants.length > 0 ? (
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="text-small text-muted-foreground min-w-24">
+                        Assistant(e)s
+                      </span>
+                      <span className="text-small">
+                        {assistants.map((a) => a.email).join(', ')}
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-small text-muted-foreground min-w-24">
+                      Crédits IA
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      ~{tenant.chatbotCreditsBalance}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-small text-muted-foreground min-w-24">Modèle</span>
+                    <span className="text-small tabular-nums">
+                      {tenant.chatbotProvider ?? '—'} / {tenant.chatbotModel ?? '—'}
+                    </span>
+                    <StatusBadge
+                      variant={tenant.chatbotEnabled ? 'success' : 'neutral'}
+                      icon={tenant.chatbotEnabled ? ShieldCheck : undefined}
+                    >
+                      {tenant.chatbotEnabled ? 'Activé' : 'Désactivé'}
+                    </StatusBadge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          <section className="space-y-2">
-            <h2 className="font-medium">Historique crédits (50 dernières lignes)</h2>
-            <div className="border border-border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-44">Date</TableHead>
-                    <TableHead>Δ</TableHead>
-                    <TableHead>Raison</TableHead>
-                    <TableHead>Par</TableHead>
-                    <TableHead>Notes</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ledger.length === 0 ? (
-                    <TableEmpty colSpan={5}>
-                      <EmptyState icon={History} title="Aucun crédit." />
-                    </TableEmpty>
-                  ) : (
-                    ledger.map((l) => (
-                      <TableRow key={l.id}>
-                        <TableCell className="text-xs font-mono">{fmtDate(l.createdAt)}</TableCell>
-                        <TableCell className={l.change > 0 ? 'text-success' : 'text-danger'}>
-                          {l.change > 0 ? '+' : ''}
-                          {l.change}
-                        </TableCell>
-                        <TableCell className="text-xs">{l.reason}</TableCell>
-                        <TableCell className="text-xs">{l.grantedBy ?? '—'}</TableCell>
-                        <TableCell className="text-xs">{l.notes ?? ''}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </section>
+            <Section icon={History} title="Historique crédits" count={ledger.length}>
+              <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-44">Date</TableHead>
+                      <TableHead>Δ</TableHead>
+                      <TableHead>Raison</TableHead>
+                      <TableHead>Par</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ledger.length === 0 ? (
+                      <TableEmpty colSpan={5}>
+                        <EmptyState icon={History} title="Aucun crédit" />
+                      </TableEmpty>
+                    ) : (
+                      ledger.map((l) => (
+                        <TableRow key={l.id}>
+                          <TableCell className="font-mono text-small text-muted-foreground tabular-nums">
+                            {fmtDate(l.createdAt)}
+                          </TableCell>
+                          <TableCell
+                            className={cn(
+                              'font-medium tabular-nums',
+                              l.change > 0 ? 'text-success' : 'text-danger',
+                            )}
+                          >
+                            {l.change > 0 ? '+' : ''}
+                            {l.change}
+                          </TableCell>
+                          <TableCell className="text-small">{l.reason}</TableCell>
+                          <TableCell className="text-small text-muted-foreground tabular-nums">
+                            {l.grantedBy ?? '—'}
+                          </TableCell>
+                          <TableCell className="text-small text-muted-foreground">
+                            {l.notes ?? ''}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Section>
 
-          <section className="space-y-2">
-            <h2 className="font-medium">Usage IA récent</h2>
-            <div className="border border-border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-44">Date</TableHead>
-                    <TableHead>Consultation</TableHead>
-                    <TableHead>Modèle</TableHead>
-                    <TableHead>Tokens (in/out)</TableHead>
-                    <TableHead>Coût µ$</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentUsage.length === 0 ? (
-                    <TableEmpty colSpan={5}>
-                      <EmptyState icon={BarChart3} title="Aucun usage." />
-                    </TableEmpty>
-                  ) : (
-                    recentUsage.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="text-xs font-mono">{fmtDate(u.createdAt)}</TableCell>
-                        <TableCell className="text-xs">#{u.consultationId.slice(0, 8)}</TableCell>
-                        <TableCell className="text-xs">
-                          {u.provider}/{u.model}
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {u.inputTokens} / {u.outputTokens}
-                        </TableCell>
-                        <TableCell className="text-xs">{u.estimatedCostMicrousd ?? '—'}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </section>
+            <Section icon={BarChart3} title="Usage IA récent" count={recentUsage.length}>
+              <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-44">Date</TableHead>
+                      <TableHead>Consultation</TableHead>
+                      <TableHead>Modèle</TableHead>
+                      <TableHead>Tokens (in/out)</TableHead>
+                      <TableHead>Coût µ$</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentUsage.length === 0 ? (
+                      <TableEmpty colSpan={5}>
+                        <EmptyState icon={BarChart3} title="Aucun usage" />
+                      </TableEmpty>
+                    ) : (
+                      recentUsage.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-mono text-small text-muted-foreground tabular-nums">
+                            {fmtDate(u.createdAt)}
+                          </TableCell>
+                          <TableCell className="text-small font-mono">
+                            #{u.consultationId.slice(0, 8)}
+                          </TableCell>
+                          <TableCell className="text-small text-muted-foreground tabular-nums">
+                            {u.provider}/{u.model}
+                          </TableCell>
+                          <TableCell className="text-small tabular-nums">
+                            {u.inputTokens} / {u.outputTokens}
+                          </TableCell>
+                          <TableCell className="text-small tabular-nums">
+                            {u.estimatedCostMicrousd ?? '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Section>
 
-          <section className="space-y-2">
-            <h2 className="font-medium">Actions admin (audit)</h2>
-            <div className="border border-border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-44">Date</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Détails</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {adminAudit.length === 0 ? (
-                    <TableEmpty colSpan={3}>
-                      <EmptyState icon={History} title="Aucune action admin." />
-                    </TableEmpty>
-                  ) : (
-                    adminAudit.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="text-xs font-mono">{fmtDate(a.at)}</TableCell>
-                        <TableCell className="text-xs">{a.action}</TableCell>
-                        <TableCell className="text-xs">
-                          <code>{a.metadata ? JSON.stringify(a.metadata) : ''}</code>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </section>
+            <Section icon={History} title="Actions admin (audit)" count={adminAudit.length}>
+              <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-44">Date</TableHead>
+                      <TableHead>Action</TableHead>
+                      <TableHead>Détails</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {adminAudit.length === 0 ? (
+                      <TableEmpty colSpan={3}>
+                        <EmptyState icon={History} title="Aucune action admin" />
+                      </TableEmpty>
+                    ) : (
+                      adminAudit.map((a) => (
+                        <TableRow key={a.id}>
+                          <TableCell className="font-mono text-small text-muted-foreground tabular-nums">
+                            {fmtDate(a.at)}
+                          </TableCell>
+                          <TableCell className="text-small font-medium">{a.action}</TableCell>
+                          <TableCell className="text-small text-muted-foreground">
+                            <code className="break-all">
+                              {a.metadata ? JSON.stringify(a.metadata) : ''}
+                            </code>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Section>
+          </div>
+
+          <aside className="space-y-4">
+            <GrantCreditsCard tenantId={tenant.id} />
+            <SetModelCard
+              tenantId={tenant.id}
+              initialProvider={tenant.chatbotProvider}
+              initialModel={tenant.chatbotModel}
+            />
+            <ToggleChatbotCard tenantId={tenant.id} enabled={tenant.chatbotEnabled} />
+            <ToggleSuspensionCard
+              tenantId={tenant.id}
+              status={tenant.status as 'active' | 'suspended'}
+            />
+          </aside>
         </div>
-
-        {/* RIGHT — actions */}
-        <aside className="space-y-4">
-          <GrantCreditsCard tenantId={tenant.id} />
-          <SetModelCard
-            tenantId={tenant.id}
-            initialProvider={tenant.chatbotProvider}
-            initialModel={tenant.chatbotModel}
-          />
-          <ToggleChatbotCard tenantId={tenant.id} enabled={tenant.chatbotEnabled} />
-          <ToggleSuspensionCard tenantId={tenant.id} status={tenant.status as 'active' | 'suspended'} />
-        </aside>
       </div>
-    </div>
+    </>
   );
 }
