@@ -50,6 +50,7 @@ export function CabinetForms({
     logoUrl: string | null;
     chatbotEnabled: boolean;
     chatbotCreditsBalance: number;
+    defaultConsultationPriceMad: string;
   };
 }) {
   const [textState, textAction] = useActionState(saveCabinetTextAction, textInitial);
@@ -72,6 +73,21 @@ export function CabinetForms({
             name="prescriptionHeaderHtml"
             rows={3}
             defaultValue={initial.prescriptionHeaderHtml}
+          />
+        </FormField>
+        <FormField
+          label="Tarif par défaut (MAD)"
+          description="Prefille le champ Prix lors de la clôture des consultations."
+        >
+          <Input
+            id="defaultConsultationPriceMad"
+            name="defaultConsultationPriceMad"
+            type="number"
+            step="0.50"
+            min="0.01"
+            max="99999.99"
+            placeholder="300.00"
+            defaultValue={initial.defaultConsultationPriceMad}
           />
         </FormField>
         {textState.error ? <Alert variant="danger">{textState.error}</Alert> : null}

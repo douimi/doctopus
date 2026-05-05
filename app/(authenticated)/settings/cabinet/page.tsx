@@ -33,6 +33,7 @@ export default async function CabinetSettingsPage() {
                 logoUrl: tenant.logoUrl ?? null,
                 chatbotEnabled: tenant.chatbotEnabled,
                 chatbotCreditsBalance: tenant.chatbotCreditsBalance,
+                defaultConsultationPriceMad: tenant.defaultConsultationPriceMad ?? '',
               }}
             />
           </CardContent>

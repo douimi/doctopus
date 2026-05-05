@@ -7,11 +7,20 @@ import { requireDoctor } from '@/lib/auth/guards';
 import { dbAdmin } from '@/db/client';
 import { tenants } from '@/db/schema';
 import { uploadCabinetAsset } from '@/lib/storage/upload';
+import { recordAudit } from '@/lib/audit/record';
 
 const textSchema = z.object({
   rpmNumber: z.string().trim().max(80).optional().or(z.literal('')),
   cnomNumber: z.string().trim().max(80).optional().or(z.literal('')),
   prescriptionHeaderHtml: z.string().trim().max(5000).optional().or(z.literal('')),
+  defaultConsultationPriceMad: z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === '' || (Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) <= 99999.99),
+      { message: 'Prix invalide.' },
+    )
+    .optional(),
 });
 
 export type SaveTextState = { error: string | null; saved: boolean };
@@ -25,8 +34,19 @@ export async function saveCabinetTextAction(
     rpmNumber: formData.get('rpmNumber'),
     cnomNumber: formData.get('cnomNumber'),
     prescriptionHeaderHtml: formData.get('prescriptionHeaderHtml'),
+    defaultConsultationPriceMad: formData.get('defaultConsultationPriceMad') ?? '',
   });
   if (!parsed.success) return { error: 'Champs invalides.', saved: false };
+
+  const newPrice =
+    parsed.data.defaultConsultationPriceMad && parsed.data.defaultConsultationPriceMad !== ''
+      ? parsed.data.defaultConsultationPriceMad
+      : null;
+
+  const [prev] = await dbAdmin()
+    .select({ defaultConsultationPriceMad: tenants.defaultConsultationPriceMad })
+    .from(tenants)
+    .where(eq(tenants.id, session.tenantId));
 
   await dbAdmin()
     .update(tenants)
@@ -34,9 +54,21 @@ export async function saveCabinetTextAction(
       rpmNumber: parsed.data.rpmNumber || null,
       cnomNumber: parsed.data.cnomNumber || null,
       prescriptionHeaderHtml: parsed.data.prescriptionHeaderHtml || null,
+      defaultConsultationPriceMad: newPrice,
       updatedAt: new Date(),
     })
     .where(eq(tenants.id, session.tenantId));
+
+  if ((prev?.defaultConsultationPriceMad ?? null) !== newPrice) {
+    await recordAudit({
+      tenantId: session.tenantId,
+      actorUserId: session.userId,
+      action: 'tenant.default_price_updated',
+      entityType: 'tenant',
+      entityId: session.tenantId,
+      metadata: { from: prev?.defaultConsultationPriceMad ?? null, to: newPrice },
+    });
+  }
 
   revalidatePath('/settings/cabinet');
   return { error: null, saved: true };
