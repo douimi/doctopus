@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   CalendarDays,
   History,
   Settings,
@@ -49,6 +50,9 @@ export function DoctorShell({
         </SidebarNavGroup>
         {isDoctor ? (
           <SidebarNavGroup label="Compte">
+            <SidebarNavItem href="/stats" icon={<BarChart3 className="size-4" aria-hidden />}>
+              Statistiques
+            </SidebarNavItem>
             <SidebarNavItem href="/settings/team" icon={<Users2 className="size-4" aria-hidden />}>
               Équipe
             </SidebarNavItem>
