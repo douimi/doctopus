@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation';
 import { requireSession } from '@/lib/auth/session';
 import { bookAppointment } from '@/lib/appointments/mutations';
 import { bookAppointmentSchema } from '@/lib/appointments/schemas';
-
-export type BookState = { error: string | null };
+import type { BookState } from './types';
 
 export async function bookAction(_: BookState, formData: FormData): Promise<BookState> {
   const session = await requireSession();
