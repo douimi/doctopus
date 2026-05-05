@@ -50,6 +50,13 @@
       "when": 1777854244220,
       "tag": "0006_milky_gateway",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777994003994,
+      "tag": "0007_grey_chamber",
+      "breakpoints": true
     }
   ]
 }

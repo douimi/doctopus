@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, integer, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -16,6 +16,7 @@ export const tenants = pgTable('tenants', {
   chatbotEnabled: boolean('chatbot_enabled').notNull().default(false),
   chatbotCreditsBalance: integer('chatbot_credits_balance').notNull().default(0),
   chatbotDisclaimerAcknowledgedAt: timestamp('chatbot_disclaimer_acknowledged_at', { withTimezone: true }),
+  defaultConsultationPriceMad: numeric('default_consultation_price_mad', { precision: 10, scale: 2 }),
   logoUrl: text('logo_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

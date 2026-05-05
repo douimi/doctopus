@@ -32,6 +32,17 @@ export const consultations = pgTable(
     isFinalized: boolean('is_finalized').notNull().default(false),
     finalizedAt: timestamp('finalized_at', { withTimezone: true }),
     aiCreditConsumedAt: timestamp('ai_credit_consumed_at', { withTimezone: true }),
+    priceMad: numeric('price_mad', { precision: 10, scale: 2 }),
+    isFree: boolean('is_free').notNull().default(false),
+    paymentStatus: text('payment_status', { enum: ['awaiting', 'paid', 'free'] })
+      .notNull()
+      .default('awaiting'),
+    paymentMethod: text('payment_method', {
+      enum: ['especes', 'carte', 'cheque', 'virement', 'autre'],
+    }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    paidBy: uuid('paid_by').references(() => userProfiles.id),
+    paymentNote: text('payment_note'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
