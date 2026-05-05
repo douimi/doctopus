@@ -78,8 +78,9 @@ export function FinalizePricingDialog({
               <Input
                 id="price-mad"
                 type="number"
-                step="0.50"
+                step="any"
                 min="0.01"
+                inputMode="decimal"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 disabled={isFree}

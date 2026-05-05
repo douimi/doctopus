@@ -83,10 +83,11 @@ export function CabinetForms({
             id="defaultConsultationPriceMad"
             name="defaultConsultationPriceMad"
             type="number"
-            step="0.50"
+            step="any"
             min="0.01"
             max="99999.99"
-            placeholder="300.00"
+            inputMode="decimal"
+            placeholder="300"
             defaultValue={initial.defaultConsultationPriceMad}
           />
         </FormField>
