@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { ArrowRight, Plus, Search, Users } from 'lucide-react';
+import { ArrowRight, Plus, Users } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import { searchPatients } from '@/lib/patients/queries';
 import { ageFromDob } from '@/lib/patients/age';
 import { Avatar } from '@/components/ui/avatar';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { buttonVariants } from '@/components/ui/button';
+import { LiveSearchInput } from '@/components/ui/live-search-input';
 import { PageHeader } from '@/components/shell/page-header';
 import {
   Table,
@@ -42,27 +42,11 @@ export default async function PatientsPage({ searchParams }: Props) {
       />
 
       <div className="px-6 py-6 space-y-4">
-        <form
-          className="flex flex-wrap items-center gap-2"
-          action="/patients"
-        >
-          <div className="relative flex-1 min-w-[240px] max-w-md">
-            <Search
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"
-              aria-hidden
-            />
-            <Input
-              name="q"
-              defaultValue={q}
-              placeholder="Recherche : nom, prénom, téléphone, CIN"
-              className="pl-8"
-              aria-label="Rechercher un patient"
-            />
-          </div>
-          {includeArchived ? <input type="hidden" name="archived" value="1" /> : null}
-          <Button type="submit" variant="secondary">
-            Rechercher
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <LiveSearchInput
+            defaultQuery={q}
+            placeholder="Recherche : nom, prénom, téléphone, CIN"
+          />
           <Link
             href={
               includeArchived
@@ -73,7 +57,7 @@ export default async function PatientsPage({ searchParams }: Props) {
           >
             {includeArchived ? 'Masquer archivés' : 'Voir archivés'}
           </Link>
-        </form>
+        </div>
 
         <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
           <Table>
