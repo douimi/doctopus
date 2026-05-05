@@ -2,15 +2,15 @@
 
 import { SectionFrame } from './section-frame';
 import { ConsultationMockup } from './consultation-mockup';
+import { SectionEyebrow } from './section-eyebrow';
+import { Parallax } from './parallax';
 
 export function ConsultationSection() {
   return (
     <SectionFrame>
       {(revealed) => (
         <>
-          <div className="text-sky-400 text-[13px] uppercase tracking-[0.1em] font-semibold mb-4">
-            01 — Consultation
-          </div>
+          <SectionEyebrow revealed={revealed}>01 — Consultation</SectionEyebrow>
           <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight max-w-3xl text-center">
             Une consultation complète.{' '}
             <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
@@ -20,7 +20,9 @@ export function ConsultationSection() {
           <p className="text-xl text-white/70 max-w-2xl mt-6 text-center">
             Motif, antécédents, examen, diagnostic, suivi, ordonnance — tout dans une seule fenêtre. L&apos;autosave veille pour vous.
           </p>
-          <ConsultationMockup revealed={revealed} />
+          <Parallax className="w-full flex flex-col items-center">
+            <ConsultationMockup revealed={revealed} />
+          </Parallax>
         </>
       )}
     </SectionFrame>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Topbar } from '@/components/landing/topbar';
+import { ScrollProgress } from '@/components/landing/scroll-progress';
 import { Hero } from '@/components/landing/hero';
 import { ConsultationSection } from '@/components/landing/consultation-section';
 import { OrdonnanceSection } from '@/components/landing/ordonnance-section';
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <div className="bg-black text-white selection:bg-sky-500/30">
+      <ScrollProgress />
       <Topbar />
       <Hero />
       <ConsultationSection />

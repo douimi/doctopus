@@ -48,7 +48,7 @@ export default async function StatsPage({
   return (
     <>
       <PageHeader title="Statistiques" description="Recettes et activité du cabinet." />
-      <div className="px-6 py-6 space-y-6 max-w-6xl">
+      <div className="px-6 py-6 space-y-6">
         <RangePills active={range} />
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

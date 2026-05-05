@@ -1,22 +1,26 @@
+'use client';
+
 import { SectionFrame } from './section-frame';
+import { SectionEyebrow } from './section-eyebrow';
+import { Parallax } from './parallax';
 
 export function PricingSection() {
   return (
     <SectionFrame>
-      <div className="text-sky-400 text-[13px] uppercase tracking-[0.1em] font-semibold mb-4">
-        03 — Tarification & paiements
-      </div>
-      <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight max-w-3xl text-center">
-        Du diagnostic au paiement.{' '}
-        <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
-          Sans friction.
-        </span>
-      </h2>
-      <p className="text-xl text-white/70 max-w-2xl mt-6 text-center">
-        Le médecin clôture, l&apos;assistant encaisse — chacun voit ce qu&apos;il doit voir. Espèces, carte, chèque, virement.
-      </p>
-
-      <div className="mt-16 max-w-[900px] w-full bg-gradient-to-b from-[#1a1a1a] to-[#0d0d0d] border border-white/10 rounded-2xl p-2 shadow-2xl">
+      {(revealed) => (
+        <>
+          <SectionEyebrow revealed={revealed}>03 — Tarification & paiements</SectionEyebrow>
+          <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight max-w-3xl text-center">
+            Du diagnostic au paiement.{' '}
+            <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+              Sans friction.
+            </span>
+          </h2>
+          <p className="text-xl text-white/70 max-w-2xl mt-6 text-center">
+            Le médecin clôture, l&apos;assistant encaisse — chacun voit ce qu&apos;il doit voir. Espèces, carte, chèque, virement.
+          </p>
+          <Parallax className="w-full flex flex-col items-center">
+            <div className="mt-16 max-w-[900px] w-full bg-gradient-to-b from-[#1a1a1a] to-[#0d0d0d] border border-white/10 rounded-2xl p-2 shadow-2xl">
         <div className="flex gap-1.5 px-3.5 py-2.5">
           <div className="w-3 h-3 rounded-full bg-white/10" />
           <div className="w-3 h-3 rounded-full bg-white/10" />
@@ -72,8 +76,11 @@ export function PricingSection() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+            </div>
+          </div>
+          </Parallax>
+        </>
+      )}
     </SectionFrame>
   );
 }

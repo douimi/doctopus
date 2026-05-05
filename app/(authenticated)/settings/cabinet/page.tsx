@@ -17,7 +17,7 @@ export default async function CabinetSettingsPage() {
         title="Cabinet"
         description="Identifiants professionnels, en-tête d'ordonnance et signature."
       />
-      <div className="px-6 py-6 max-w-2xl space-y-4">
+      <div className="px-6 py-6 space-y-4">
         <Card>
           <CardHeader>
             <CardTitle>Paramètres du cabinet</CardTitle>

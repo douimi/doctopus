@@ -57,7 +57,7 @@ export default async function AuditPage() {
         title="Journal d'audit"
         description="Trace de toutes les actions effectuées sur votre cabinet."
       />
-      <div className="px-6 py-6 max-w-6xl space-y-4">
+      <div className="px-6 py-6 space-y-4">
         <Card>
           <CardHeader>
             <CardTitle>Événements récents</CardTitle>
