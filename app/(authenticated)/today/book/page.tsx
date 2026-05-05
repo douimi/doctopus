@@ -38,7 +38,7 @@ export default async function BookPage({ searchParams }: Props) {
       />
 
       <div className="px-6 py-6">
-        <div className="max-w-2xl space-y-4">
+        <div className="max-w-2xl mx-auto space-y-4">
           <Card>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-end gap-2">

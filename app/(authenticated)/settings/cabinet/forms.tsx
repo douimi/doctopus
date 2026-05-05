@@ -101,13 +101,13 @@ export function CabinetForms({
       <div className="space-y-2">
         <div className="font-medium">Assistant IA</div>
         {initial.chatbotEnabled ? (
-          <p className="text-sm">Crédits IA : ~{initial.chatbotCreditsBalance} consultations restantes.</p>
+          <p className="text-body">Crédits IA : ~{initial.chatbotCreditsBalance} consultations restantes.</p>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Non activé. Contactez l&apos;administrateur de la plateforme pour activer l&apos;assistant.
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           Doctopus utilise des fournisseurs d&apos;IA (Anthropic, OpenAI, Mistral) comme sous-traitants pour
           l&apos;assistant. Le contexte clinique du patient (sans nom, CIN, téléphone ni adresse) leur est
           transmis. Aucune donnée n&apos;est utilisée pour entraîner leurs modèles.
@@ -129,7 +129,7 @@ export function CabinetForms({
               unoptimized
             />
           ) : (
-            <p className="text-sm text-muted-foreground">Aucune signature.</p>
+            <p className="text-body text-muted-foreground">Aucune signature.</p>
           )}
           <form action={sigAction} className="space-y-2">
             <Input type="file" name="file" accept="image/png,image/jpeg" required />
@@ -151,7 +151,7 @@ export function CabinetForms({
               unoptimized
             />
           ) : (
-            <p className="text-sm text-muted-foreground">Aucun cachet.</p>
+            <p className="text-body text-muted-foreground">Aucun cachet.</p>
           )}
           <form action={stampAction} className="space-y-2">
             <Input type="file" name="file" accept="image/png,image/jpeg" required />
@@ -166,7 +166,7 @@ export function CabinetForms({
           {initial.logoUrl ? (
             <Image src={initial.logoUrl} alt="logo" width={120} height={80} className="border border-border rounded" unoptimized />
           ) : (
-            <p className="text-sm text-muted-foreground">Aucun logo.</p>
+            <p className="text-body text-muted-foreground">Aucun logo.</p>
           )}
           <form action={logoAction} className="space-y-2">
             <Input type="file" name="file" accept="image/png,image/jpeg" required />

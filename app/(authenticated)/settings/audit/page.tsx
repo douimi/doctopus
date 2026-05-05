@@ -57,7 +57,7 @@ export default async function AuditPage() {
         title="Journal d'audit"
         description="Trace de toutes les actions effectuées sur votre cabinet."
       />
-      <div className="px-6 py-6 max-w-4xl space-y-4">
+      <div className="px-6 py-6 max-w-6xl space-y-4">
         <Card>
           <CardHeader>
             <CardTitle>Événements récents</CardTitle>
@@ -93,12 +93,12 @@ export default async function AuditPage() {
                       <TableCell className="text-small text-muted-foreground tabular-nums">
                         {r.entityType ?? '—'}{' '}
                         {r.entityId ? (
-                          <code className="text-xs">#{r.entityId.slice(0, 8)}</code>
+                          <code className="text-small">#{r.entityId.slice(0, 8)}</code>
                         ) : null}
                       </TableCell>
                       <TableCell className="text-small text-muted-foreground tabular-nums">
                         {r.actorUserId ? (
-                          <code className="text-xs">#{r.actorUserId.slice(0, 8)}</code>
+                          <code className="text-small">#{r.actorUserId.slice(0, 8)}</code>
                         ) : (
                           '—'
                         )}
@@ -109,7 +109,7 @@ export default async function AuditPage() {
               </TableBody>
             </Table>
             {page.hasMore ? (
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-small text-muted-foreground mt-2">
                 Plus de 100 entrées. La pagination complète sera ajoutée dans une version ultérieure.
               </p>
             ) : null}

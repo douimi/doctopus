@@ -166,7 +166,7 @@ export default function NewPatientPage() {
         description="Créez le dossier d'un nouveau patient pour votre cabinet."
       />
       <div className="px-6 py-6">
-        <Card className="max-w-2xl">
+        <Card className="max-w-2xl mx-auto">
           <CardContent className="space-y-4">
             <Suspense fallback={null}>
               <NewPatientForm />

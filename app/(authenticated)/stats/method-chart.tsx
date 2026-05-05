@@ -1,20 +1,37 @@
 'use client';
 
+import { Wallet } from 'lucide-react';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import type { RevenueByMethod } from '@/lib/stats/queries';
 import { PAYMENT_METHOD_LABELS } from '@/lib/payments/schemas';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useChartTokens, type ChartTokens } from '@/lib/charts/tokens';
 
-const METHOD_COLOR: Record<string, string> = {
-  especes: '#0ea5e9',
-  carte: '#ea580c',
-  cheque: '#f59e0b',
-  virement: '#16a34a',
-  autre: '#94a3b8',
-};
+function methodColor(method: string, t: ChartTokens): string {
+  switch (method) {
+    case 'especes':
+      return t['--primary'];
+    case 'carte':
+      return t['--admin'];
+    case 'cheque':
+      return t['--warning'];
+    case 'virement':
+      return t['--success'];
+    default:
+      return t['--muted-foreground'];
+  }
+}
 
 export function MethodChart({ byMethod }: { byMethod: RevenueByMethod }) {
+  const tokens = useChartTokens();
   if (byMethod.length === 0) {
-    return <p className="text-small text-muted-foreground p-4">Aucune recette sur la période.</p>;
+    return (
+      <EmptyState
+        icon={Wallet}
+        title="Aucun encaissement"
+        description="Aucun paiement encaissé sur la période sélectionnée."
+      />
+    );
   }
   const data = byMethod.map((m) => ({
     name: PAYMENT_METHOD_LABELS[m.method as keyof typeof PAYMENT_METHOD_LABELS] ?? m.method,
@@ -22,7 +39,7 @@ export function MethodChart({ byMethod }: { byMethod: RevenueByMethod }) {
     revenue: Number(m.revenue),
   }));
   return (
-    <div className="border rounded-md p-3">
+    <div className="rounded-xl border border-border bg-card shadow-card p-3">
       <ResponsiveContainer width="100%" height={240}>
         <PieChart>
           <Pie
@@ -34,7 +51,7 @@ export function MethodChart({ byMethod }: { byMethod: RevenueByMethod }) {
             paddingAngle={2}
           >
             {data.map((d) => (
-              <Cell key={d.method} fill={METHOD_COLOR[d.method] ?? '#94a3b8'} />
+              <Cell key={d.method} fill={methodColor(d.method, tokens)} />
             ))}
           </Pie>
           <Tooltip

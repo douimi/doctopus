@@ -1,5 +1,6 @@
 'use client';
 
+import { Activity } from 'lucide-react';
 import {
   Area,
   AreaChart,
@@ -10,10 +11,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useChartTokens } from '@/lib/charts/tokens';
 
 type DailyPoint = { date: string; consumed: number; costMicrousd: number };
 
 export function UsageChart({ daily }: { daily: DailyPoint[] }) {
+  const tokens = useChartTokens();
   const data = daily.map((d) => ({
     date: d.date,
     consumed: d.consumed,
@@ -21,27 +25,34 @@ export function UsageChart({ daily }: { daily: DailyPoint[] }) {
   }));
   if (data.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground p-4">
-        Pas encore d&apos;utilisation IA ce mois-ci.
-      </p>
+      <EmptyState
+        icon={Activity}
+        title="Pas encore d'utilisation IA"
+        description="Aucun appel enregistré ce mois-ci."
+      />
     );
   }
   return (
-    <div className="border rounded-md p-3">
+    <div className="rounded-xl border border-border bg-card shadow-card p-3">
       <ResponsiveContainer width="100%" height={240}>
         <AreaChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-          <YAxis yAxisId="l" tick={{ fontSize: 11 }} />
-          <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke={tokens['--border']} />
+          <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke={tokens['--muted-foreground']} />
+          <YAxis yAxisId="l" tick={{ fontSize: 11 }} stroke={tokens['--muted-foreground']} />
+          <YAxis
+            yAxisId="r"
+            orientation="right"
+            tick={{ fontSize: 11 }}
+            stroke={tokens['--muted-foreground']}
+          />
           <Tooltip />
           <Area
             yAxisId="l"
             type="monotone"
             dataKey="consumed"
             name="Consultations IA"
-            stroke="#2563eb"
-            fill="#dbeafe"
+            stroke={tokens['--primary']}
+            fill={tokens['--primary-tint']}
             strokeWidth={2}
           />
           <Line
@@ -49,7 +60,7 @@ export function UsageChart({ daily }: { daily: DailyPoint[] }) {
             type="monotone"
             dataKey="costMad"
             name="Coût (MAD)"
-            stroke="#ea580c"
+            stroke={tokens['--admin']}
             strokeWidth={2}
             dot={false}
           />

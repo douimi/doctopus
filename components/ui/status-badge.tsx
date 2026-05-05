@@ -8,7 +8,7 @@ const statusBadgeVariants = cva(
     variants: {
       variant: {
         success: 'bg-success-tint text-success border-success/20',
-        warning: 'bg-warning-tint text-warning-foreground border-warning/30',
+        warning: 'bg-warning-tint text-warning border-warning/30',
         danger: 'bg-danger-tint text-danger border-danger/20',
         info: 'bg-info-tint text-info border-info/20',
         neutral: 'bg-muted text-muted-foreground border-border',

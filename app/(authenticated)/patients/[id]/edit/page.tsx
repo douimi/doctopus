@@ -35,7 +35,7 @@ export default async function EditPatientPage({
       />
 
       <div className="px-6 py-6">
-        <Card className="max-w-2xl">
+        <Card className="max-w-2xl mx-auto">
           <CardContent className="space-y-4">
             <EditPatientForm
               patient={{

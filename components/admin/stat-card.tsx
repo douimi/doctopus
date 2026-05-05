@@ -20,7 +20,7 @@ export function StatCard({
     admin: 'bg-admin-tint text-admin',
     primary: 'bg-primary-tint text-primary',
     success: 'bg-success-tint text-success',
-    warning: 'bg-warning-tint text-warning-foreground',
+    warning: 'bg-warning-tint text-warning',
     danger: 'bg-danger-tint text-danger',
   };
   return (

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Hourglass } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { StatusBadge } from '@/components/ui/status-badge';
 
 function formatMinutes(min: number): string {
   if (min < 1) return "à l'instant";
@@ -29,23 +29,17 @@ export function WaitTime({ since }: { since: Date }) {
   }, []);
 
   const minutes = Math.max(0, Math.floor((now - sinceMs) / 60_000));
-  const tone =
-    minutes > 20
-      ? 'bg-danger-tint text-danger border-danger/20'
-      : minutes > 10
-        ? 'bg-warning-tint text-warning-foreground border-warning/30'
-        : 'bg-muted text-muted-foreground border-border';
+  const variant: 'neutral' | 'warning' | 'danger' =
+    minutes > 20 ? 'danger' : minutes > 10 ? 'warning' : 'neutral';
 
   return (
-    <span
+    <StatusBadge
+      variant={variant}
+      icon={Hourglass}
       aria-label={`En attente depuis ${formatMinutes(minutes)}`}
-      className={cn(
-        'inline-flex items-center gap-1 text-small font-medium px-2 py-0.5 rounded-pill border tabular-nums',
-        tone,
-      )}
+      className="tabular-nums"
     >
-      <Hourglass className="size-3" aria-hidden />
       {formatMinutes(minutes)}
-    </span>
+    </StatusBadge>
   );
 }

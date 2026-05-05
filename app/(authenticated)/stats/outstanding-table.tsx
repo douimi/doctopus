@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import {
   Table,
   TableHeader,
@@ -32,7 +32,11 @@ export function OutstandingTable({ rows }: { rows: OutstandingRow[] }) {
         <TableBody>
           {rows.length === 0 ? (
             <TableEmpty colSpan={4}>
-              <EmptyState title="Aucun paiement en attente" />
+              <EmptyState
+                icon={CheckCircle2}
+                title="Aucun paiement en attente"
+                description="Toutes les consultations finalisées ont été encaissées."
+              />
             </TableEmpty>
           ) : (
             rows.map((r) => (

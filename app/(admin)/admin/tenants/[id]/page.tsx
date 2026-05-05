@@ -150,7 +150,11 @@ export default async function AdminTenantDetailPage({
                   <TableBody>
                     {ledger.length === 0 ? (
                       <TableEmpty colSpan={5}>
-                        <EmptyState icon={History} title="Aucun crédit" />
+                        <EmptyState
+                          icon={History}
+                          title="Aucun crédit"
+                          description="Aucun crédit IA n'a encore été accordé à ce cabinet."
+                        />
                       </TableEmpty>
                     ) : (
                       ledger.map((l) => (
@@ -197,7 +201,11 @@ export default async function AdminTenantDetailPage({
                   <TableBody>
                     {recentUsage.length === 0 ? (
                       <TableEmpty colSpan={5}>
-                        <EmptyState icon={BarChart3} title="Aucun usage" />
+                        <EmptyState
+                          icon={BarChart3}
+                          title="Aucun usage"
+                          description="Ce cabinet n'a appelé l'assistant IA pour aucune consultation."
+                        />
                       </TableEmpty>
                     ) : (
                       recentUsage.map((u) => (
@@ -238,7 +246,11 @@ export default async function AdminTenantDetailPage({
                   <TableBody>
                     {adminAudit.length === 0 ? (
                       <TableEmpty colSpan={3}>
-                        <EmptyState icon={History} title="Aucune action admin" />
+                        <EmptyState
+                          icon={History}
+                          title="Aucune action admin"
+                          description="Aucune action super-admin enregistrée pour ce cabinet."
+                        />
                       </TableEmpty>
                     ) : (
                       adminAudit.map((a) => (

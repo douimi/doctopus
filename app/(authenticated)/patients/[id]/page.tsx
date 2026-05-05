@@ -70,7 +70,7 @@ export default async function PatientDetailPage({
         }
       />
 
-      <div className="px-6 py-6 space-y-4 max-w-3xl">
+      <div className="px-6 py-6 space-y-4 max-w-6xl">
         <PatientCard
           patient={data.patient}
           allergies={data.allergies}
@@ -141,7 +141,7 @@ export default async function PatientDetailPage({
           <Card size="sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <HeartPulse className="size-4 text-warning-foreground" aria-hidden />
+                <HeartPulse className="size-4 text-warning" aria-hidden />
                 Antécédents / chroniques
               </CardTitle>
             </CardHeader>

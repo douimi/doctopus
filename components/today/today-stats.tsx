@@ -7,10 +7,7 @@ type Tone = 'primary' | 'warning' | 'success' | 'admin';
 
 const TONE: Record<Tone, { wrap: string; icon: string }> = {
   primary: { wrap: 'bg-primary-tint text-primary', icon: 'text-primary' },
-  warning: {
-    wrap: 'bg-warning-tint text-warning-foreground',
-    icon: 'text-warning-foreground',
-  },
+  warning: { wrap: 'bg-warning-tint text-warning', icon: 'text-warning' },
   success: { wrap: 'bg-success-tint text-success', icon: 'text-success' },
   admin: { wrap: 'bg-admin-tint text-admin', icon: 'text-admin' },
 };
