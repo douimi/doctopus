@@ -55,12 +55,17 @@ export async function finalizeConsultationAction(formData: FormData): Promise<Fi
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Données invalides.' };
   }
 
-  const ok = await finalizeConsultation(session.tenantId, parsed.data.consultationId, {
+  const outcome = await finalizeConsultation(session.tenantId, parsed.data.consultationId, {
     isFree: parsed.data.isFree,
     priceMad: parsed.data.isFree ? undefined : parsed.data.priceMad,
     doctorId: session.userId,
   });
-  if (!ok) return { ok: false, error: 'Consultation déjà finalisée ou introuvable.' };
+  if (outcome === 'not_found') {
+    return { ok: false, error: 'Consultation introuvable.' };
+  }
+  if (outcome === 'already_finalized') {
+    return { ok: false, error: 'Consultation déjà finalisée.' };
+  }
 
   await recordAudit({
     tenantId: session.tenantId,

@@ -54,12 +54,12 @@ describe('finalizeConsultation (extended)', () => {
   });
 
   it('finalize with price sets payment_status=awaiting and stores price', async () => {
-    const ok = await finalizeConsultation(tenantId, consultationId, {
+    const outcome = await finalizeConsultation(tenantId, consultationId, {
       isFree: false,
       priceMad: '250.00',
       doctorId,
     });
-    expect(ok).toBe(true);
+    expect(outcome).toBe('ok');
 
     const [row] = await dbAdmin().select().from(consultations).where(eq(consultations.id, consultationId));
     expect(row.isFinalized).toBe(true);
@@ -68,14 +68,18 @@ describe('finalizeConsultation (extended)', () => {
     expect(row.paymentStatus).toBe('awaiting');
     expect(row.paidAt).toBeNull();
     expect(row.paidBy).toBeNull();
+
+    const [appt] = await dbAdmin().select().from(appointments).where(eq(appointments.id, appointmentId));
+    expect(appt.status).toBe('done');
+    expect(appt.endedAt).not.toBeNull();
   });
 
   it('finalize with isFree=true sets payment_status=free and paid_at + paid_by', async () => {
-    const ok = await finalizeConsultation(tenantId, consultationId, {
+    const outcome = await finalizeConsultation(tenantId, consultationId, {
       isFree: true,
       doctorId,
     });
-    expect(ok).toBe(true);
+    expect(outcome).toBe('ok');
 
     const [row] = await dbAdmin().select().from(consultations).where(eq(consultations.id, consultationId));
     expect(row.priceMad).toBeNull();
@@ -83,6 +87,10 @@ describe('finalizeConsultation (extended)', () => {
     expect(row.paymentStatus).toBe('free');
     expect(row.paidAt).not.toBeNull();
     expect(row.paidBy).toBe(doctorId);
+
+    const [appt] = await dbAdmin().select().from(appointments).where(eq(appointments.id, appointmentId));
+    expect(appt.status).toBe('done');
+    expect(appt.endedAt).not.toBeNull();
   });
 
   it('returns false when already finalized (idempotent no-op)', async () => {
@@ -91,10 +99,10 @@ describe('finalizeConsultation (extended)', () => {
       priceMad: '250.00',
       doctorId,
     });
-    const ok = await finalizeConsultation(tenantId, consultationId, {
+    const outcome = await finalizeConsultation(tenantId, consultationId, {
       isFree: true,
       doctorId,
     });
-    expect(ok).toBe(false);
+    expect(outcome).toBe('already_finalized');
   });
 });

@@ -1,5 +1,5 @@
 import 'server-only';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
 import {
   appointments,
@@ -131,6 +131,8 @@ export async function updateConsultationVitals(
   });
 }
 
+export type FinalizeConsultationOutcome = 'ok' | 'not_found' | 'already_finalized';
+
 export type FinalizeConsultationOptions = {
   isFree: boolean;
   priceMad?: string;
@@ -141,10 +143,11 @@ export async function finalizeConsultation(
   tenantId: string,
   id: string,
   opts: FinalizeConsultationOptions,
-): Promise<boolean> {
+): Promise<FinalizeConsultationOutcome> {
   return withTenantTx(tenantId, async (tx) => {
     const [c] = await tx.select().from(consultations).where(eq(consultations.id, id));
-    if (!c || c.isFinalized) return false;
+    if (!c) return 'not_found';
+    if (c.isFinalized) return 'already_finalized';
 
     const [appt] = await tx.select().from(appointments).where(eq(appointments.id, c.appointmentId));
     if (!appt) throw new Error('Appointment missing');
@@ -170,7 +173,9 @@ export async function finalizeConsultation(
           paidBy: null,
         };
 
-    await tx
+    // Guarded UPDATE: only succeeds if isFinalized is still false. Returning
+    // an empty array means a concurrent finalize raced ahead of us.
+    const updated = await tx
       .update(consultations)
       .set({
         isFinalized: true,
@@ -178,7 +183,10 @@ export async function finalizeConsultation(
         updatedAt: now,
         ...pricingPatch,
       })
-      .where(eq(consultations.id, id));
+      .where(and(eq(consultations.id, id), eq(consultations.isFinalized, false)))
+      .returning({ id: consultations.id });
+
+    if (updated.length === 0) return 'already_finalized';
 
     await tx
       .update(appointments)
@@ -189,6 +197,6 @@ export async function finalizeConsultation(
       })
       .where(eq(appointments.id, c.appointmentId));
 
-    return true;
+    return 'ok';
   });
 }
