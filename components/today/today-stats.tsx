@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
-import { CalendarDays, CheckCircle2, Clock, Stethoscope } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, Stethoscope, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatMad } from '@/lib/medications/format';
 
 type Tone = 'primary' | 'warning' | 'success' | 'admin';
 
@@ -58,14 +59,20 @@ export function TodayStats({
   waiting,
   inConsultation,
   done,
+  todayRevenueMad,
+  paidCount,
+  awaitingCount,
 }: {
   scheduled: number;
   waiting: number;
   inConsultation: number;
   done: number;
+  todayRevenueMad: string;
+  paidCount: number;
+  awaitingCount: number;
 }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
       <StatTile
         icon={CalendarDays}
         tone="primary"
@@ -94,6 +101,25 @@ export function TodayStats({
         value={done}
         hint="aujourd'hui"
       />
+      <div className="rounded-xl border border-border bg-card shadow-card p-4 flex items-start gap-3 card-hover-lift">
+        <div
+          aria-hidden
+          className="flex items-center justify-center size-10 rounded-lg shrink-0 bg-success-tint text-success"
+        >
+          <Wallet className="size-5" aria-hidden />
+        </div>
+        <div className="space-y-0.5 min-w-0">
+          <div className="text-small text-muted-foreground uppercase tracking-wide font-medium">
+            Recettes du jour
+          </div>
+          <div className="text-display font-semibold leading-none tabular-nums">
+            {formatMad(todayRevenueMad)}
+          </div>
+          <div className="text-small text-muted-foreground">
+            {paidCount} encaissés · {awaitingCount} en attente
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
