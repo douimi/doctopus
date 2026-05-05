@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
 import { searchMedicationsAction } from './actions';
 import { formatMad } from '@/lib/medications/format';
-import type { MedicationSearchHit } from '@/lib/medications/queries';
+import type { MedicationSearchHit } from '@/lib/medications/types';
 
 export function MedicationSearchInput({
   onPick,

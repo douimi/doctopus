@@ -13,8 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { PrescriptionItem } from '@/db/schema';
-import type { MedicationSearchHit } from '@/lib/medications/queries';
-import { formatMedicationLabel } from '@/lib/medications/queries';
+import { formatMedicationLabel, type MedicationSearchHit } from '@/lib/medications/types';
 import type { AutocompleteSuggestions } from '@/lib/prescriptions/autocomplete';
 import {
   addItemActionFromForm,
