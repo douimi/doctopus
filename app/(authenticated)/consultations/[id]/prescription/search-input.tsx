@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { searchMedicationsAction } from './actions';
 import { formatMad } from '@/lib/medications/format';
-import type { MedicationSearchHit } from '@/lib/medications/types';
+import type { MedicationSearchHit, SearchMedicationsResult } from '@/lib/medications/types';
 
 export function MedicationSearchInput({
   onPick,
@@ -16,29 +15,40 @@ export function MedicationSearchInput({
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<MedicationSearchHit[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [, start] = useTransition();
 
   useEffect(() => {
-    if (query.trim().length < 2) {
-      const id = setTimeout(() => {
-        setHits([]);
-        setError(null);
-      }, 0);
-      return () => clearTimeout(id);
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setHits([]);
+      setError(null);
+      return;
     }
-    const id = setTimeout(() => {
-      start(async () => {
-        const result = await searchMedicationsAction(query);
-        if (result.ok) {
-          setHits(result.hits);
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/medications/search?q=${encodeURIComponent(trimmed)}`,
+          { signal: ctrl.signal },
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as SearchMedicationsResult;
+        if (data.ok) {
+          setHits(data.hits);
           setError(null);
         } else {
           setHits([]);
-          setError(result.error);
+          setError(data.error);
         }
-      });
+      } catch (e) {
+        if ((e as { name?: string }).name === 'AbortError') return;
+        setHits([]);
+        setError('Service de recherche temporairement indisponible.');
+      }
     }, 250);
-    return () => clearTimeout(id);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
   }, [query]);
 
   return (

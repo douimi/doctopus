@@ -14,8 +14,6 @@ import {
   reorderPrescriptionItem,
   updatePrescriptionItem,
 } from '@/lib/prescriptions/mutations';
-import { searchMedications } from '@/lib/medications/queries';
-import type { SearchMedicationsResult } from '@/lib/medications/types';
 import { recordAudit } from '@/lib/audit/record';
 
 export async function addItemActionFromForm(formData: FormData): Promise<void> {
@@ -77,14 +75,4 @@ export async function reorderItemAction(formData: FormData): Promise<void> {
   if (!parsed.success || typeof consultationId !== 'string') return;
   await reorderPrescriptionItem(session.tenantId, parsed.data.itemId, parsed.data.direction);
   revalidatePath(`/consultations/${consultationId}`);
-}
-
-export async function searchMedicationsAction(query: string): Promise<SearchMedicationsResult> {
-  await requireDoctor();
-  try {
-    const hits = await searchMedications(query);
-    return { ok: true, hits };
-  } catch {
-    return { ok: false, error: 'Service de recherche temporairement indisponible.' };
-  }
 }
