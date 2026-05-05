@@ -3,6 +3,7 @@ import {
   CalendarDays,
   History,
   Settings,
+  Stethoscope,
   Users,
   Users2,
 } from 'lucide-react';
@@ -43,6 +44,9 @@ export function DoctorShell({
         <SidebarNavGroup label="Cabinet">
           <SidebarNavItem href="/today" icon={<CalendarDays className="size-4" aria-hidden />}>
             Aujourd&apos;hui
+          </SidebarNavItem>
+          <SidebarNavItem href="/consultations" icon={<Stethoscope className="size-4" aria-hidden />}>
+            Consultations
           </SidebarNavItem>
           <SidebarNavItem href="/patients" icon={<Users className="size-4" aria-hidden />}>
             Patients
