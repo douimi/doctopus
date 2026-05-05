@@ -15,6 +15,7 @@ import { Section } from '@/components/ui/section';
 import { Avatar } from '@/components/ui/avatar';
 import { PaymentsPanel } from '@/components/payments/payments-panel';
 import { getPaymentsForToday } from '@/lib/payments/queries';
+import { TodayLiveRefresh } from '@/components/today/live-refresh';
 
 export default async function TodayPage() {
   const session = await requireSession();
@@ -36,6 +37,7 @@ export default async function TodayPage() {
 
   return (
     <>
+      <TodayLiveRefresh tenantId={session.tenantId} />
       <PageHeader
         eyebrow={new Date().toLocaleDateString('fr-FR', {
           weekday: 'long',
