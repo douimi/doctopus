@@ -46,28 +46,16 @@ APP_URL=https://<your-project>.vercel.app pnpm invite:doctor --email you@example
 
 Open the printed URL → complete onboarding → confirm `/today` loads.
 
-## 6. Medication registry seed (one-time, post-deploy)
+## 6. Medication search (no seed required)
 
-The `medications` table ships empty. Run the AMMPS sync against the production DB once after the first deploy:
+Medication search is now backed by the ANAM e-services live API
+(`e-services.anam.ma`). The `medications` table is no longer populated by a
+sync script — searches hit ANAM directly and prescription items snapshot the
+EAN-13 + full medication row at prescribe time.
 
-```bash
-# Ensure DATABASE_URL and DATABASE_URL_DIRECT in .env.local point at
-# the production database, then:
-pnpm sync:ammps
-```
-
-The script scrapes `https://ammps.sante.gov.ma/basesdedonnes/listes-medicaments` (~197 pages, ≈5 minutes total at the 100 ms throttle) and upserts ~7 000 medications. Idempotent — safe to re-run.
-
-Re-run roughly monthly to pick up new registrations / withdrawals. Until cron-automation lands, this is manual.
-
-**Fallback** if AMMPS is unreachable: `pnpm import:medications <path-to-xlsx>` against an offline registry export.
-
-Verify after running:
-
-```sql
-SELECT COUNT(*) FROM medications;             -- expected: ~7 000+ (registry size as of 2026)
-SELECT * FROM medication_imports ORDER BY imported_at DESC LIMIT 1;
-```
+No post-deploy step is required for medication search. Smoke-test it from the
+prescription editor (`/consultations/<id>` → Traitement → search "doli") to
+confirm outbound HTTPS to `e-services.anam.ma` is reachable from production.
 
 ## Restore from backup (Supabase free tier)
 

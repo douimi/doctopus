@@ -6,10 +6,9 @@ const MAILTO = 'mailto:douimiotmane@gmail.com?subject=Doctopus%20%E2%80%94%20dem
 export function Topbar() {
   return (
     <div className="sticky top-0 z-50 bg-black/85 backdrop-blur-md border-b border-white/5">
-      <div className="max-w-[1200px] mx-auto px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 font-semibold text-white">
-          <BrandLockup size={28} />
-          <span>Doctopus</span>
+      <div className="max-w-[1200px] mx-auto px-8 py-3 flex items-center justify-between">
+        <Link href="/" aria-label="Accueil" className="flex items-center">
+          <BrandLockup size={48} />
         </Link>
         <div className="flex items-center gap-2">
           <a

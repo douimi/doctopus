@@ -20,8 +20,6 @@
     "db:migrate": "drizzle-kit migrate --config db/drizzle.config.ts",
     "db:studio": "drizzle-kit studio --config db/drizzle.config.ts",
     "invite:doctor": "tsx scripts/invite-doctor.ts",
-    "import:medications": "tsx scripts/import-medications.ts",
-    "sync:ammps": "tsx scripts/sync-ammps.ts",
     "admin:list-tenants": "tsx scripts/admin-list-tenants.ts",
     "admin:set-model": "tsx scripts/admin-set-model.ts",
     "admin:grant-credits": "tsx scripts/admin-grant-credits.ts",

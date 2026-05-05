@@ -1,50 +1,48 @@
 import 'server-only';
-import { sql } from 'drizzle-orm';
-import { dbAdmin } from '@/db/client';
+import { searchAnamMedications, type AnamRow } from './anam';
 
 export type MedicationSearchHit = {
-  id: string;
+  codeEan13: string;
   nomCommercial: string;
   dci: string;
-  dosage: string | null;
-  forme: string | null;
-  laboratoire: string | null;
-  ppv: string | null;
+  formeDosage: string | null;
+  presentation: string | null;
+  classeTherapeutique: string | null;
+  ppm: string | null;
+  pbrPpm: string | null;
+  isReimbursable: boolean;
+  typeMed: string | null;
 };
+
+function fmt(n: number | null | undefined): string | null {
+  if (n == null || !Number.isFinite(n)) return null;
+  return Number(n).toFixed(2);
+}
+
+function rowToHit(r: AnamRow): MedicationSearchHit {
+  return {
+    codeEan13: r.codeEan13,
+    nomCommercial: r.nomCommercial,
+    dci: r.dci,
+    formeDosage: r.formeDosage || null,
+    presentation: r.presentation || null,
+    classeTherapeutique: r.classeTherapeutique || null,
+    ppm: fmt(r.ppm),
+    pbrPpm: fmt(r.pbrPpm),
+    isReimbursable: typeof r.pbrPpm === 'number' && r.pbrPpm > 0,
+    typeMed: r.typeMed || null,
+  };
+}
 
 export async function searchMedications(query: string): Promise<MedicationSearchHit[]> {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
-  const db = dbAdmin();
-  const pattern = `%${trimmed.replace(/[\\%_]/g, (m) => '\\' + m)}%`;
-  const rows = await db.execute<{
-    id: string;
-    nom_commercial: string;
-    dci: string;
-    dosage: string | null;
-    forme: string | null;
-    laboratoire: string | null;
-    ppv: string | null;
-  }>(sql`
-    SELECT id, nom_commercial, dci, dosage, forme, laboratoire, ppv
-    FROM medications
-    WHERE is_active = true
-      AND (nom_commercial ILIKE ${pattern} OR dci ILIKE ${pattern})
-    ORDER BY similarity(nom_commercial, ${trimmed}) DESC, nom_commercial ASC
-    LIMIT 20
-  `);
-  return rows.map((r) => ({
-    id: r.id,
-    nomCommercial: r.nom_commercial,
-    dci: r.dci,
-    dosage: r.dosage,
-    forme: r.forme,
-    laboratoire: r.laboratoire,
-    ppv: r.ppv,
-  }));
+  const rows = await searchAnamMedications(trimmed);
+  return rows.map(rowToHit);
 }
 
 export function formatMedicationLabel(hit: MedicationSearchHit): string {
-  const parts = [hit.nomCommercial, hit.dosage, hit.forme].filter(Boolean) as string[];
-  return parts.join(' ');
+  return [hit.nomCommercial, hit.formeDosage, hit.presentation]
+    .filter((s): s is string => Boolean(s))
+    .join(' · ');
 }

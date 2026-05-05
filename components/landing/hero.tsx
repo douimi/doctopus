@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandLockup } from '@/components/ui/brand';
 
 const MAILTO = 'mailto:douimiotmane@gmail.com?subject=Doctopus%20%E2%80%94%20demande%20d%27acc%C3%A8s';
 
@@ -13,19 +14,22 @@ export function Hero() {
           'radial-gradient(ellipse at 30% 20%, rgba(56,189,248,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(129,140,248,0.10) 0%, transparent 50%)',
       }}
     >
-      <div className="text-sky-400 text-[13px] uppercase tracking-[0.1em] font-semibold mb-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
+      <div className="mb-8 animate-in fade-in-0 zoom-in-95 duration-700 [animation-fill-mode:both]">
+        <BrandLockup size={180} alt="" priority />
+      </div>
+      <div className="text-sky-400 text-[13px] uppercase tracking-[0.1em] font-semibold mb-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:80ms] [animation-fill-mode:both]">
         Logiciel de cabinet médical · Maroc
       </div>
-      <h1 className="text-6xl md:text-8xl font-semibold tracking-tight leading-none max-w-4xl animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:100ms] [animation-fill-mode:both]">
+      <h1 className="text-6xl md:text-8xl font-semibold tracking-tight leading-none max-w-4xl animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:160ms] [animation-fill-mode:both]">
         Le cabinet,{' '}
         <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
           repensé.
         </span>
       </h1>
-      <p className="text-xl text-white/70 max-w-xl mt-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:200ms] [animation-fill-mode:both]">
-        Doctopus rassemble consultations, ordonnances, paiements et statistiques dans une interface conçue pour les médecins du Maroc.
+      <p className="text-xl text-white/70 max-w-xl mt-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:240ms] [animation-fill-mode:both]">
+        Consultations, ordonnances, paiements et statistiques dans une interface conçue pour les médecins du Maroc.
       </p>
-      <div className="flex gap-3 mt-10 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:300ms] [animation-fill-mode:both]">
+      <div className="flex gap-3 mt-10 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:320ms] [animation-fill-mode:both]">
         <Link
           href="/sign-in"
           className="px-7 py-3.5 rounded-lg text-base font-medium bg-white text-black hover:bg-white/90 transition-colors"

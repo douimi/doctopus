@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { PrescriptionItem } from '@/db/schema';
 import type { MedicationSearchHit } from '@/lib/medications/queries';
+import { formatMedicationLabel } from '@/lib/medications/queries';
 import type { AutocompleteSuggestions } from '@/lib/prescriptions/autocomplete';
 import {
   addItemActionFromForm,
@@ -22,10 +23,6 @@ import {
   updateItemAction,
 } from './actions';
 import { MedicationSearchInput } from './search-input';
-
-function formatLabel(hit: MedicationSearchHit): string {
-  return [hit.nomCommercial, hit.dosage, hit.forme].filter(Boolean).join(' ');
-}
 
 export function PrescriptionEditor({
   consultationId,
@@ -269,18 +266,41 @@ export function PrescriptionEditor({
             <form action={addItemActionFromForm} className="space-y-2 border-t border-border pt-3">
               <input type="hidden" name="consultationId" value={consultationId} />
               {!isFree && pickedHit ? (
-                <input type="hidden" name="medicationId" value={pickedHit.id} />
+                <>
+                  <input type="hidden" name="medicationEan13" value={pickedHit.codeEan13} />
+                  <input
+                    type="hidden"
+                    name="medicationMetadata"
+                    value={JSON.stringify({
+                      codeEan13: pickedHit.codeEan13,
+                      nomCommercial: pickedHit.nomCommercial,
+                      dci: pickedHit.dci,
+                      formeDosage: pickedHit.formeDosage,
+                      presentation: pickedHit.presentation,
+                      classeTherapeutique: pickedHit.classeTherapeutique,
+                      ppm: pickedHit.ppm,
+                      pbrPpm: pickedHit.pbrPpm,
+                      isReimbursable: pickedHit.isReimbursable,
+                      typeMed: pickedHit.typeMed,
+                    })}
+                  />
+                </>
               ) : null}
               <input
                 type="hidden"
                 name="label"
-                value={isFree ? freeLabel : pickedHit ? formatLabel(pickedHit) : ''}
+                value={isFree ? freeLabel : pickedHit ? formatMedicationLabel(pickedHit) : ''}
               />
               <div className="text-body">
                 <span className="text-muted-foreground">À ajouter :</span>{' '}
                 <span className="font-medium">
-                  {isFree ? freeLabel : pickedHit ? formatLabel(pickedHit) : ''}
+                  {isFree ? freeLabel : pickedHit ? formatMedicationLabel(pickedHit) : ''}
                 </span>
+                {pickedHit?.isReimbursable ? (
+                  <span className="ml-2 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-success-tint text-success">
+                    Remboursé
+                  </span>
+                ) : null}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">

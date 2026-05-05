@@ -67,8 +67,10 @@ See [`docs/superpowers/specs/2026-04-30-doctopus-mvp-design.md`](docs/superpower
 
 All five sub-plans of Phase 1 are done. The product is launch-ready for the first paying tenant. See [docs/runbooks/deploy-1a.md](docs/runbooks/deploy-1a.md) to deploy.
 
-### Live AMMPS sync
+### Medication search
 
-Doctopus pulls medications from the official Moroccan **AMMPS** database
-(`ammps.sante.gov.ma`). Run `pnpm sync:ammps` to refresh — see
-[docs/research/ammps-integration.md](docs/research/ammps-integration.md).
+Medication search is powered by a live, up-to-date Moroccan medication
+database, queried through the ANAM e-services API. No background sync is
+required — searches and prices reflect the current registry on every
+keystroke. Prescriptions snapshot the medication's EAN-13 + full row at
+prescribe time so prints stay stable later.

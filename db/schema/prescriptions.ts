@@ -1,4 +1,4 @@
-import { integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
 import { patients } from './patients';
 import { userProfiles } from './users';
@@ -28,6 +28,8 @@ export const prescriptionItems = pgTable('prescription_items', {
     .references(() => prescriptions.id, { onDelete: 'cascade' }),
   position: integer('position').notNull(),
   medicationId: uuid('medication_id').references(() => medications.id, { onDelete: 'set null' }),
+  medicationEan13: text('medication_ean13'),
+  medicationMetadata: jsonb('medication_metadata'),
   medicationLabelSnapshot: text('medication_label_snapshot').notNull(),
   posologie: text('posologie'),
   duration: text('duration'),

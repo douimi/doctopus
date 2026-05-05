@@ -17,11 +17,16 @@ import {
 import { searchMedications, type MedicationSearchHit } from '@/lib/medications/queries';
 import { recordAudit } from '@/lib/audit/record';
 
+export type SearchMedicationsResult =
+  | { ok: true; hits: MedicationSearchHit[] }
+  | { ok: false; error: string };
+
 export async function addItemActionFromForm(formData: FormData): Promise<void> {
   const session = await requireDoctor();
   const parsed = addItemSchema.safeParse({
     consultationId: formData.get('consultationId'),
-    medicationId: formData.get('medicationId'),
+    medicationEan13: formData.get('medicationEan13'),
+    medicationMetadata: formData.get('medicationMetadata'),
     label: formData.get('label'),
     posologie: formData.get('posologie'),
     duration: formData.get('duration'),
@@ -36,7 +41,7 @@ export async function addItemActionFromForm(formData: FormData): Promise<void> {
     action: 'prescription.item_added',
     entityType: 'consultation',
     entityId: parsed.data.consultationId,
-    metadata: { medicationId: parsed.data.medicationId || null },
+    metadata: { medicationEan13: parsed.data.medicationEan13 || null },
   });
   revalidatePath(`/consultations/${parsed.data.consultationId}`);
 }
@@ -77,7 +82,12 @@ export async function reorderItemAction(formData: FormData): Promise<void> {
   revalidatePath(`/consultations/${consultationId}`);
 }
 
-export async function searchMedicationsAction(query: string): Promise<MedicationSearchHit[]> {
+export async function searchMedicationsAction(query: string): Promise<SearchMedicationsResult> {
   await requireDoctor();
-  return searchMedications(query);
+  try {
+    const hits = await searchMedications(query);
+    return { ok: true, hits };
+  } catch {
+    return { ok: false, error: 'Service de recherche temporairement indisponible.' };
+  }
 }

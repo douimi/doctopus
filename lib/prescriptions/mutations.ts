@@ -59,14 +59,26 @@ export async function addPrescriptionItem(
       .where(eq(prescriptionItems.prescriptionId, pres.id));
     const nextPos = (posRow?.m ?? -1) + 1;
 
+    let metadata: unknown = null;
+    if (input.medicationMetadata && input.medicationMetadata.length > 0) {
+      try {
+        metadata = JSON.parse(input.medicationMetadata);
+      } catch {
+        metadata = null;
+      }
+    }
+
     const [created] = await tx
       .insert(prescriptionItems)
       .values({
         tenantId,
         prescriptionId: pres.id,
         position: nextPos,
-        medicationId:
-          input.medicationId && input.medicationId.length > 0 ? input.medicationId : null,
+        medicationEan13:
+          input.medicationEan13 && input.medicationEan13.length > 0
+            ? input.medicationEan13
+            : null,
+        medicationMetadata: metadata,
         medicationLabelSnapshot: input.label,
         posologie: input.posologie || null,
         duration: input.duration || null,
