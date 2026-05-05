@@ -31,6 +31,15 @@ export function FinalizePricingDialog({
   const submitDisabled =
     !isFree && (!price || Number.isNaN(Number(price)) || Number(price) <= 0);
 
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) {
+      setIsFree(false);
+      setPrice(defaultPriceMad ?? '');
+      setError(null);
+    }
+  }
+
   function handleSubmit() {
     setError(null);
     start(async () => {
@@ -54,10 +63,16 @@ export function FinalizePricingDialog({
       <Button type="button" onClick={() => setOpen(true)}>
         Terminer la consultation
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogTitle>Tarification et clôture</DialogTitle>
-          <div className="mt-4 space-y-4">
+          <form
+            className="mt-4 space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!submitDisabled && !pending) handleSubmit();
+            }}
+          >
             <div className={cn('space-y-1.5', isFree && 'opacity-50')}>
               <Label htmlFor="price-mad">Prix (MAD)</Label>
               <Input
@@ -85,21 +100,20 @@ export function FinalizePricingDialog({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setOpen(false)}
+                onClick={() => handleOpenChange(false)}
                 disabled={pending}
               >
                 Annuler
               </Button>
               <Button
-                type="button"
-                onClick={handleSubmit}
+                type="submit"
                 disabled={submitDisabled || pending}
                 loading={pending}
               >
                 Terminer la consultation
               </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </>
