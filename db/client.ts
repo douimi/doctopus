@@ -26,11 +26,16 @@ const pools: Pools =
     adminClient: null,
   });
 
+/**
+ * `prepare: false` is required for the Supabase transaction-mode pooler
+ * (PgBouncer rotates server connections per query and can't keep prepared
+ * statements). Both pools target the same DATABASE_URL (transaction mode)
+ * — the session-mode pooler is intentionally avoided at runtime because
+ * its server-side pool_size cap (15 by default on Supabase) is easy to
+ * exhaust under modest concurrency.
+ */
 const POSTGRES_OPTS = {
   prepare: false,
-  // Keep pools small — the local Supabase Postgres caps non-superuser
-  // connections aggressively. App pool + admin pool + Supabase Auth +
-  // Realtime + Storage all share the same limit.
   idle_timeout: 20,
   max_lifetime: 60 * 30,
 } as const;
@@ -41,7 +46,7 @@ const POSTGRES_OPTS = {
  */
 export function dbUser() {
   if (!pools.userClient) {
-    pools.userSql = postgres(env().DATABASE_URL, { ...POSTGRES_OPTS, max: 5 });
+    pools.userSql = postgres(env().DATABASE_URL, { ...POSTGRES_OPTS, max: 8 });
     pools.userClient = drizzle(pools.userSql, { schema });
   }
   return pools.userClient;
@@ -65,10 +70,16 @@ export function dbUser() {
  *
  * Prefer withTenantTx in lib/with-tenant.ts when you don't need raw SQL
  * aggregation — it sets the RLS GUC and gives you defense in depth.
+ *
+ * Uses DATABASE_URL (transaction pooler) — same connection mode as
+ * dbUser. Migrations + admin CLI scripts running off the laptop can keep
+ * using DATABASE_URL_DIRECT, but at runtime we route every Postgres call
+ * through the transaction pooler so we never hit Supabase's session-mode
+ * pool cap.
  */
 export function dbAdmin() {
   if (!pools.adminClient) {
-    pools.adminSql = postgres(env().DATABASE_URL_DIRECT, { ...POSTGRES_OPTS, max: 3 });
+    pools.adminSql = postgres(env().DATABASE_URL, { ...POSTGRES_OPTS, max: 5 });
     pools.adminClient = drizzle(pools.adminSql, { schema });
   }
   return pools.adminClient;
