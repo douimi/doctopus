@@ -1,4 +1,5 @@
-import { convertToModelMessages, streamText, type UIMessage } from 'ai';
+import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from 'ai';
+import { z } from 'zod';
 import { sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { dbAdmin } from '@/db/client';
@@ -18,6 +19,7 @@ import {
 } from '@/lib/chatbot/provider';
 import { getTenantApiKey } from '@/lib/chatbot/byo-key';
 import { computeCostMicrousd } from '@/lib/chatbot/cost';
+import { searchMedications } from '@/lib/medications/queries';
 import {
   MAX_OUTPUT_TOKENS_PER_TURN,
   MAX_TOKENS_PER_CONSULTATION,
@@ -153,6 +155,51 @@ export async function POST(req: Request) {
       ...modelMessages,
     ],
     maxOutputTokens: MAX_OUTPUT_TOKENS_PER_TURN,
+    // Allow up to 4 steps so the model can: call tool → read result → optionally call again → answer.
+    stopWhen: stepCountIs(4),
+    tools: {
+      search_medications: tool({
+        description:
+          "Recherche en temps réel dans la base de médicaments marocaine ANAM. Utilisez-le pour toute question sur les médicaments, les prix (PPM), la base de remboursement, le statut Princeps/Générique, ou la disponibilité au Maroc. Retourne jusqu'à 30 médicaments correspondants avec leur DCI, forme/dosage, présentation, PPM, base de remboursement et statut Princeps/Générique.",
+        inputSchema: z.object({
+          query: z
+            .string()
+            .min(2)
+            .max(80)
+            .describe(
+              "Nom commercial, DCI ou racine (ex. 'doli', 'paracetamol', 'amlodipine'). Au moins 2 caractères.",
+            ),
+        }),
+        execute: async ({ query }) => {
+          try {
+            const hits = await searchMedications(query);
+            return {
+              ok: true,
+              query,
+              count: hits.length,
+              results: hits.slice(0, 20).map((h) => ({
+                nom: h.nomCommercial,
+                dci: h.dci,
+                forme_dosage: h.formeDosage,
+                presentation: h.presentation,
+                ppm_mad: h.ppm,
+                base_remboursement_mad: h.pbrPpm,
+                rembourse: h.isReimbursable,
+                type: h.typeMed,
+              })),
+            };
+          } catch (err) {
+            return {
+              ok: false,
+              query,
+              error:
+                'Service de recherche temporairement indisponible. Suggérer de réessayer ou de chercher dans la fiche papier.',
+              detail: (err as Error).message,
+            };
+          }
+        },
+      }),
+    },
     onFinish: async ({ text, usage }) => {
       try {
         const inputTokens = usage?.inputTokens ?? 0;

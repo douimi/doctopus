@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { Send, Sparkles } from 'lucide-react';
+import { Search, Send, Sparkles } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,19 +89,51 @@ function ChatPanel({
               .filter((p) => p.type === 'text')
               .map((p) => (p as { type: 'text'; text: string }).text)
               .join('');
+            const toolParts = m.parts.filter((p) => p.type.startsWith('tool-')) as Array<{
+              type: string;
+              state?: string;
+              input?: { query?: string };
+              output?: { count?: number };
+            }>;
             const isUser = m.role === 'user';
             return (
               <div key={m.id} className={isUser ? 'flex justify-end' : 'space-y-1'}>
-                <div
-                  className={
-                    isUser
-                      ? 'inline-block max-w-[85%] rounded-lg bg-primary-tint text-foreground px-3 py-2 text-body'
-                      : 'inline-block max-w-[85%] rounded-lg bg-muted text-foreground px-3 py-2 text-body'
-                  }
-                >
-                  <span className="whitespace-pre-wrap">{text}</span>
-                </div>
-                {!isUser ? (
+                {!isUser && toolParts.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 mb-1">
+                    {toolParts.map((tp, i) => {
+                      const isDone = tp.state === 'output-available';
+                      const query = tp.input?.query ?? '';
+                      const count = tp.output?.count;
+                      return (
+                        <span
+                          key={i}
+                          className={
+                            isDone
+                              ? 'inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-pill bg-success-tint text-success border border-success/20'
+                              : 'inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-pill bg-primary-tint text-primary border border-primary/20'
+                          }
+                        >
+                          <Search className="size-3" aria-hidden />
+                          {isDone
+                            ? `${count ?? 0} résultat${(count ?? 0) === 1 ? '' : 's'} pour "${query}"`
+                            : `Recherche "${query}"…`}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : null}
+                {text ? (
+                  <div
+                    className={
+                      isUser
+                        ? 'inline-block max-w-[85%] rounded-lg bg-primary-tint text-foreground px-3 py-2 text-body'
+                        : 'inline-block max-w-[85%] rounded-lg bg-muted text-foreground px-3 py-2 text-body'
+                    }
+                  >
+                    <span className="whitespace-pre-wrap">{text}</span>
+                  </div>
+                ) : null}
+                {!isUser && text ? (
                   <p className="text-small text-muted-foreground italic">
                     Suggestion IA — vérifiez avant toute décision clinique.
                   </p>
