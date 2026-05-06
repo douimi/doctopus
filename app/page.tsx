@@ -7,6 +7,7 @@ import { OrdonnanceSection } from '@/components/landing/ordonnance-section';
 import { PricingSection } from '@/components/landing/pricing-section';
 import { StatsSection } from '@/components/landing/stats-section';
 import { AISection } from '@/components/landing/ai-section';
+import { MigrationSection } from '@/components/landing/migration-section';
 import { CTASection } from '@/components/landing/cta-section';
 import { LandingFooter } from '@/components/landing/landing-footer';
 
@@ -27,6 +28,7 @@ export default function HomePage() {
       <PricingSection />
       <StatsSection />
       <AISection />
+      <MigrationSection />
       <CTASection />
       <LandingFooter />
     </div>

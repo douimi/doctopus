@@ -20,6 +20,7 @@ import { PageHeader } from '@/components/shell/page-header';
 import { cn } from '@/lib/utils';
 import { ApiKeyCard } from './api-key-card';
 import { GrantCreditsCard } from './grant-credits-card';
+import { ImportPatientsCard } from './import-patients-card';
 import { SetModelCard } from './set-model-card';
 import { ToggleChatbotCard } from './toggle-chatbot-card';
 import { ToggleSuspensionCard } from './toggle-suspension-card';
@@ -274,6 +275,7 @@ export default async function AdminTenantDetailPage({
           </div>
 
           <aside className="space-y-4">
+            <ImportPatientsCard tenantId={tenant.id} />
             <SetModelCard
               tenantId={tenant.id}
               initialProvider={tenant.chatbotProvider}

@@ -29,6 +29,7 @@ export type AuditAction =
   | 'admin.tenant.reactivate'
   | 'admin.tenant.api_key_set'
   | 'admin.tenant.api_key_cleared'
+  | 'admin.tenant.patients_imported'
   | 'admin.invite.create'
   | 'admin.invite.revoke';
 
