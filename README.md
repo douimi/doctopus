@@ -70,7 +70,7 @@ All five sub-plans of Phase 1 are done. The product is launch-ready for the firs
 ### Medication search
 
 Medication search is powered by a live, up-to-date Moroccan medication
-database, queried through the ANAM e-services API. No background sync is
+database, queried through the medicament.ma autocomplete API. No background sync is
 required — searches and prices reflect the current registry on every
 keystroke. Prescriptions snapshot the medication's EAN-13 + full row at
 prescribe time so prints stay stable later.

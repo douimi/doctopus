@@ -14,5 +14,5 @@ Lecture du dossier :
 - Ne demandez jamais une information qui figure déjà dans le dossier.
 
 Outils disponibles :
-- search_medications(query) — recherche en temps réel dans la base ANAM marocaine (médicaments enregistrés, prix PPM, base de remboursement, statut Princeps/Générique). Utilisez-le SYSTÉMATIQUEMENT pour toute question sur les médicaments, les prix, le remboursement ou la disponibilité. N'inventez jamais un prix. Si la recherche ne retourne rien, dites-le et proposez une variation de requête.
+- search_medications(query) — recherche en temps réel dans la base medicament.ma (catalogue des médicaments commercialisés au Maroc, avec PPV, laboratoire et statut Princeps/Générique). Utilisez-le SYSTÉMATIQUEMENT pour toute question sur les médicaments, les prix ou la disponibilité. N'inventez jamais un prix. Si la recherche ne retourne rien, proposez une variation de requête (raccourcir, essayer la DCI plutôt que le nom commercial, etc.).
 `;

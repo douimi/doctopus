@@ -159,14 +159,14 @@ export async function POST(req: Request) {
     tools: {
       search_medications: tool({
         description:
-          "Recherche en temps réel dans la base de médicaments marocaine ANAM. Utilisez-le pour toute question sur les médicaments, les prix (PPM), la base de remboursement, le statut Princeps/Générique, ou la disponibilité au Maroc. Retourne jusqu'à 30 médicaments correspondants avec leur DCI, forme/dosage, présentation, PPM, base de remboursement et statut Princeps/Générique.",
+          "Recherche en temps réel dans la base de médicaments marocaine medicament.ma. Utilisez-le pour toute question sur les médicaments, les prix (PPV), le statut Princeps/Générique, le laboratoire, ou la disponibilité au Maroc. Retourne jusqu'à 30 médicaments correspondants avec leur nom, forme/dosage, présentation, PPV (prix public de vente en MAD), laboratoire et statut Princeps/Générique.",
         inputSchema: z.object({
           query: z
             .string()
-            .min(2)
+            .min(3)
             .max(80)
             .describe(
-              "Nom commercial, DCI ou racine (ex. 'doli', 'paracetamol', 'amlodipine'). Au moins 2 caractères.",
+              "Nom commercial, DCI ou racine d'au moins 3 caractères (ex. 'doli', 'paracetamol', 'amlodipine').",
             ),
         }),
         execute: async ({ query }) => {
@@ -178,12 +178,10 @@ export async function POST(req: Request) {
               count: hits.length,
               results: hits.slice(0, 20).map((h) => ({
                 nom: h.nomCommercial,
-                dci: h.dci,
                 forme_dosage: h.formeDosage,
                 presentation: h.presentation,
-                ppm_mad: h.ppm,
-                base_remboursement_mad: h.pbrPpm,
-                rembourse: h.isReimbursable,
+                ppv_mad: h.ppm,
+                laboratoire: h.classeTherapeutique,
                 type: h.typeMed,
               })),
             };

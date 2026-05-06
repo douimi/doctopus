@@ -218,7 +218,7 @@ Run through the golden path on the live domain:
       complete onboarding → land on `/today`.
 - [ ] As a doctor, create a patient → start a walk-in → open the
       consultation → search "doli" in the prescription editor (hits
-      ANAM live).
+      medicament.ma live).
 - [ ] Finalise the consultation with a price → as the assistant
       account, encaisser the payment.
 - [ ] Open `/today` in two tabs → confirm real-time updates flow
@@ -256,10 +256,10 @@ Free tier keeps daily backups for 7 days. Pro keeps 30 days + PITR.
 stale. Trigger a fresh deploy from Vercel (Settings → Deployments →
 Redeploy without cache).
 
-**`UNABLE_TO_VERIFY_LEAF_SIGNATURE` on medication search** → the ANAM
-TLS workaround in `lib/medications/anam.ts` already handles this. If
-you still see it, confirm `undici` is in `dependencies` in
-`package.json` (it is — we ship it).
+**Medication search returns nothing** → check that the Vercel function
+can reach `medicament.ma` (their `wp-admin/admin-ajax.php` endpoint).
+The runtime fetches it directly with the standard Node client; no
+custom dispatcher is required.
 
 **Real-time `/today` updates not firing** → ensure migration 0010 ran
 in production:
