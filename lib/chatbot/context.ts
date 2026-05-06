@@ -104,13 +104,17 @@ export async function buildContext(
       '[Patient]',
       `- Sexe : ${p.gender === 'm' ? 'H' : 'F'} · Âge : ${ageFromDob(p.dateOfBirth)} ans`,
       `- Allergies : ${allergies.length > 0 ? allergies.map((a) => a.label).join(', ') : 'aucune connue'}`,
-      `- Antécédents : ${conditions.length > 0 ? conditions.map((x) => x.label).join(', ') : 'aucun connu'}`,
+      `- Antécédents / chroniques : ${
+        conditions.length > 0 ? conditions.map((x) => x.label).join(', ') : 'aucun connu'
+      }`,
       '',
       '[Consultation en cours]',
       `Motif : ${c.motif ?? '(non renseigné)'}`,
+      `Antécédents / historique : ${c.historyNotes ?? '(non renseigné)'}`,
       `Examen : ${c.examNotes ?? '(non renseigné)'}`,
       vitalsLine ? `Constantes : ${vitalsLine}` : 'Constantes : (non renseignées)',
       `Diagnostic provisoire : ${c.diagnosis ?? '(non renseigné)'}`,
+      `Suite / follow-up : ${c.followUpNotes ?? '(non renseigné)'}`,
       '',
       '[Consultations antérieures (3 dernières finalisées)]',
       past.length === 0
