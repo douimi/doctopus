@@ -78,6 +78,10 @@ export type ImportRowError = {
   row: number; // 1-indexed row number in the source file (header excluded)
   field: string;
   message: string;
+  /** Raw values from the source row (canonical column → string). Lets the
+   *  caller download the failed rows as CSV so the operator can correct
+   *  them in a spreadsheet and re-import. */
+  raw?: Record<string, string>;
 };
 
 export type ImportPreview = {
@@ -218,6 +222,14 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
       return header ? rawRow[header] : null;
     };
 
+    // Snapshot of raw values keyed by canonical column name, used to
+    // include in error rows so the operator can download + fix + re-upload.
+    const rawByCanonical: Record<string, string> = {};
+    for (const canonical of PATIENT_IMPORT_HEADERS) {
+      const v = get(canonical);
+      rawByCanonical[canonical] = v == null ? '' : String(v);
+    }
+
     const last_name = asString(get('last_name'));
     const first_name = asString(get('first_name'));
     const gender = parseGender(get('gender'));
@@ -225,19 +237,16 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
     const phone = asString(get('phone'));
 
     const rowErrors: ImportRowError[] = [];
-    if (!last_name) rowErrors.push({ row: rowNumber, field: 'last_name', message: 'Nom requis.' });
-    if (!first_name) rowErrors.push({ row: rowNumber, field: 'first_name', message: 'Prénom requis.' });
-    if (!gender) {
-      rowErrors.push({ row: rowNumber, field: 'gender', message: 'Sexe attendu : m / f / Homme / Femme.' });
-    }
+    const pushErr = (field: string, message: string) =>
+      rowErrors.push({ row: rowNumber, field, message, raw: rawByCanonical });
+
+    if (!last_name) pushErr('last_name', 'Nom requis.');
+    if (!first_name) pushErr('first_name', 'Prénom requis.');
+    if (!gender) pushErr('gender', 'Sexe attendu : m / f / Homme / Femme.');
     if (!date_of_birth) {
-      rowErrors.push({
-        row: rowNumber,
-        field: 'date_of_birth',
-        message: 'Date de naissance attendue : YYYY-MM-DD ou DD/MM/YYYY.',
-      });
+      pushErr('date_of_birth', 'Date de naissance attendue : YYYY-MM-DD ou DD/MM/YYYY.');
     }
-    if (!phone) rowErrors.push({ row: rowNumber, field: 'phone', message: 'Téléphone requis.' });
+    if (!phone) pushErr('phone', 'Téléphone requis.');
 
     const coverage_type_raw = asString(get('coverage_type'));
     let coverage_type: string | null = null;
@@ -246,11 +255,10 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
       if (COVERAGE_SET.has(lc)) {
         coverage_type = lc;
       } else {
-        rowErrors.push({
-          row: rowNumber,
-          field: 'coverage_type',
-          message: `Couverture inconnue "${coverage_type_raw}". Voir la liste dans le modèle.`,
-        });
+        pushErr(
+          'coverage_type',
+          `Couverture inconnue "${coverage_type_raw}". Voir la liste dans le modèle.`,
+        );
       }
     }
 

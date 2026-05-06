@@ -6,7 +6,6 @@ import { eq } from 'drizzle-orm';
 import { requireAdmin } from '@/lib/auth/admin';
 import { recordAudit } from '@/lib/audit/record';
 import { grantCredits, setCredits } from '@/lib/chatbot/credits';
-import { importPatients, parsePatientImport } from '@/lib/admin/patient-import';
 import {
   EncryptionKeyMissingError,
   clearTenantApiKey,
@@ -282,66 +281,5 @@ export async function adminClearApiKeyAction(formData: FormData): Promise<void> 
   revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
 }
 
-export type ImportPatientsState = {
-  error: string | null;
-  inserted: number | null;
-  failed: { row: number; field: string; message: string }[];
-};
-
-export async function adminImportPatientsAction(
-  _: ImportPatientsState,
-  formData: FormData,
-): Promise<ImportPatientsState> {
-  const session = await requireAdmin();
-  const tenantId = formData.get('tenantId');
-  const file = formData.get('file');
-  if (typeof tenantId !== 'string' || !z.string().uuid().safeParse(tenantId).success) {
-    return { error: 'Cabinet invalide.', inserted: null, failed: [] };
-  }
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: 'Aucun fichier reçu.', inserted: null, failed: [] };
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    return { error: 'Fichier trop volumineux (max 5 Mo).', inserted: null, failed: [] };
-  }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const preview = parsePatientImport(buffer);
-
-  if (preview.errors.some((e) => e.field === '_columns' || e.field === '_file')) {
-    return {
-      error: preview.errors[0]!.message,
-      inserted: null,
-      failed: preview.errors,
-    };
-  }
-  if (preview.rows.length === 0) {
-    return {
-      error: 'Aucune ligne valide à importer. Corrigez les erreurs ci-dessous et réessayez.',
-      inserted: null,
-      failed: preview.errors,
-    };
-  }
-
-  const { inserted, failed: insertFailed } = await importPatients(tenantId, preview.rows);
-
-  await recordAudit({
-    tenantId,
-    actorUserId: session.userId,
-    action: 'admin.tenant.patients_imported',
-    entityType: 'tenant',
-    entityId: tenantId,
-    metadata: {
-      inserted,
-      validation_errors: preview.errors.length,
-      insert_errors: insertFailed.length,
-    },
-  });
-
-  revalidatePath(`/admin/tenants/${tenantId}`);
-  return {
-    error: null,
-    inserted,
-    failed: [...preview.errors, ...insertFailed],
-  };
-}
+// Patient bulk import is handled via /api/admin/patient-import (XHR upload
+// with progress + downloadable failed-rows CSV). See ImportPatientsCard.
