@@ -27,7 +27,7 @@ const STEPS = [
 
 export function MigrationSection() {
   return (
-    <SectionFrame>
+    <SectionFrame id="section-migration">
       {(revealed) => (
         <>
           <SectionEyebrow revealed={revealed}>06 — Reprise de données</SectionEyebrow>

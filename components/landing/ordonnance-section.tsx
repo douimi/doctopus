@@ -7,7 +7,7 @@ import { Parallax } from './parallax';
 
 export function OrdonnanceSection() {
   return (
-    <SectionFrame>
+    <SectionFrame id="section-ordonnance">
       {(revealed) => (
         <>
           <SectionEyebrow revealed={revealed}>02 — Ordonnance intelligente</SectionEyebrow>

@@ -7,7 +7,7 @@ import { Parallax } from './parallax';
 
 export function StatsSection() {
   return (
-    <SectionFrame>
+    <SectionFrame id="section-stats">
       {(revealed) => (
         <>
           <SectionEyebrow revealed={revealed}>04 — Statistiques</SectionEyebrow>

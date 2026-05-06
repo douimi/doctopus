@@ -12,9 +12,12 @@ import { cn } from '@/lib/utils';
  * animations.
  */
 export function SectionFrame({
+  id,
   children,
   className,
 }: {
+  /** Optional DOM id used by the Octopus tentacles to anchor to this section. */
+  id?: string;
   children: ((revealed: boolean) => ReactNode) | ReactNode;
   className?: string;
 }) {
@@ -23,6 +26,7 @@ export function SectionFrame({
   return (
     <section
       ref={ref}
+      id={id}
       className={cn(
         'min-h-screen px-8 py-32 flex flex-col items-center justify-center max-w-[1200px] mx-auto',
         className,

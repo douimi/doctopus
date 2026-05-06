@@ -7,7 +7,7 @@ import { Parallax } from './parallax';
 
 export function ConsultationSection() {
   return (
-    <SectionFrame>
+    <SectionFrame id="section-consultation">
       {(revealed) => (
         <>
           <SectionEyebrow revealed={revealed}>01 — Consultation</SectionEyebrow>

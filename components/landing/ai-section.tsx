@@ -7,7 +7,7 @@ import { Parallax } from './parallax';
 
 export function AISection() {
   return (
-    <SectionFrame>
+    <SectionFrame id="section-ai">
       {(revealed) => (
         <>
           <SectionEyebrow revealed={revealed}>05 — Assistant clinique IA</SectionEyebrow>
