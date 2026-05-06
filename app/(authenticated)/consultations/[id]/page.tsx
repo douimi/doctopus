@@ -37,20 +37,26 @@ export default async function ConsultationPage({
       balance: tenants.chatbotCreditsBalance,
       ackAt: tenants.chatbotDisclaimerAcknowledgedAt,
       defaultConsultationPriceMad: tenants.defaultConsultationPriceMad,
+      apiKeyLast4: tenants.chatbotApiKeyLast4,
     })
     .from(tenants)
     .where(eq(tenants.id, session.tenantId));
 
   const suggestions = await getAutocompleteSuggestions(session.tenantId, session.userId);
 
+  const hasByoKey = tenant?.apiKeyLast4 !== null && tenant?.apiKeyLast4 !== undefined;
+
   const assistantState =
     !tenant?.enabled || !tenant.provider || !tenant.model
       ? ({ kind: 'disabled' } as const)
-      : tenant.balance <= 0 && detail.consultation.aiCreditConsumedAt === null
+      : !hasByoKey &&
+          tenant.balance <= 0 &&
+          detail.consultation.aiCreditConsumedAt === null
         ? ({ kind: 'no_credits', balance: 0 } as const)
         : ({
             kind: 'ready',
             balance: tenant.balance,
+            hasByoKey,
             disclaimerAcknowledged: tenant.ackAt !== null,
           } as const);
 

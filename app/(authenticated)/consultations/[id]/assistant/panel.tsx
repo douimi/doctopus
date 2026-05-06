@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { Search, Send, Sparkles } from 'lucide-react';
+import { KeyRound, Lock, Search, Send, Sparkles } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,20 +13,28 @@ import { DisclaimerModal } from './disclaimer-modal';
 type State =
   | { kind: 'disabled' }
   | { kind: 'no_credits'; balance: number }
-  | { kind: 'ready'; balance: number; disclaimerAcknowledged: boolean };
+  | {
+      kind: 'ready';
+      balance: number;
+      hasByoKey: boolean;
+      disclaimerAcknowledged: boolean;
+    };
 
 function ChatPanel({
   consultationId,
   balance,
+  hasByoKey,
   disclaimerAcknowledged,
   readOnly,
 }: {
   consultationId: string;
   balance: number;
+  hasByoKey: boolean;
   disclaimerAcknowledged: boolean;
   readOnly: boolean;
 }) {
   const [input, setInput] = useState('');
+  const router = useRouter();
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -35,6 +44,18 @@ function ChatPanel({
   });
 
   const isStreaming = status === 'streaming' || status === 'submitted';
+
+  // After each AI response completes, re-fetch the page so the credits
+  // counter at the top of the panel reflects the deduction.
+  const lastRefreshedAt = useRef(0);
+  useEffect(() => {
+    if (status !== 'ready') return;
+    if (messages.length === 0) return;
+    if (messages.length === lastRefreshedAt.current) return;
+    if (messages.at(-1)?.role !== 'assistant') return;
+    lastRefreshedAt.current = messages.length;
+    router.refresh();
+  }, [status, messages.length, router, messages]);
 
   const errMsg =
     error?.message?.match(/no_credits/) ? 'Crédits IA épuisés.' :
@@ -63,19 +84,39 @@ function ChatPanel({
             <Sparkles className="size-3.5" aria-hidden />
           </span>
           <span className="text-heading font-semibold leading-none">Assistant IA</span>
+          {readOnly ? (
+            <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide px-1.5 py-0.5 rounded-pill bg-muted text-muted-foreground border border-border">
+              <Lock className="size-3" aria-hidden />
+              Lecture seule
+            </span>
+          ) : null}
         </div>
-        <span className="text-small text-muted-foreground tabular-nums">
-          ~{balance} consultations restantes
-        </span>
+        {hasByoKey ? (
+          <span className="inline-flex items-center gap-1.5 text-small text-muted-foreground">
+            <KeyRound className="size-3.5" aria-hidden />
+            Clé propre · pas de décompte
+          </span>
+        ) : (
+          <span className="text-small text-muted-foreground tabular-nums">
+            ~{balance} consultations restantes
+          </span>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="text-muted-foreground space-y-2 text-body">
             <p>
-              Posez une question clinique. La consultation utilisera{' '}
-              <span className="font-medium text-foreground">1 crédit</span> dès le
-              premier message.
+              Posez une question clinique.
+              {hasByoKey
+                ? ' Le cabinet utilise sa propre clé API — aucun décompte plateforme.'
+                : ' La consultation utilisera '}
+              {hasByoKey ? null : (
+                <>
+                  <span className="font-medium text-foreground">1 crédit</span> dès le
+                  premier message.
+                </>
+              )}
             </p>
             <ul className="list-disc list-inside text-small space-y-1 marker:text-muted-foreground/60">
               <li>« Posologie pour cystite chez adulte allergique à la pénicilline ? »</li>
@@ -227,6 +268,7 @@ export function AssistantPanel({
     <ChatPanel
       consultationId={consultationId}
       balance={state.balance}
+      hasByoKey={state.hasByoKey}
       disclaimerAcknowledged={state.disclaimerAcknowledged}
       readOnly={readOnly}
     />
