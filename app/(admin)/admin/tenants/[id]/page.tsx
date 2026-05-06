@@ -286,7 +286,10 @@ export default async function AdminTenantDetailPage({
               provider={tenant.chatbotProvider}
               last4={tenant.chatbotApiKeyLast4 ?? null}
             />
-            <GrantCreditsCard tenantId={tenant.id} />
+            <GrantCreditsCard
+              tenantId={tenant.id}
+              currentBalance={tenant.chatbotCreditsBalance}
+            />
             <ToggleChatbotCard tenantId={tenant.id} enabled={tenant.chatbotEnabled} />
             <ToggleSuspensionCard
               tenantId={tenant.id}

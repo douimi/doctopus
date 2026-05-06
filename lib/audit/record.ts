@@ -22,6 +22,7 @@ export type AuditAction =
   | 'ai.chat_message_sent'
   | 'tenant.default_price_updated'
   | 'admin.tenant.grant_credits'
+  | 'admin.tenant.set_credits'
   | 'admin.tenant.set_model'
   | 'admin.tenant.enable_chatbot'
   | 'admin.tenant.disable_chatbot'

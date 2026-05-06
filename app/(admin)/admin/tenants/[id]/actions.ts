@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { requireAdmin } from '@/lib/auth/admin';
 import { recordAudit } from '@/lib/audit/record';
-import { grantCredits } from '@/lib/chatbot/credits';
+import { grantCredits, setCredits } from '@/lib/chatbot/credits';
 import { importPatients, parsePatientImport } from '@/lib/admin/patient-import';
 import {
   EncryptionKeyMissingError,
@@ -210,6 +210,58 @@ export async function adminSetApiKeyAction(
 
   revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
   return { error: null, ok: true };
+}
+
+const setCreditsSchema = tenantIdSchema.extend({
+  newBalance: z.coerce.number().int().min(0).max(100_000),
+  note: z.string().trim().max(200).optional().or(z.literal('')),
+});
+
+export type SetCreditsState = {
+  error: string | null;
+  ok: boolean;
+  newBalance: number | null;
+};
+
+export async function adminSetCreditsAction(
+  _: SetCreditsState,
+  formData: FormData,
+): Promise<SetCreditsState> {
+  const session = await requireAdmin();
+  const parsed = setCreditsSchema.safeParse({
+    tenantId: formData.get('tenantId'),
+    newBalance: formData.get('newBalance'),
+    note: formData.get('note'),
+  });
+  if (!parsed.success) {
+    return { error: 'Solde invalide (entier ≥ 0).', ok: false, newBalance: null };
+  }
+
+  const result = await setCredits(
+    parsed.data.tenantId,
+    parsed.data.newBalance,
+    `admin:${session.email}`,
+    parsed.data.note || undefined,
+  );
+
+  await recordAudit({
+    tenantId: parsed.data.tenantId,
+    actorUserId: session.userId,
+    action: 'admin.tenant.set_credits',
+    entityType: 'tenant',
+    entityId: parsed.data.tenantId,
+    metadata: {
+      previous: result.previousBalance,
+      next: result.newBalance,
+      delta: result.delta,
+      note: parsed.data.note || null,
+    },
+  });
+
+  revalidatePath(`/admin/tenants/${parsed.data.tenantId}`);
+  revalidatePath('/admin');
+  revalidatePath('/admin/tenants');
+  return { error: null, ok: true, newBalance: result.newBalance };
 }
 
 export async function adminClearApiKeyAction(formData: FormData): Promise<void> {
