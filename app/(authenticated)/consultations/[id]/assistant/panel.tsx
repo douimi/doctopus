@@ -12,24 +12,22 @@ import { DisclaimerModal } from './disclaimer-modal';
 
 type State =
   | { kind: 'disabled' }
+  | { kind: 'no_api_key' }
   | { kind: 'no_credits'; balance: number }
   | {
       kind: 'ready';
       balance: number;
-      hasByoKey: boolean;
       disclaimerAcknowledged: boolean;
     };
 
 function ChatPanel({
   consultationId,
   balance,
-  hasByoKey,
   disclaimerAcknowledged,
   readOnly,
 }: {
   consultationId: string;
   balance: number;
-  hasByoKey: boolean;
   disclaimerAcknowledged: boolean;
   readOnly: boolean;
 }) {
@@ -91,32 +89,18 @@ function ChatPanel({
             </span>
           ) : null}
         </div>
-        {hasByoKey ? (
-          <span className="inline-flex items-center gap-1.5 text-small text-muted-foreground">
-            <KeyRound className="size-3.5" aria-hidden />
-            Clé propre · pas de décompte
-          </span>
-        ) : (
-          <span className="text-small text-muted-foreground tabular-nums">
-            ~{balance} consultations restantes
-          </span>
-        )}
+        <span className="text-small text-muted-foreground tabular-nums">
+          ~{balance} consultations restantes
+        </span>
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="text-muted-foreground space-y-2 text-body">
             <p>
-              Posez une question clinique.
-              {hasByoKey
-                ? ' Le cabinet utilise sa propre clé API — aucun décompte plateforme.'
-                : ' La consultation utilisera '}
-              {hasByoKey ? null : (
-                <>
-                  <span className="font-medium text-foreground">1 crédit</span> dès le
-                  premier message.
-                </>
-              )}
+              Posez une question clinique. La consultation utilisera{' '}
+              <span className="font-medium text-foreground">1 crédit</span> dès le
+              premier message.
             </p>
             <ul className="list-disc list-inside text-small space-y-1 marker:text-muted-foreground/60">
               <li>« Posologie pour cystite chez adulte allergique à la pénicilline ? »</li>
@@ -245,6 +229,25 @@ export function AssistantPanel({
       </aside>
     );
   }
+  if (state.kind === 'no_api_key') {
+    return (
+      <aside className="rounded-xl border border-border bg-card shadow-card p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className="inline-flex items-center justify-center size-6 rounded-md bg-warning-tint text-warning"
+          >
+            <KeyRound className="size-3.5" aria-hidden />
+          </span>
+          <div className="text-heading font-semibold leading-none">Assistant IA</div>
+        </div>
+        <Alert variant="warning" title="Clé API non configurée">
+          Aucune clé API n&apos;est associée à votre cabinet. Contactez votre administrateur
+          pour activer l&apos;assistant IA.
+        </Alert>
+      </aside>
+    );
+  }
   if (state.kind === 'no_credits') {
     return (
       <aside className="rounded-xl border border-border bg-card shadow-card p-4 space-y-3">
@@ -268,7 +271,6 @@ export function AssistantPanel({
     <ChatPanel
       consultationId={consultationId}
       balance={state.balance}
-      hasByoKey={state.hasByoKey}
       disclaimerAcknowledged={state.disclaimerAcknowledged}
       readOnly={readOnly}
     />

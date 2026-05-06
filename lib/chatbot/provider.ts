@@ -2,14 +2,14 @@ import 'server-only';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMistral } from '@ai-sdk/mistral';
-import { env } from '@/lib/env';
 import { ALLOWED_MODELS_BY_PROVIDER } from './pricing';
 
 export type Provider = 'anthropic' | 'openai' | 'mistral';
 
 export class ProviderNotConfiguredError extends Error {
+  code = 'provider_not_configured' as const;
   constructor(provider: Provider) {
-    super(`Provider ${provider} has no API key (no per-tenant key + no env fallback)`);
+    super(`Provider ${provider} has no per-cabinet API key configured`);
   }
 }
 
@@ -20,32 +20,23 @@ export class ModelNotAllowedError extends Error {
 }
 
 /**
- * Resolves the API key to use for `provider`:
- * 1. The explicit `byoApiKey` if provided (per-tenant key from
- *    lib/chatbot/byo-key.ts).
- * 2. The platform-wide env var fallback.
+ * Returns a configured AI SDK model for the cabinet.
  *
- * Returns null if neither is available — caller should throw
- * ProviderNotConfiguredError.
+ * Each cabinet MUST have its own API key (configured by the super-admin
+ * via /admin/tenants/[id] → "Clé API du cabinet"). There is no
+ * platform-wide fallback — usage and billing are isolated per tenant.
+ *
+ * Throws:
+ *   - ModelNotAllowedError if `model` isn't in the allowlist for `provider`
+ *   - ProviderNotConfiguredError if `apiKey` is missing or empty
  */
-function resolveApiKey(provider: Provider, byoApiKey?: string | null): string | null {
-  if (byoApiKey && byoApiKey.length > 0) return byoApiKey;
-  switch (provider) {
-    case 'anthropic':
-      return env().ANTHROPIC_API_KEY ?? null;
-    case 'openai':
-      return env().OPENAI_API_KEY ?? null;
-    case 'mistral':
-      return env().MISTRAL_API_KEY ?? null;
-  }
-}
-
-export function getModel(provider: Provider, model: string, byoApiKey?: string | null) {
+export function getModel(provider: Provider, model: string, apiKey: string | null) {
   if (!ALLOWED_MODELS_BY_PROVIDER[provider].includes(model)) {
     throw new ModelNotAllowedError(provider, model);
   }
-  const apiKey = resolveApiKey(provider, byoApiKey);
-  if (!apiKey) throw new ProviderNotConfiguredError(provider);
+  if (!apiKey || apiKey.length === 0) {
+    throw new ProviderNotConfiguredError(provider);
+  }
   switch (provider) {
     case 'anthropic':
       return createAnthropic({ apiKey })(model);

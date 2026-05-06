@@ -92,24 +92,23 @@ export async function POST(req: Request) {
   const cumulativeTokens = cumRow?.total ?? 0;
   if (cumulativeTokens >= MAX_TOKENS_PER_CONSULTATION) return jsonError('token_cap', 429);
 
-  // Resolve per-tenant BYO API key (null = use platform fallback).
-  let byoApiKey: string | null = null;
+  // Per-cabinet API key is REQUIRED. Each cabinet has its own key + its
+  // own consultation budget; there is no platform-wide fallback.
+  let cabinetApiKey: string | null = null;
   try {
-    byoApiKey = await getTenantApiKey(session.tenantId);
+    cabinetApiKey = await getTenantApiKey(session.tenantId);
   } catch {
-    byoApiKey = null;
+    cabinetApiKey = null;
   }
-  const usesByoKey = byoApiKey !== null;
+  if (!cabinetApiKey) return jsonError('not_configured', 400);
 
-  // Atomic debit on first turn — only when the platform is paying for it.
-  // Tenants bringing their own key are billed by their provider directly.
-  if (!usesByoKey) {
-    try {
-      await debitOneCredit(session.tenantId, consultationId);
-    } catch (err) {
-      if (err instanceof NoCreditsError) return jsonError('no_credits', 402);
-      throw err;
-    }
+  // Atomic debit on first turn. The credit budget tracks the cabinet's
+  // allowed consultations regardless of which API key drives the calls.
+  try {
+    await debitOneCredit(session.tenantId, consultationId);
+  } catch (err) {
+    if (err instanceof NoCreditsError) return jsonError('no_credits', 402);
+    throw err;
   }
 
   // Build context.
@@ -121,10 +120,10 @@ export async function POST(req: Request) {
     throw err;
   }
 
-  // Get model — passes BYO key when present, otherwise falls back to env.
+  // Get model — uses the per-cabinet API key resolved above.
   let model;
   try {
-    model = getModel(tenantRow.chatbot_provider, tenantRow.chatbot_model, byoApiKey);
+    model = getModel(tenantRow.chatbot_provider, tenantRow.chatbot_model, cabinetApiKey);
   } catch (err) {
     if (err instanceof ProviderNotConfiguredError || err instanceof ModelNotAllowedError) {
       return jsonError('not_configured', 500);
@@ -240,8 +239,7 @@ export async function POST(req: Request) {
             model: modelName,
             input_tokens: inputTokens,
             output_tokens: outputTokens,
-            credit_debited: priorTurns === 0 && !usesByoKey,
-            byo_key: usesByoKey,
+            credit_debited: priorTurns === 0,
           },
         });
       } catch (err) {

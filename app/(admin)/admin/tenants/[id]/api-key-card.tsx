@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { KeyRound, Trash2 } from 'lucide-react';
+import { AlertTriangle, KeyRound, Trash2 } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,30 +58,35 @@ export function ApiKeyCard({
           <span className="inline-flex items-center gap-2">
             <KeyRound className="size-4 text-muted-foreground" aria-hidden />
             Clé API du cabinet
+            <span className="text-[10px] uppercase tracking-wide font-medium text-danger">
+              Requise
+            </span>
           </span>
           {hasKey ? (
-            <StatusBadge variant="info">BYO key</StatusBadge>
+            <StatusBadge variant="success">Configurée</StatusBadge>
           ) : (
-            <StatusBadge variant="neutral">Plateforme</StatusBadge>
+            <StatusBadge variant="warning" icon={AlertTriangle}>
+              Manquante
+            </StatusBadge>
           )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {hasKey ? (
           <p className="text-small text-muted-foreground">
-            Clé enregistrée pour <span className="font-medium">{provider ?? 'aucun fournisseur'}</span> —{' '}
+            Clé enregistrée pour{' '}
+            <span className="font-medium">{provider ?? 'aucun fournisseur'}</span> —{' '}
             <code className="bg-muted px-1.5 py-0.5 rounded text-foreground tabular-nums">
               ••••••••{last4}
             </code>
-            . Les appels IA de ce cabinet utilisent cette clé et n&apos;entament pas
-            les crédits plateforme.
+            . Tous les appels IA de ce cabinet l&apos;utilisent.
           </p>
         ) : (
-          <p className="text-small text-muted-foreground">
-            Ce cabinet utilise les clés API plateforme (variables d&apos;environnement).
-            Configurez ici une clé propre au cabinet pour facturer son usage IA
-            directement à son fournisseur.
-          </p>
+          <Alert variant="warning" title="Aucune clé API configurée">
+            L&apos;assistant IA est désactivé pour ce cabinet tant qu&apos;une clé API
+            n&apos;est pas enregistrée ici. Chaque cabinet doit avoir sa propre clé
+            pour isoler l&apos;usage et le suivi.
+          </Alert>
         )}
 
         <form action={action} className="space-y-2">

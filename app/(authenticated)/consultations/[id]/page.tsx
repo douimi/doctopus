@@ -44,21 +44,20 @@ export default async function ConsultationPage({
 
   const suggestions = await getAutocompleteSuggestions(session.tenantId, session.userId);
 
-  const hasByoKey = tenant?.apiKeyLast4 !== null && tenant?.apiKeyLast4 !== undefined;
+  const hasApiKey = tenant?.apiKeyLast4 !== null && tenant?.apiKeyLast4 !== undefined;
 
   const assistantState =
     !tenant?.enabled || !tenant.provider || !tenant.model
       ? ({ kind: 'disabled' } as const)
-      : !hasByoKey &&
-          tenant.balance <= 0 &&
-          detail.consultation.aiCreditConsumedAt === null
-        ? ({ kind: 'no_credits', balance: 0 } as const)
-        : ({
-            kind: 'ready',
-            balance: tenant.balance,
-            hasByoKey,
-            disclaimerAcknowledged: tenant.ackAt !== null,
-          } as const);
+      : !hasApiKey
+        ? ({ kind: 'no_api_key' } as const)
+        : tenant.balance <= 0 && detail.consultation.aiCreditConsumedAt === null
+          ? ({ kind: 'no_credits', balance: 0 } as const)
+          : ({
+              kind: 'ready',
+              balance: tenant.balance,
+              disclaimerAcknowledged: tenant.ackAt !== null,
+            } as const);
 
   const v = detail.vitals;
   const patientName = `${patientData.patient.lastName} ${patientData.patient.firstName}`;
