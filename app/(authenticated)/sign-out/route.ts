@@ -5,5 +5,8 @@ import { env } from '@/lib/env';
 export async function POST() {
   const supabase = await getSupabaseServerClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL('/sign-in', env().APP_URL));
+  // Status 303 = "See Other" — instructs the browser to follow the redirect
+  // with GET, even though the original request was POST. NextResponse.redirect
+  // defaults to 307 which preserves POST and would 405 against the sign-in page.
+  return NextResponse.redirect(new URL('/sign-in', env().APP_URL), { status: 303 });
 }
