@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { Sparkles } from 'lucide-react';
 import { Magnetic } from './magnetic';
-
-const MAILTO = 'mailto:douimiotmane@gmail.com?subject=Doctopus%20%E2%80%94%20demande%20d%27acc%C3%A8s';
+import { FREE_TRIAL_MONTHS, WHATSAPP_NUMBER_DISPLAY, WHATSAPP_URL } from './contact';
+import { WhatsAppIcon } from './whatsapp-icon';
 
 export function Hero() {
   return (
@@ -57,9 +58,15 @@ export function Hero() {
       `}</style>
 
       <div className="relative z-10 flex flex-col items-center">
-        <div className="text-sky-400 text-[13px] uppercase tracking-[0.1em] font-semibold mb-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
-          Logiciel de cabinet médical · Maroc
-        </div>
+        <a
+          href={WHATSAPP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[12px] font-medium mb-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 hover:bg-emerald-500/25 hover:border-emerald-400/50 hover:text-emerald-200 transition-colors"
+        >
+          <Sparkles className="size-3.5" aria-hidden />
+          Offre lancement · {FREE_TRIAL_MONTHS} mois gratuits
+        </a>
         <h1 className="text-6xl md:text-8xl font-semibold tracking-tight leading-none max-w-4xl animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:100ms] [animation-fill-mode:both]">
           Le cabinet,{' '}
           <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
@@ -69,24 +76,30 @@ export function Hero() {
         <p className="text-xl text-white/70 max-w-xl mt-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:200ms] [animation-fill-mode:both]">
           Consultations, ordonnances, paiements et statistiques dans une interface conçue pour les médecins du Maroc.
         </p>
-        <div className="flex gap-3 mt-10 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:300ms] [animation-fill-mode:both]">
+        <div className="flex flex-wrap gap-3 justify-center mt-10 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:300ms] [animation-fill-mode:both]">
+          <Magnetic>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg text-base font-medium bg-emerald-500 text-white hover:bg-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.4),0_18px_48px_-18px_rgba(16,185,129,0.7)] transition-all"
+            >
+              <WhatsAppIcon className="size-5" />
+              Essayer {FREE_TRIAL_MONTHS} mois gratuits
+            </a>
+          </Magnetic>
           <Magnetic>
             <Link
               href="/sign-in"
-              className="inline-flex px-7 py-3.5 rounded-lg text-base font-medium bg-white text-black hover:bg-white/90 transition-colors"
+              className="inline-flex px-7 py-3.5 rounded-lg text-base font-medium text-white border border-white/20 hover:bg-white/5 hover:border-white/40 transition-colors"
             >
               Se connecter
             </Link>
           </Magnetic>
-          <Magnetic>
-            <a
-              href={MAILTO}
-              className="inline-flex px-7 py-3.5 rounded-lg text-base font-medium text-white border border-white/20 hover:bg-white/5 hover:border-white/40 transition-colors"
-            >
-              Demander un accès
-            </a>
-          </Magnetic>
         </div>
+        <p className="text-small text-white/40 mt-4 tabular-nums animate-in fade-in-0 duration-700 [animation-delay:400ms] [animation-fill-mode:both]">
+          Sur WhatsApp : {WHATSAPP_NUMBER_DISPLAY}
+        </p>
         <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 text-white/30 text-sm animate-bounce [animation-duration:2s] [animation-delay:600ms] [animation-fill-mode:both]">
           ↓ découvrir
         </div>
