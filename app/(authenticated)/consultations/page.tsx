@@ -5,6 +5,7 @@ import { listConsultations } from '@/lib/consultations/queries';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LiveSearchInput } from '@/components/ui/live-search-input';
+import { LiveRefresh } from '@/components/shell/live-refresh';
 import { PageHeader } from '@/components/shell/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import {
@@ -64,6 +65,7 @@ export default async function ConsultationsPage({ searchParams }: Props) {
 
   return (
     <>
+      <LiveRefresh tenantId={session.tenantId} channel="consultations-list" />
       <PageHeader title="Consultations" description="Historique des consultations du cabinet." />
       <div className="px-6 py-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">

@@ -9,6 +9,7 @@ import { getAutocompleteSuggestions } from '@/lib/prescriptions/autocomplete';
 import { dbAdmin } from '@/db/client';
 import { tenants } from '@/db/schema';
 import { PatientCard } from '@/components/patients/patient-card';
+import { LiveRefresh } from '@/components/shell/live-refresh';
 import { PageHeader } from '@/components/shell/page-header';
 import { ConsultationEditor } from './editor';
 import { PrescriptionEditor } from './prescription/editor';
@@ -63,6 +64,7 @@ export default async function ConsultationPage({
   const patientName = `${patientData.patient.lastName} ${patientData.patient.firstName}`;
   return (
     <>
+      <LiveRefresh tenantId={session.tenantId} channel={`consultation-${id}`} />
       <PageHeader
         title={patientName}
         description={

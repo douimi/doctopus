@@ -10,6 +10,7 @@ import {
 import type { ReactNode } from 'react';
 import type { Session } from '@/lib/auth/session';
 import { BrandLockup } from '@/components/ui/brand';
+import { NotificationBell } from './notification-bell';
 import { Sidebar } from './sidebar';
 import { SidebarNavGroup, SidebarNavItem } from './sidebar-nav';
 import { SidebarUser } from './sidebar-user';
@@ -27,10 +28,13 @@ export function DoctorShell({
       <Sidebar
         theme="sky"
         brand={
-          <div className="space-y-2 min-w-0">
+          <div className="space-y-2 min-w-0 relative">
             <BrandLockup size={120} className="mx-auto" />
             <div className="text-small text-muted-foreground truncate text-center">
               {session.tenantName}
+            </div>
+            <div className="absolute top-0 right-0">
+              <NotificationBell tenantId={session.tenantId} />
             </div>
           </div>
         }
