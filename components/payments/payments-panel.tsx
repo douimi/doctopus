@@ -26,11 +26,9 @@ function fmtTime(d: Date): string {
 export function PaymentsPanel({
   awaiting,
   collectedToday,
-  role,
 }: {
   awaiting: PaymentRow[];
   collectedToday: PaymentRow[];
-  role: 'doctor' | 'assistant';
 }) {
   return (
     <>
@@ -67,13 +65,11 @@ export function PaymentsPanel({
                 <div className="text-body font-semibold tabular-nums shrink-0">
                   {formatMad(r.priceMad)}
                 </div>
-                {role === 'assistant' ? (
-                  <EncaisserDialog
-                    consultationId={r.consultationId}
-                    patientFullName={r.patientFullName}
-                    priceMad={r.priceMad}
-                  />
-                ) : null}
+                <EncaisserDialog
+                  consultationId={r.consultationId}
+                  patientFullName={r.patientFullName}
+                  priceMad={r.priceMad}
+                />
               </li>
             ))}
           </ul>

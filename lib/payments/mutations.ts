@@ -10,7 +10,8 @@ export type RecordPaymentArgs = {
   consultationId: string;
   paymentMethod: PaymentMethod;
   paymentNote: string | null;
-  assistantId: string;
+  /** Doctor or assistant — whoever clicked Encaisser. */
+  recordedBy: string;
 };
 
 /**
@@ -47,7 +48,7 @@ export async function recordPayment(
         paymentStatus: 'paid',
         paymentMethod: args.paymentMethod,
         paidAt: now,
-        paidBy: args.assistantId,
+        paidBy: args.recordedBy,
         paymentNote: args.paymentNote,
         updatedAt: now,
       })

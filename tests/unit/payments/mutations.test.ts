@@ -185,7 +185,7 @@ describe('recordPayment', () => {
       consultationId,
       paymentMethod: 'especes',
       paymentNote: null,
-      assistantId,
+      recordedBy: assistantId,
     });
     expect(outcome).toBe('ok');
 
@@ -202,7 +202,7 @@ describe('recordPayment', () => {
       consultationId,
       paymentMethod: 'autre',
       paymentNote: 'split: 100 espèces + 150 carte',
-      assistantId,
+      recordedBy: assistantId,
     });
     expect(outcome).toBe('ok');
 
@@ -216,13 +216,13 @@ describe('recordPayment', () => {
       consultationId,
       paymentMethod: 'especes',
       paymentNote: null,
-      assistantId,
+      recordedBy: assistantId,
     });
     const outcome = await recordPayment(tenantId, {
       consultationId,
       paymentMethod: 'carte',
       paymentNote: null,
-      assistantId,
+      recordedBy: assistantId,
     });
     expect(outcome).toBe('not_awaiting');
   });
@@ -242,7 +242,7 @@ describe('recordPayment', () => {
       consultationId,
       paymentMethod: 'especes',
       paymentNote: null,
-      assistantId,
+      recordedBy: assistantId,
     });
     expect(outcome).toBe('not_awaiting');
   });
@@ -253,7 +253,7 @@ describe('recordPayment', () => {
       consultationId,
       paymentMethod: 'especes',
       paymentNote: null,
-      assistantId,
+      recordedBy: assistantId,
     });
     expect(outcome).toBe('not_found');
   });

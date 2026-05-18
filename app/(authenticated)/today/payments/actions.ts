@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireAssistant } from '@/lib/auth/guards';
+import { requireSession } from '@/lib/auth/session';
 import { recordPaymentSchema } from '@/lib/payments/schemas';
 import { recordPayment } from '@/lib/payments/mutations';
 import { recordAudit } from '@/lib/audit/record';
@@ -9,7 +9,10 @@ import { recordAudit } from '@/lib/audit/record';
 export type RecordPaymentResult = { ok: boolean; error?: string };
 
 export async function recordPaymentAction(formData: FormData): Promise<RecordPaymentResult> {
-  const session = await requireAssistant();
+  // Both doctor and assistant can collect payments. requireSession only
+  // returns a Session for the two clinician roles — super-admins live on
+  // a different route tree and don't reach this action.
+  const session = await requireSession();
   const parsed = recordPaymentSchema.safeParse({
     consultationId: formData.get('consultationId'),
     paymentMethod: formData.get('paymentMethod'),
@@ -23,7 +26,7 @@ export async function recordPaymentAction(formData: FormData): Promise<RecordPay
     consultationId: parsed.data.consultationId,
     paymentMethod: parsed.data.paymentMethod,
     paymentNote: parsed.data.paymentNote ?? null,
-    assistantId: session.userId,
+    recordedBy: session.userId,
   });
   if (outcome === 'not_found') {
     return { ok: false, error: 'Consultation introuvable.' };

@@ -88,7 +88,6 @@ export default async function TodayPage() {
         <PaymentsPanel
           awaiting={payments.awaiting}
           collectedToday={payments.collectedToday}
-          role={session.role}
         />
 
         {inConsult.length > 0 ? (
