@@ -1,8 +1,8 @@
 import { History } from 'lucide-react';
 import { requireDoctor } from '@/lib/auth/guards';
 import { listAuditLog } from '@/lib/audit/queries';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/shell/page-header';
+import { Section } from '@/components/ui/section';
 import {
   Table,
   TableHeader,
@@ -58,11 +58,8 @@ export default async function AuditPage() {
         description="Trace de toutes les actions effectuées sur votre cabinet."
       />
       <div className="px-6 py-6 space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Événements récents</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Section icon={History} title="Événements récents" count={page.rows.length}>
+          <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -108,13 +105,13 @@ export default async function AuditPage() {
                 )}
               </TableBody>
             </Table>
-            {page.hasMore ? (
-              <p className="text-small text-muted-foreground mt-2">
-                Plus de 100 entrées. La pagination complète sera ajoutée dans une version ultérieure.
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
+          </div>
+          {page.hasMore ? (
+            <p className="text-small text-muted-foreground">
+              Plus de 100 entrées. La pagination complète sera ajoutée dans une version ultérieure.
+            </p>
+          ) : null}
+        </Section>
       </div>
     </>
   );
