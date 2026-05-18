@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import * as XLSX from 'xlsx';
-import { parsePatientImport } from '@/lib/admin/patient-import';
+import { __closeDbForTests } from '@/db/client';
+import { importPatients, parsePatientImport } from '@/lib/admin/patient-import';
+import { seedTenant } from '../../fixtures/tenants';
+import { seedPatient } from '../../fixtures/patients';
 
 function csvBuf(text: string): Buffer {
   return Buffer.from(text, 'utf-8');
@@ -125,5 +128,77 @@ describe('parsePatientImport — XLSX', () => {
     expect(out.errors).toEqual([]);
     expect(out.rows[0].date_of_birth).toBe('1997-01-01');
     expect(out.rows[1].date_of_birth).toBe('1985-12-31');
+  });
+});
+
+describe('importPatients — dedup', () => {
+  afterAll(async () => {
+    await __closeDbForTests();
+  });
+
+  it('skips rows that match an existing patient on (last_name, first_name, dob)', async () => {
+    const t = await seedTenant('import-dedup');
+    // One patient already in the DB.
+    await seedPatient(t.tenantId, {
+      lastName: 'Aakab',
+      firstName: 'Fatima Ezzahra',
+      dateOfBirth: '1997-01-01',
+    });
+
+    const rows = [
+      // Same person, different case + extra whitespace → should be skipped
+      {
+        rowNumber: 2,
+        last_name: 'aakab ',
+        first_name: 'FATIMA EZZAHRA',
+        gender: 'f' as const,
+        date_of_birth: '1997-01-01',
+        phone: null,
+        cin: null,
+        coverage_type: null,
+        coverage_id: null,
+        address: null,
+        notes: null,
+      },
+      // New patient → should be inserted
+      {
+        rowNumber: 3,
+        last_name: 'Bennani',
+        first_name: 'Ahmed',
+        gender: 'm' as const,
+        date_of_birth: '1980-06-15',
+        phone: '0612000000',
+        cin: null,
+        coverage_type: null,
+        coverage_id: null,
+        address: null,
+        notes: null,
+      },
+    ];
+
+    const out = await importPatients(t.tenantId, rows);
+    expect(out.inserted).toBe(1);
+    expect(out.skipped).toBe(1);
+    expect(out.failed).toEqual([]);
+  });
+
+  it('also dedups duplicates within the same file', async () => {
+    const t = await seedTenant('import-dedup-self');
+    const row = {
+      rowNumber: 2,
+      last_name: 'Solo',
+      first_name: 'Han',
+      gender: 'm' as const,
+      date_of_birth: '1980-01-01',
+      phone: null,
+      cin: null,
+      coverage_type: null,
+      coverage_id: null,
+      address: null,
+      notes: null,
+    };
+    const out = await importPatients(t.tenantId, [row, { ...row, rowNumber: 3 }]);
+    expect(out.inserted).toBe(1);
+    expect(out.skipped).toBe(1);
   });
 });

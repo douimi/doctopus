@@ -1,5 +1,6 @@
 import 'server-only';
 import * as XLSX from 'xlsx';
+import { eq } from 'drizzle-orm';
 import { dbAdmin } from '@/db/client';
 import { patients } from '@/db/schema';
 import { COVERAGE_VALUES } from '@/lib/patients/coverage';
@@ -407,20 +408,59 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
  * Persists parsed rows to the tenant's patients table. Uses dbAdmin()
  * with an explicit tenant_id predicate (RLS bypass is safe because the
  * super-admin guard already verified the actor is authorized).
+ *
+ * Idempotent: a row is treated as a duplicate of an existing patient
+ * when (lower(last_name), lower(first_name), date_of_birth) match. Those
+ * rows are counted as `skipped` and not re-inserted, so an operator can
+ * safely re-upload the same file after fixing a few bad rows.
  */
+function dedupKey(lastName: string, firstName: string, dob: string): string {
+  return `${lastName.trim().toLowerCase()}${firstName.trim().toLowerCase()}${dob}`;
+}
+
 export async function importPatients(
   tenantId: string,
   rows: ParsedPatientRow[],
-): Promise<{ inserted: number; failed: ImportRowError[] }> {
-  if (rows.length === 0) return { inserted: 0, failed: [] };
+): Promise<{ inserted: number; skipped: number; failed: ImportRowError[] }> {
+  if (rows.length === 0) return { inserted: 0, skipped: 0, failed: [] };
+
+  // Load existing (last_name, first_name, dob) tuples for this tenant so
+  // we can skip rows that are already in the DB.
+  const existing = await dbAdmin()
+    .select({
+      lastName: patients.lastName,
+      firstName: patients.firstName,
+      dateOfBirth: patients.dateOfBirth,
+    })
+    .from(patients)
+    .where(eq(patients.tenantId, tenantId));
+
+  const existingKeys = new Set(
+    existing.map((p) => dedupKey(p.lastName, p.firstName, p.dateOfBirth)),
+  );
 
   const failed: ImportRowError[] = [];
   let inserted = 0;
+  let skipped = 0;
+
+  // Filter out duplicates against the DB AND against earlier rows in the
+  // same file (operator might have the same patient twice in the sheet).
+  const seen = new Set<string>(existingKeys);
+  const toInsert: ParsedPatientRow[] = [];
+  for (const r of rows) {
+    const key = dedupKey(r.last_name, r.first_name, r.date_of_birth);
+    if (seen.has(key)) {
+      skipped++;
+      continue;
+    }
+    seen.add(key);
+    toInsert.push(r);
+  }
 
   // Insert in batches to keep query size sane.
   const BATCH = 100;
-  for (let i = 0; i < rows.length; i += BATCH) {
-    const batch = rows.slice(i, i + BATCH);
+  for (let i = 0; i < toInsert.length; i += BATCH) {
+    const batch = toInsert.slice(i, i + BATCH);
     try {
       const values = batch.map((r) => ({
         tenantId,
@@ -450,7 +490,7 @@ export async function importPatients(
     }
   }
 
-  return { inserted, failed };
+  return { inserted, skipped, failed };
 }
 
 /**

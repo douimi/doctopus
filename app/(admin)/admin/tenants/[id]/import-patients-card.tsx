@@ -17,7 +17,7 @@ type Status =
   | { kind: 'idle' }
   | { kind: 'uploading'; pct: number }
   | { kind: 'parsing' } // file uploaded; server is parsing + inserting
-  | { kind: 'done'; inserted: number; failed: FailedRow[] }
+  | { kind: 'done'; inserted: number; skipped: number; failed: FailedRow[] }
   | { kind: 'error'; message: string; failed?: FailedRow[] };
 
 const FAILED_HEADERS = [
@@ -111,7 +111,7 @@ export function ImportPatientsCard({ tenantId }: { tenantId: string }) {
     });
     xhr.addEventListener('load', () => {
       const res = xhr.response as
-        | { ok: true; inserted: number; failed: FailedRow[] }
+        | { ok: true; inserted: number; skipped: number; failed: FailedRow[] }
         | { ok: false; error: string; failed?: FailedRow[] }
         | null;
       if (!res) {
@@ -119,7 +119,12 @@ export function ImportPatientsCard({ tenantId }: { tenantId: string }) {
         return;
       }
       if (res.ok) {
-        setStatus({ kind: 'done', inserted: res.inserted, failed: res.failed ?? [] });
+        setStatus({
+          kind: 'done',
+          inserted: res.inserted,
+          skipped: res.skipped ?? 0,
+          failed: res.failed ?? [],
+        });
       } else {
         setStatus({ kind: 'error', message: res.error, failed: res.failed });
       }
@@ -223,9 +228,14 @@ export function ImportPatientsCard({ tenantId }: { tenantId: string }) {
           <Alert variant={status.failed.length === 0 ? 'success' : 'warning'}>
             {status.inserted} patient{status.inserted === 1 ? '' : 's'} importé
             {status.inserted === 1 ? '' : 's'}.
+            {status.skipped > 0
+              ? ` ${status.skipped} déjà présent${status.skipped === 1 ? '' : 's'} (sauté${status.skipped === 1 ? '' : 's'}).`
+              : ''}
             {status.failed.length > 0
               ? ` ${status.failed.length} ligne${status.failed.length === 1 ? '' : 's'} en erreur — téléchargez la liste pour corriger et réimporter.`
-              : ' Tout est passé.'}
+              : status.skipped === 0
+                ? ' Tout est passé.'
+                : ''}
           </Alert>
         ) : null}
 

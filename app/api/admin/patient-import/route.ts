@@ -16,6 +16,7 @@ const tenantSchema = z.object({ tenantId: z.string().uuid() });
 export type ImportPatientsResponse = {
   ok: true;
   inserted: number;
+  skipped: number;
   failed: ImportRowError[];
 } | {
   ok: false;
@@ -70,7 +71,10 @@ export async function POST(req: Request): Promise<NextResponse<ImportPatientsRes
     );
   }
 
-  const { inserted, failed: insertFailed } = await importPatients(tenantId, preview.rows);
+  const { inserted, skipped, failed: insertFailed } = await importPatients(
+    tenantId,
+    preview.rows,
+  );
 
   await recordAudit({
     tenantId,
@@ -80,6 +84,7 @@ export async function POST(req: Request): Promise<NextResponse<ImportPatientsRes
     entityId: tenantId,
     metadata: {
       inserted,
+      skipped,
       validation_errors: preview.errors.length,
       insert_errors: insertFailed.length,
     },
@@ -88,6 +93,7 @@ export async function POST(req: Request): Promise<NextResponse<ImportPatientsRes
   return NextResponse.json({
     ok: true,
     inserted,
+    skipped,
     failed: [...preview.errors, ...insertFailed],
   });
 }
