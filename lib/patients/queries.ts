@@ -1,7 +1,10 @@
 import 'server-only';
-import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
 import { patients, patientAllergies, patientChronicConditions } from '@/db/schema';
+
+export type PatientSort = 'name' | 'created';
+export type PatientSortDir = 'asc' | 'desc';
 
 export type PatientListRow = {
   id: string;
@@ -70,14 +73,34 @@ export type PatientPage = {
  * Paginated variant of searchPatients. Returns the slice plus the total
  * row count for the current filter so the caller can render pagination
  * controls. `page` is 1-indexed; out-of-range pages clamp to a valid value.
+ *
+ * Default sort is alphabetical by lastName ASC, firstName ASC — the
+ * natural order for a cabinet looking up an existing patient. Pass
+ * `sort: 'created'` for "most recent first" (useful right after an
+ * import to see what just landed).
  */
 export async function searchPatientsPage(
   tenantId: string,
   query: string,
-  opts: { includeArchived?: boolean; page?: number; pageSize?: number } = {},
+  opts: {
+    includeArchived?: boolean;
+    page?: number;
+    pageSize?: number;
+    sort?: PatientSort;
+    dir?: PatientSortDir;
+  } = {},
 ): Promise<PatientPage> {
   const pageSize = Math.min(Math.max(opts.pageSize ?? 25, 1), 100);
+  const sort: PatientSort = opts.sort ?? 'name';
+  const dir: PatientSortDir = opts.dir ?? (sort === 'created' ? 'desc' : 'asc');
   const trimmed = query.trim();
+
+  const orderBy: SQL[] =
+    sort === 'created'
+      ? [dir === 'asc' ? asc(patients.createdAt) : desc(patients.createdAt)]
+      : dir === 'asc'
+        ? [asc(patients.lastName), asc(patients.firstName)]
+        : [desc(patients.lastName), desc(patients.firstName)];
 
   return withTenantTx(tenantId, async (tx) => {
     const where = trimmed
@@ -116,7 +139,7 @@ export async function searchPatientsPage(
       })
       .from(patients)
       .where(where)
-      .orderBy(desc(patients.createdAt))
+      .orderBy(...orderBy)
       .limit(pageSize)
       .offset(offset);
 
