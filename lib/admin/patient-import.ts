@@ -15,12 +15,17 @@ import { COVERAGE_VALUES } from '@/lib/patients/coverage';
  *   - first_name       REQUIRED
  *   - gender           REQUIRED   "m" | "f" (also accepts "h"/"homme"/"femme")
  *   - date_of_birth    REQUIRED   ISO YYYY-MM-DD or DD/MM/YYYY
- *   - phone            REQUIRED
+ *   - phone            optional
  *   - cin              optional
  *   - coverage_type    optional   one of COVERAGE_VALUES (e.g. cnss, cmim, axa_maroc, ramed…)
  *   - coverage_id      optional
  *   - address          optional
  *   - notes            optional
+ *
+ * CSV files are parsed manually rather than via xlsx — xlsx's CSV
+ * date detection loses precision on ISO date strings (1997-01-01 →
+ * 35430.99976 → "12/31/96" after rounding), corrupting every patient
+ * DOB by one day.
  */
 
 export const PATIENT_IMPORT_HEADERS = [
@@ -96,7 +101,7 @@ export type ParsedPatientRow = {
   first_name: string;
   gender: 'm' | 'f';
   date_of_birth: string;
-  phone: string;
+  phone: string | null;
   cin: string | null;
   coverage_type: string | null;
   coverage_id: string | null;
@@ -157,36 +162,150 @@ function parseGender(v: unknown): 'm' | 'f' | null {
 }
 
 function parseDate(v: unknown): string | null {
+  // XLSX path: cellDates:true returns a Date built via xlsx's local-time
+  // constructor (with a ~20s rounding artifact), so the wall-clock time
+  // in local TZ corresponds to the Excel serial date. Local accessors
+  // recover the right day; UTC ones shift it in non-UTC timezones.
+  if (v instanceof Date && !Number.isNaN(v.getTime())) {
+    return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
+  }
   const s = asString(v);
   if (!s) return null;
-  // ISO YYYY-MM-DD
-  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (isoMatch) return s;
+  // ISO YYYY-MM-DD (or YYYY-M-D)
+  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
   // DD/MM/YYYY or DD-MM-YYYY
   const frMatch = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (frMatch) {
     const [, d, m, y] = frMatch;
     return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
   }
-  // Excel might give us a Date object via cellDates: true
-  if (v instanceof Date && !Number.isNaN(v.getTime())) {
-    return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
-  }
   return null;
+}
+
+function isXlsxBuffer(buffer: Buffer): boolean {
+  // XLSX is a ZIP archive — PK\x03\x04 magic.
+  return (
+    buffer.length >= 4 &&
+    buffer[0] === 0x50 &&
+    buffer[1] === 0x4b &&
+    buffer[2] === 0x03 &&
+    buffer[3] === 0x04
+  );
+}
+
+function parseCsvText(text: string): string[][] {
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += c;
+      }
+    } else if (c === '"' && field === '') {
+      inQuotes = true;
+    } else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else if (c !== '\r') {
+      field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  while (rows.length > 0 && rows[rows.length - 1].every((c) => c === '')) {
+    rows.pop();
+  }
+  return rows;
+}
+
+function readCsvRows(buffer: Buffer): Record<string, unknown>[] {
+  const rows = parseCsvText(buffer.toString('utf-8'));
+  if (rows.length === 0) return [];
+  const headers = rows[0];
+  return rows.slice(1).map((row) => {
+    const obj: Record<string, unknown> = {};
+    headers.forEach((h, i) => {
+      if (!h) return;
+      const v = i < row.length ? row[i] : '';
+      obj[h] = v === '' ? null : v;
+    });
+    return obj;
+  });
+}
+
+function readXlsxRows(buffer: Buffer): Record<string, unknown>[] {
+  const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  if (!sheet || !sheet['!ref']) return [];
+  const range = XLSX.utils.decode_range(sheet['!ref']);
+
+  const headers: string[] = [];
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const cell = sheet[XLSX.utils.encode_cell({ r: range.s.r, c })];
+    headers.push(cell ? String(cell.v ?? '') : '');
+  }
+
+  const rows: Record<string, unknown>[] = [];
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const obj: Record<string, unknown> = {};
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const h = headers[c - range.s.c];
+      if (!h) continue;
+      const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+      if (!cell) {
+        obj[h] = null;
+      } else if (cell.t === 'd' && cell.v instanceof Date) {
+        // Hand the raw Date to parseDate — its formatted .w would be
+        // locale-dependent ("12/31/96") and lose precision.
+        obj[h] = cell.v;
+      } else {
+        // Prefer formatted text (cell.w) so number cells displayed with
+        // leading zeros — phone "0612345678" — survive.
+        obj[h] = cell.w != null ? cell.w : cell.v ?? null;
+      }
+    }
+    rows.push(obj);
+  }
+  return rows;
 }
 
 const COVERAGE_SET = new Set(COVERAGE_VALUES);
 
 export function parsePatientImport(buffer: Buffer): ImportPreview {
-  const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  if (!sheet) {
-    return { columnsRecognised: {}, rows: [], errors: [{ row: 0, field: '_file', message: 'Feuille vide.' }] };
+  let raw: Record<string, unknown>[];
+  try {
+    raw = isXlsxBuffer(buffer) ? readXlsxRows(buffer) : readCsvRows(buffer);
+  } catch (e) {
+    return {
+      columnsRecognised: {},
+      rows: [],
+      errors: [{ row: 0, field: '_file', message: `Fichier illisible : ${(e as Error).message}` }],
+    };
   }
-  const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    defval: null,
-    raw: false,
-  });
   if (raw.length === 0) {
     return {
       columnsRecognised: {},
@@ -203,7 +322,7 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
 
   // Required columns present?
   const requiredMissing: string[] = [];
-  for (const required of ['last_name', 'first_name', 'gender', 'date_of_birth', 'phone'] as const) {
+  for (const required of ['last_name', 'first_name', 'gender', 'date_of_birth'] as const) {
     if (!byCanonical[required]) requiredMissing.push(required);
   }
   if (requiredMissing.length > 0) {
@@ -246,7 +365,6 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
     if (!date_of_birth) {
       pushErr('date_of_birth', 'Date de naissance attendue : YYYY-MM-DD ou DD/MM/YYYY.');
     }
-    if (!phone) pushErr('phone', 'Téléphone requis.');
 
     const coverage_type_raw = asString(get('coverage_type'));
     let coverage_type: string | null = null;
@@ -273,7 +391,7 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
       first_name: first_name!,
       gender: gender!,
       date_of_birth: date_of_birth!,
-      phone: phone!,
+      phone,
       cin: asString(get('cin')),
       coverage_type,
       coverage_id: asString(get('coverage_id')),
