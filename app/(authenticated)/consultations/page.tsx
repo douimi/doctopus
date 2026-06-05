@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { ArrowRight, Stethoscope } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
-import { listConsultations } from '@/lib/consultations/queries';
+import { listConsultationsPage } from '@/lib/consultations/queries';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LiveSearchInput } from '@/components/ui/live-search-input';
 import { LiveRefresh } from '@/components/shell/live-refresh';
 import { PageHeader } from '@/components/shell/page-header';
+import { Pagination } from '@/components/ui/pagination';
 import { StatusBadge } from '@/components/ui/status-badge';
 import {
   Table,
@@ -21,8 +22,10 @@ import { formatMad } from '@/lib/medications/format';
 
 export const dynamic = 'force-dynamic';
 
+const PAGE_SIZE = 25;
+
 type Props = {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 };
 
 function fmtDate(d: Date): string {
@@ -60,8 +63,22 @@ function StatusCell({
 
 export default async function ConsultationsPage({ searchParams }: Props) {
   const session = await requireSession();
-  const { q = '' } = await searchParams;
-  const rows = await listConsultations(session.tenantId, q);
+  const { q = '', page: pageRaw } = await searchParams;
+  const trimmed = q.trim();
+  const requestedPage = Number.parseInt(pageRaw ?? '1', 10) || 1;
+  const { rows, total, page, totalPages } = await listConsultationsPage(
+    session.tenantId,
+    trimmed,
+    { page: requestedPage, pageSize: PAGE_SIZE },
+  );
+
+  const buildHref = (n: number) => {
+    const params = new URLSearchParams();
+    if (trimmed) params.set('q', trimmed);
+    if (n > 1) params.set('page', String(n));
+    const qs = params.toString();
+    return qs ? `/consultations?${qs}` : '/consultations';
+  };
 
   return (
     <>
@@ -73,6 +90,10 @@ export default async function ConsultationsPage({ searchParams }: Props) {
             defaultQuery={q}
             placeholder="Recherche par patient (nom, prénom)"
           />
+          <span className="text-small text-muted-foreground ml-auto tabular-nums">
+            {total} consultation{total === 1 ? '' : 's'}
+            {trimmed ? ' trouvées' : ''}
+          </span>
         </div>
 
         <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
@@ -93,8 +114,8 @@ export default async function ConsultationsPage({ searchParams }: Props) {
                     icon={Stethoscope}
                     title="Aucune consultation"
                     description={
-                      q
-                        ? `Aucun résultat pour « ${q} ».`
+                      trimmed
+                        ? `Aucun résultat pour « ${trimmed} ».`
                         : 'Les consultations apparaîtront ici.'
                     }
                   />
@@ -143,6 +164,8 @@ export default async function ConsultationsPage({ searchParams }: Props) {
             </TableBody>
           </Table>
         </div>
+
+        <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
       </div>
     </>
   );

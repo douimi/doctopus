@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, desc, eq, ilike, or } from 'drizzle-orm';
+import { desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
 import {
   consultations,
@@ -112,5 +112,83 @@ export async function listConsultations(
       paymentStatus: r.paymentStatus as 'awaiting' | 'paid' | 'free',
       priceMad: r.priceMad,
     }));
+  });
+}
+
+export type ConsultationPage = {
+  rows: ConsultationListRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+/**
+ * Paginated variant of listConsultations. `page` is 1-indexed; out-of-
+ * range pages clamp to a valid value. Same ordering (most recent first)
+ * and same patient-name search as the non-paginated version.
+ */
+export async function listConsultationsPage(
+  tenantId: string,
+  query: string,
+  opts: { page?: number; pageSize?: number } = {},
+): Promise<ConsultationPage> {
+  const pageSize = Math.min(Math.max(opts.pageSize ?? 25, 1), 100);
+  const trimmed = query.trim();
+
+  return withTenantTx(tenantId, async (tx) => {
+    const where = trimmed
+      ? or(
+          ilike(patients.firstName, `%${escapeIlike(trimmed)}%`),
+          ilike(patients.lastName, `%${escapeIlike(trimmed)}%`),
+        )
+      : undefined;
+
+    const [{ count }] = await tx
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(consultations)
+      .innerJoin(patients, eq(patients.id, consultations.patientId))
+      .where(where);
+
+    const total = Number(count) || 0;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(Math.max(opts.page ?? 1, 1), totalPages);
+    const offset = (page - 1) * pageSize;
+
+    const rows = await tx
+      .select({
+        id: consultations.id,
+        patientId: consultations.patientId,
+        lastName: patients.lastName,
+        firstName: patients.firstName,
+        consultedAt: consultations.consultedAt,
+        motif: consultations.motif,
+        isFinalized: consultations.isFinalized,
+        paymentStatus: consultations.paymentStatus,
+        priceMad: consultations.priceMad,
+      })
+      .from(consultations)
+      .innerJoin(patients, eq(patients.id, consultations.patientId))
+      .where(where)
+      .orderBy(desc(consultations.consultedAt))
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      rows: rows.map((r) => ({
+        id: r.id,
+        patientId: r.patientId,
+        patientFullName: `${r.lastName} ${r.firstName}`.trim(),
+        consultedAt: r.consultedAt,
+        motif: r.motif,
+        isFinalized: r.isFinalized,
+        paymentStatus: r.paymentStatus as 'awaiting' | 'paid' | 'free',
+        priceMad: r.priceMad,
+      })),
+      total,
+      page,
+      pageSize,
+      totalPages,
+    };
   });
 }
