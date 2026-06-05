@@ -10,10 +10,12 @@ import {
 import type { ReactNode } from 'react';
 import type { Session } from '@/lib/auth/session';
 import { BrandLockup } from '@/components/ui/brand';
+import { Toaster } from '@/components/ui/toast';
 import { NotificationBell } from './notification-bell';
 import { Sidebar } from './sidebar';
 import { SidebarNavGroup, SidebarNavItem } from './sidebar-nav';
 import { SidebarUser } from './sidebar-user';
+import { WaitingArrivalsListener } from './waiting-arrivals-listener';
 
 export function DoctorShell({
   session,
@@ -74,6 +76,8 @@ export function DoctorShell({
         ) : null}
       </Sidebar>
       <main className="flex-1 min-w-0 bg-app-surface">{children}</main>
+      <WaitingArrivalsListener tenantId={session.tenantId} />
+      <Toaster />
     </div>
   );
 }
