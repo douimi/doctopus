@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { SectionCard } from '@/components/consultations/section-card';
-import { saveFollowUpAction, saveSectionsAction, saveVitalsAction } from './actions';
+import { saveSectionsAction, saveVitalsAction } from './actions';
 
 type Sections = {
   motif: string;
@@ -15,8 +15,6 @@ type Sections = {
   diagnosis: string;
   followUpNotes: string;
 };
-
-type EditableSections = Omit<Sections, 'followUpNotes'>;
 
 type Vitals = {
   weightKg: string;
@@ -34,53 +32,29 @@ const DEBOUNCE_MS = 1500;
 
 export function ConsultationEditor({
   consultationId,
-  readOnly,
   initialSections,
   initialVitals,
   prescriptionSlot,
 }: {
   consultationId: string;
-  readOnly: boolean;
   initialSections: Sections;
   initialVitals: Vitals;
   prescriptionSlot: React.ReactNode;
 }) {
-  const [sections, setSections] = useState<EditableSections>({
-    motif: initialSections.motif,
-    historyNotes: initialSections.historyNotes,
-    examNotes: initialSections.examNotes,
-    diagnosis: initialSections.diagnosis,
-  });
-  const [followUpNotes, setFollowUpNotes] = useState(initialSections.followUpNotes);
+  const [sections, setSections] = useState<Sections>(initialSections);
   const [vitals, setVitals] = useState<Vitals>(initialVitals);
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  const lastSavedSectionsRef = useRef(
-    JSON.stringify({
-      motif: initialSections.motif,
-      historyNotes: initialSections.historyNotes,
-      examNotes: initialSections.examNotes,
-      diagnosis: initialSections.diagnosis,
-    }),
-  );
-  const lastSavedFollowUpRef = useRef(initialSections.followUpNotes);
+  const lastSavedSectionsRef = useRef(JSON.stringify(initialSections));
   const lastSavedVitalsRef = useRef(JSON.stringify(initialVitals));
 
   useEffect(() => {
-    if (readOnly) return;
     const current = JSON.stringify(sections);
     if (current === lastSavedSectionsRef.current) return;
     setStatus('pending');
     const id = setTimeout(async () => {
-      // Send all five fields — the server expects the full schema — but
-      // include the latest followUpNotes from a ref so a follow-up edit
-      // that hadn't yet been autosaved doesn't get clobbered by a stale
-      // closure value.
-      const res = await saveSectionsAction(consultationId, {
-        ...sections,
-        followUpNotes: lastSavedFollowUpRef.current,
-      });
+      const res = await saveSectionsAction(consultationId, sections);
       if (res.ok) {
         lastSavedSectionsRef.current = current;
         setStatus('saved');
@@ -91,29 +65,9 @@ export function ConsultationEditor({
       }
     }, DEBOUNCE_MS);
     return () => clearTimeout(id);
-  }, [sections, consultationId, readOnly]);
-
-  // Follow-up notes autosave — runs even when the consultation is
-  // finalized so the doctor can keep recording return-visit notes.
-  useEffect(() => {
-    if (followUpNotes === lastSavedFollowUpRef.current) return;
-    setStatus('pending');
-    const id = setTimeout(async () => {
-      const res = await saveFollowUpAction(consultationId, followUpNotes);
-      if (res.ok) {
-        lastSavedFollowUpRef.current = followUpNotes;
-        setStatus('saved');
-        setError(null);
-      } else {
-        setStatus('error');
-        setError(res.error ?? 'Erreur de sauvegarde.');
-      }
-    }, DEBOUNCE_MS);
-    return () => clearTimeout(id);
-  }, [followUpNotes, consultationId]);
+  }, [sections, consultationId]);
 
   useEffect(() => {
-    if (readOnly) return;
     const current = JSON.stringify(vitals);
     if (current === lastSavedVitalsRef.current) return;
     setStatus('pending');
@@ -129,10 +83,8 @@ export function ConsultationEditor({
       }
     }, DEBOUNCE_MS);
     return () => clearTimeout(id);
-  }, [vitals, consultationId, readOnly]);
+  }, [vitals, consultationId]);
 
-  // After finalization the main sections are locked but follow-up notes
-  // remain editable, so we can't show a flat "read-only" label.
   const statusLabel =
     status === 'pending'
       ? 'Enregistrement…'
@@ -140,9 +92,7 @@ export function ConsultationEditor({
         ? 'Enregistré'
         : status === 'error'
           ? error ?? 'Erreur'
-          : readOnly
-            ? 'Finalisée · suivi modifiable'
-            : 'Aucune modification';
+          : 'Aucune modification';
 
   const variant =
     status === 'error'
@@ -174,7 +124,6 @@ export function ConsultationEditor({
           name="motif"
           rows={2}
           value={sections.motif}
-          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, motif: e.target.value })}
         />
       </SectionCard>
@@ -183,7 +132,6 @@ export function ConsultationEditor({
         <Textarea
           rows={3}
           value={sections.historyNotes}
-          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, historyNotes: e.target.value })}
         />
       </SectionCard>
@@ -192,7 +140,6 @@ export function ConsultationEditor({
         <Textarea
           rows={4}
           value={sections.examNotes}
-          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, examNotes: e.target.value })}
         />
       </SectionCard>
@@ -205,8 +152,7 @@ export function ConsultationEditor({
               id="weightKg"
               inputMode="decimal"
               value={vitals.weightKg}
-              disabled={readOnly}
-              onChange={(e) => setVitals({ ...vitals, weightKg: e.target.value })}
+                  onChange={(e) => setVitals({ ...vitals, weightKg: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -215,8 +161,7 @@ export function ConsultationEditor({
               id="heightCm"
               inputMode="decimal"
               value={vitals.heightCm}
-              disabled={readOnly}
-              onChange={(e) => setVitals({ ...vitals, heightCm: e.target.value })}
+                  onChange={(e) => setVitals({ ...vitals, heightCm: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -225,8 +170,7 @@ export function ConsultationEditor({
               id="temperatureC"
               inputMode="decimal"
               value={vitals.temperatureC}
-              disabled={readOnly}
-              onChange={(e) => setVitals({ ...vitals, temperatureC: e.target.value })}
+                  onChange={(e) => setVitals({ ...vitals, temperatureC: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -235,8 +179,7 @@ export function ConsultationEditor({
               id="bpSystolic"
               inputMode="numeric"
               value={vitals.bpSystolic}
-              disabled={readOnly}
-              onChange={(e) => setVitals({ ...vitals, bpSystolic: e.target.value })}
+                  onChange={(e) => setVitals({ ...vitals, bpSystolic: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -245,8 +188,7 @@ export function ConsultationEditor({
               id="bpDiastolic"
               inputMode="numeric"
               value={vitals.bpDiastolic}
-              disabled={readOnly}
-              onChange={(e) => setVitals({ ...vitals, bpDiastolic: e.target.value })}
+                  onChange={(e) => setVitals({ ...vitals, bpDiastolic: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -255,8 +197,7 @@ export function ConsultationEditor({
               id="heartRate"
               inputMode="numeric"
               value={vitals.heartRate}
-              disabled={readOnly}
-              onChange={(e) => setVitals({ ...vitals, heartRate: e.target.value })}
+                  onChange={(e) => setVitals({ ...vitals, heartRate: e.target.value })}
             />
           </div>
         </div>
@@ -266,8 +207,7 @@ export function ConsultationEditor({
             id="vitalsNotes"
             rows={2}
             value={vitals.notes}
-            disabled={readOnly}
-            onChange={(e) => setVitals({ ...vitals, notes: e.target.value })}
+              onChange={(e) => setVitals({ ...vitals, notes: e.target.value })}
           />
         </div>
       </SectionCard>
@@ -276,22 +216,18 @@ export function ConsultationEditor({
         <Textarea
           rows={3}
           value={sections.diagnosis}
-          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, diagnosis: e.target.value })}
         />
       </SectionCard>
 
       <SectionCard title="Traitement (ordonnance)">{prescriptionSlot}</SectionCard>
 
-      <SectionCard
-        title="Suite / follow-up"
-        hint={readOnly ? 'modifiable après finalisation' : undefined}
-      >
+      <SectionCard title="Suite / follow-up">
         <Textarea
           rows={8}
           className="min-h-48"
-          value={followUpNotes}
-          onChange={(e) => setFollowUpNotes(e.target.value)}
+          value={sections.followUpNotes}
+          onChange={(e) => setSections({ ...sections, followUpNotes: e.target.value })}
           placeholder="Visites de contrôle, relecture d'examens, suivi à distance. Ex. : 2026-06-12 — retour pour relecture biologie : TSH normale, à revoir dans 6 mois."
         />
       </SectionCard>

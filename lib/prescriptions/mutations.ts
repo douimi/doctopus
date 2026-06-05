@@ -49,7 +49,7 @@ export async function addPrescriptionItem(
       .select()
       .from(consultations)
       .where(eq(consultations.id, input.consultationId));
-    if (!c || c.isFinalized) throw new Error('Consultation introuvable ou finalisée');
+    if (!c) throw new Error('Consultation introuvable');
 
     const pres = await ensurePrescriptionFor(tx, tenantId, input.consultationId, doctorId);
 

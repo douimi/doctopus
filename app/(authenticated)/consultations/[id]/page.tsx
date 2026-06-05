@@ -16,6 +16,7 @@ import { PrescriptionEditor } from './prescription/editor';
 import { AssistantPanel } from './assistant/panel';
 import { FinalizePricingDialog } from '@/components/payments/finalize-pricing-dialog';
 import { FinalizedTarificationBadge } from '@/components/payments/finalized-tarification-badge';
+import { DeleteConsultationDialog } from './delete-dialog';
 
 export default async function ConsultationPage({
   params,
@@ -73,19 +74,26 @@ export default async function ConsultationPage({
           </Link>
         }
         actions={
-          detail.consultation.isFinalized ? (
-            <FinalizedTarificationBadge
-              isFree={detail.consultation.isFree}
-              priceMad={detail.consultation.priceMad}
-              paymentStatus={detail.consultation.paymentStatus as 'awaiting' | 'paid' | 'free'}
-              paymentMethod={detail.consultation.paymentMethod}
-            />
-          ) : (
-            <FinalizePricingDialog
+          <>
+            {detail.consultation.isFinalized ? (
+              <FinalizedTarificationBadge
+                isFree={detail.consultation.isFree}
+                priceMad={detail.consultation.priceMad}
+                paymentStatus={detail.consultation.paymentStatus as 'awaiting' | 'paid' | 'free'}
+                paymentMethod={detail.consultation.paymentMethod}
+              />
+            ) : (
+              <FinalizePricingDialog
+                consultationId={id}
+                defaultPriceMad={tenant?.defaultConsultationPriceMad ?? null}
+              />
+            )}
+            <DeleteConsultationDialog
               consultationId={id}
-              defaultPriceMad={tenant?.defaultConsultationPriceMad ?? null}
+              patientFullName={patientName}
+              isPaid={detail.consultation.paymentStatus === 'paid'}
             />
-          )
+          </>
         }
       />
       <div className="px-6 py-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -98,7 +106,6 @@ export default async function ConsultationPage({
 
         <ConsultationEditor
           consultationId={id}
-          readOnly={detail.consultation.isFinalized}
           initialSections={{
             motif: detail.consultation.motif ?? '',
             historyNotes: detail.consultation.historyNotes ?? '',
@@ -120,7 +127,6 @@ export default async function ConsultationPage({
               consultationId={id}
               prescriptionId={presc?.prescription.id ?? null}
               items={presc?.items ?? []}
-              readOnly={detail.consultation.isFinalized}
               suggestions={suggestions}
             />
           }
@@ -130,7 +136,6 @@ export default async function ConsultationPage({
         <AssistantPanel
           consultationId={id}
           state={assistantState}
-          readOnly={detail.consultation.isFinalized}
         />
       </div>
     </div>

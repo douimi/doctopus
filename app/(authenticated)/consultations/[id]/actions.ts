@@ -1,12 +1,13 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireDoctor } from '@/lib/auth/guards';
 import { sectionsUpdateSchema, vitalsUpdateSchema } from '@/lib/consultations/schemas';
 import {
+  deleteConsultation,
   finalizeConsultation,
-  updateConsultationFollowUp,
   updateConsultationSections,
   updateConsultationVitals,
 } from '@/lib/consultations/mutations';
@@ -26,37 +27,7 @@ export async function saveSectionsAction(
   const parsed = sectionsUpdateSchema.safeParse(data);
   if (!parsedId.success || !parsed.success) return { ok: false, error: 'Données invalides.' };
   const ok = await updateConsultationSections(session.tenantId, parsedId.data.id, parsed.data);
-  if (!ok) return { ok: false, error: 'Consultation finalisée ou introuvable.' };
-  return { ok: true };
-}
-
-const followUpSchema = z.string().max(10000);
-
-/**
- * Saves only the follow-up notes. Allowed on finalized consultations
- * (the other sections stay frozen). We audit post-finalization follow-up
- * edits so there's a trail; pre-finalization edits go through the normal
- * autosave and aren't audited per-keystroke.
- */
-export async function saveFollowUpAction(
-  id: string,
-  followUpNotes: string,
-): Promise<SaveResult> {
-  const session = await requireDoctor();
-  const parsedId = idSchema.safeParse({ id });
-  const parsed = followUpSchema.safeParse(followUpNotes);
-  if (!parsedId.success || !parsed.success) return { ok: false, error: 'Données invalides.' };
-  const ok = await updateConsultationFollowUp(session.tenantId, parsedId.data.id, parsed.data);
   if (!ok) return { ok: false, error: 'Consultation introuvable.' };
-
-  await recordAudit({
-    tenantId: session.tenantId,
-    actorUserId: session.userId,
-    action: 'consultation.follow_up_updated',
-    entityType: 'consultation',
-    entityId: parsedId.data.id,
-  });
-
   return { ok: true };
 }
 
@@ -69,7 +40,7 @@ export async function saveVitalsAction(
   const parsed = vitalsUpdateSchema.safeParse(data);
   if (!parsedId.success || !parsed.success) return { ok: false, error: 'Données invalides.' };
   const ok = await updateConsultationVitals(session.tenantId, parsedId.data.id, parsed.data);
-  if (!ok) return { ok: false, error: 'Consultation finalisée ou introuvable.' };
+  if (!ok) return { ok: false, error: 'Consultation introuvable.' };
   return { ok: true };
 }
 
@@ -116,4 +87,27 @@ export async function finalizeConsultationAction(formData: FormData): Promise<Fi
 
   revalidatePath('/today');
   return { ok: true };
+}
+
+export async function deleteConsultationAction(formData: FormData): Promise<void> {
+  const session = await requireDoctor();
+  const parsedId = idSchema.safeParse({ id: formData.get('id') });
+  if (!parsedId.success) {
+    // Form submission — there's no UI surface to show this; bail silently.
+    return;
+  }
+  const ok = await deleteConsultation(session.tenantId, parsedId.data.id);
+  if (!ok) return;
+
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'consultation.delete',
+    entityType: 'consultation',
+    entityId: parsedId.data.id,
+  });
+
+  revalidatePath('/consultations');
+  revalidatePath('/today');
+  redirect('/consultations');
 }

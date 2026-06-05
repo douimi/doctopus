@@ -27,13 +27,11 @@ export function PrescriptionEditor({
   consultationId,
   prescriptionId,
   items,
-  readOnly,
   suggestions,
 }: {
   consultationId: string;
   prescriptionId: string | null;
   items: PrescriptionItem[];
-  readOnly: boolean;
   suggestions: AutocompleteSuggestions;
 }) {
   const [pickedHit, setPickedHit] = useState<MedicationSearchHit | null>(null);
@@ -69,8 +67,7 @@ export function PrescriptionEditor({
                     {it.medicationLabelSnapshot}
                   </div>
                 </div>
-                {!readOnly ? (
-                  <div className="flex items-center gap-0.5 shrink-0">
+                <div className="flex items-center gap-0.5 shrink-0">
                     <form action={reorderItemAction}>
                       <input type="hidden" name="consultationId" value={consultationId} />
                       <input type="hidden" name="itemId" value={it.id} />
@@ -115,38 +112,9 @@ export function PrescriptionEditor({
                         <X aria-hidden />
                       </Button>
                     </form>
-                  </div>
-                ) : null}
+                </div>
               </div>
-              {readOnly ? (
-                <dl className="text-small text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                  {it.posologie ? (
-                    <div className="contents">
-                      <dt className="font-medium text-foreground">Posologie</dt>
-                      <dd>{it.posologie}</dd>
-                    </div>
-                  ) : null}
-                  {it.duration ? (
-                    <div className="contents">
-                      <dt className="font-medium text-foreground">Durée</dt>
-                      <dd>{it.duration}</dd>
-                    </div>
-                  ) : null}
-                  {it.quantity ? (
-                    <div className="contents">
-                      <dt className="font-medium text-foreground">Quantité</dt>
-                      <dd>{it.quantity}</dd>
-                    </div>
-                  ) : null}
-                  {it.instructions ? (
-                    <div className="contents">
-                      <dt className="font-medium text-foreground">Notes</dt>
-                      <dd>{it.instructions}</dd>
-                    </div>
-                  ) : null}
-                </dl>
-              ) : (
-                <form action={updateItemAction} className="grid grid-cols-2 gap-2">
+              <form action={updateItemAction} className="grid grid-cols-2 gap-2">
                   <input type="hidden" name="consultationId" value={consultationId} />
                   <input type="hidden" name="itemId" value={it.id} />
                   <div className="space-y-1">
@@ -200,14 +168,12 @@ export function PrescriptionEditor({
                     </Button>
                   </div>
                 </form>
-              )}
             </li>
           ))}
         </ul>
       )}
 
-      {!readOnly ? (
-        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+      <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
           <div className="font-medium text-heading">Ajouter un médicament</div>
           <div
             role="tablist"
@@ -334,7 +300,6 @@ export function PrescriptionEditor({
             </form>
           ) : null}
         </div>
-      ) : null}
 
       {prescriptionId && items.length > 0 ? (
         <a

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { KeyRound, Lock, Search, Send, Sparkles } from 'lucide-react';
+import { KeyRound, Search, Send, Sparkles } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,12 +24,10 @@ function ChatPanel({
   consultationId,
   balance,
   disclaimerAcknowledged,
-  readOnly,
 }: {
   consultationId: string;
   balance: number;
   disclaimerAcknowledged: boolean;
-  readOnly: boolean;
 }) {
   const [input, setInput] = useState('');
   const router = useRouter();
@@ -82,12 +80,6 @@ function ChatPanel({
             <Sparkles className="size-3.5" aria-hidden />
           </span>
           <span className="text-heading font-semibold leading-none">Assistant IA</span>
-          {readOnly ? (
-            <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide px-1.5 py-0.5 rounded-pill bg-muted text-muted-foreground border border-border">
-              <Lock className="size-3" aria-hidden />
-              Lecture seule
-            </span>
-          ) : null}
         </div>
         <span className="text-small text-muted-foreground tabular-nums">
           ~{balance} consultations restantes
@@ -170,34 +162,28 @@ function ChatPanel({
         {errMsg ? <Alert variant="danger">{errMsg}</Alert> : null}
       </div>
 
-      {readOnly ? (
-        <div className="border-t border-border px-4 py-3 text-small text-muted-foreground bg-muted/30">
-          Consultation terminée — historique en lecture seule.
-        </div>
-      ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="border-t border-border flex gap-2 p-3 bg-muted/30"
+      <form
+        onSubmit={handleSubmit}
+        className="border-t border-border flex gap-2 p-3 bg-muted/30"
+      >
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Votre question…"
+          disabled={isStreaming}
+          aria-label="Question à l'assistant IA"
+        />
+        <Button
+          type="submit"
+          disabled={input.trim().length === 0}
+          loading={isStreaming}
+          size="default"
+          aria-label="Envoyer"
         >
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Votre question…"
-            disabled={isStreaming}
-            aria-label="Question à l'assistant IA"
-          />
-          <Button
-            type="submit"
-            disabled={input.trim().length === 0}
-            loading={isStreaming}
-            size="default"
-            aria-label="Envoyer"
-          >
-            <Send aria-hidden />
-            Envoyer
-          </Button>
-        </form>
-      )}
+          <Send aria-hidden />
+          Envoyer
+        </Button>
+      </form>
     </aside>
   );
 }
@@ -205,11 +191,9 @@ function ChatPanel({
 export function AssistantPanel({
   consultationId,
   state,
-  readOnly,
 }: {
   consultationId: string;
   state: State;
-  readOnly: boolean;
 }) {
   if (state.kind === 'disabled') {
     return (
@@ -272,7 +256,6 @@ export function AssistantPanel({
       consultationId={consultationId}
       balance={state.balance}
       disclaimerAcknowledged={state.disclaimerAcknowledged}
-      readOnly={readOnly}
     />
   );
 }

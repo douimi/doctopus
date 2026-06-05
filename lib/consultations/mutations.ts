@@ -10,6 +10,73 @@ import {
 import { applyTransition, canTransition } from '@/lib/appointments/state-machine';
 import type { SectionsUpdateInput, VitalsUpdateInput } from './schemas';
 
+/**
+ * Manually register a past or off-platform consultation. We still need
+ * an appointment row to anchor the FK (the `appointments` table is the
+ * canonical "visit happened" record), so we synthesize one as a walk-in
+ * marked done at the same timestamp — invisible to the agenda views
+ * (which filter on kind='scheduled' or status='waiting'/'in_consultation').
+ */
+export async function createManualConsultation(
+  tenantId: string,
+  args: { patientId: string; doctorId: string; consultedAt: Date },
+): Promise<Consultation> {
+  return withTenantTx(tenantId, async (tx) => {
+    const [appt] = await tx
+      .insert(appointments)
+      .values({
+        tenantId,
+        patientId: args.patientId,
+        kind: 'walkin',
+        status: 'done',
+        arrivedAt: args.consultedAt,
+        startedAt: args.consultedAt,
+        endedAt: args.consultedAt,
+        createdBy: args.doctorId,
+      })
+      .returning();
+
+    const [created] = await tx
+      .insert(consultations)
+      .values({
+        tenantId,
+        appointmentId: appt.id,
+        patientId: args.patientId,
+        doctorId: args.doctorId,
+        consultedAt: args.consultedAt,
+      })
+      .returning();
+    return created;
+  });
+}
+
+/**
+ * Hard-delete a consultation. Cascades — via the DB constraints — to
+ * consultation_vitals, prescriptions + prescription_items, chat
+ * messages, and chatbot_usage. The chatbot_credit_ledger entry tied to
+ * this consultation has consultation_id set to NULL so the ledger
+ * stays intact (we don't want to lose accounting history).
+ *
+ * The synthetic appointment row from a manual create is intentionally
+ * left behind — it's harmless (status='done', no scheduled time, hidden
+ * from agenda views) and removing it would require us to know whether
+ * the appointment was "manual" or real.
+ *
+ * Returns false when the consultation doesn't exist in this tenant.
+ */
+export async function deleteConsultation(
+  tenantId: string,
+  id: string,
+): Promise<boolean> {
+  return withTenantTx(tenantId, async (tx) => {
+    const result = await tx
+      .delete(consultations)
+      .where(and(eq(consultations.id, id), eq(consultations.tenantId, tenantId)))
+      .returning({ id: consultations.id });
+    return result.length > 0;
+  });
+}
+
 export async function startFromAppointment(
   tenantId: string,
   appointmentId: string,
@@ -66,6 +133,14 @@ function strToInt(s: string): number | null {
   return s.length > 0 ? Number(s) : null;
 }
 
+/**
+ * Update the editable clinical sections. Allowed at any point in the
+ * consultation's lifecycle — finalization locks pricing/payment, not
+ * the medical record itself, so the doctor can amend their notes after
+ * the fact (correcting a diagnosis, adding follow-up info, etc.).
+ *
+ * Returns false only when the consultation doesn't exist in this tenant.
+ */
 export async function updateConsultationSections(
   tenantId: string,
   id: string,
@@ -73,7 +148,7 @@ export async function updateConsultationSections(
 ): Promise<boolean> {
   return withTenantTx(tenantId, async (tx) => {
     const [current] = await tx.select().from(consultations).where(eq(consultations.id, id));
-    if (!current || current.isFinalized) return false;
+    if (!current) return false;
     await tx
       .update(consultations)
       .set({
@@ -82,33 +157,6 @@ export async function updateConsultationSections(
         examNotes: emptyToNull(input.examNotes),
         diagnosis: emptyToNull(input.diagnosis),
         followUpNotes: emptyToNull(input.followUpNotes),
-        updatedAt: new Date(),
-      })
-      .where(eq(consultations.id, id));
-    return true;
-  });
-}
-
-/**
- * Update ONLY the follow-up notes — allowed even when the consultation
- * is finalized so the doctor can record what happened on return visits,
- * lab-result reviews, or post-finalization observations without
- * reopening the whole record.
- *
- * Returns false only when the consultation doesn't exist in this tenant.
- */
-export async function updateConsultationFollowUp(
-  tenantId: string,
-  id: string,
-  followUpNotes: string,
-): Promise<boolean> {
-  return withTenantTx(tenantId, async (tx) => {
-    const [current] = await tx.select().from(consultations).where(eq(consultations.id, id));
-    if (!current) return false;
-    await tx
-      .update(consultations)
-      .set({
-        followUpNotes: emptyToNull(followUpNotes),
         updatedAt: new Date(),
       })
       .where(eq(consultations.id, id));
@@ -126,7 +174,9 @@ export async function updateConsultationVitals(
       .select()
       .from(consultations)
       .where(eq(consultations.id, consultationId));
-    if (!current || current.isFinalized) return false;
+    // Vitals follow the same "edit anytime" rule as the clinical sections —
+    // see updateConsultationSections above.
+    if (!current) return false;
 
     const [existing] = await tx
       .select()
