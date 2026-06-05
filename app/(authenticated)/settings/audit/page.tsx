@@ -23,6 +23,8 @@ const ACTION_LABEL: Record<string, string> = {
   'patient.update': 'Patient modifié',
   'patient.archive': 'Patient archivé',
   'consultation.start': 'Consultation démarrée',
+  'consultation.manual_create': 'Consultation enregistrée manuellement',
+  'consultation.delete': 'Consultation supprimée',
   'consultation.finalize': 'Consultation terminée',
   'consultation.follow_up_updated': 'Suivi mis à jour',
   'prescription.item_added': "Médicament ajouté à l’ordonnance",
