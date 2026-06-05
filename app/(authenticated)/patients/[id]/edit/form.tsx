@@ -114,12 +114,11 @@ export function EditPatientForm({ patient }: { patient: Patient }) {
 
       <FormSection title="Contact">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Téléphone">
+          <FormField label="Téléphone (optionnel)">
             <Input
               id="phone"
               name="phone"
               defaultValue={patient.phone}
-              required
               type="tel"
               autoComplete="tel"
             />

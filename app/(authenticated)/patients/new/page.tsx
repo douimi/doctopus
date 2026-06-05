@@ -89,8 +89,8 @@ function NewPatientForm() {
 
       <FormSection title="Contact">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Téléphone">
-            <Input id="phone" name="phone" required type="tel" autoComplete="tel" />
+          <FormField label="Téléphone (optionnel)">
+            <Input id="phone" name="phone" type="tel" autoComplete="tel" />
           </FormField>
           <FormField label="CIN (optionnel)">
             <Input id="cin" name="cin" />
