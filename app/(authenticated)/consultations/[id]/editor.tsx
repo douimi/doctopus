@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { Check, Pencil, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,9 +28,24 @@ type Vitals = {
   notes: string;
 };
 
-type Status = 'idle' | 'pending' | 'saved' | 'error';
+type Mode = 'view' | 'edit';
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-const DEBOUNCE_MS = 1500;
+function isEmptySections(s: Sections): boolean {
+  return !s.motif && !s.historyNotes && !s.examNotes && !s.diagnosis && !s.followUpNotes;
+}
+
+function isEmptyVitals(v: Vitals): boolean {
+  return (
+    !v.weightKg &&
+    !v.heightCm &&
+    !v.temperatureC &&
+    !v.bpSystolic &&
+    !v.bpDiastolic &&
+    !v.heartRate &&
+    !v.notes
+  );
+}
 
 export function ConsultationEditor({
   consultationId,
@@ -41,63 +58,97 @@ export function ConsultationEditor({
   initialVitals: Vitals;
   prescriptionSlot: React.ReactNode;
 }) {
+  // Empty consultation? Treat as fresh entry — start in edit so the doctor
+  // doesn't have to click "Modifier" before typing anything. Otherwise
+  // start in view; explicit "Modifier" gates every keystroke against the DB.
+  const startInEdit = isEmptySections(initialSections) && isEmptyVitals(initialVitals);
+  const [mode, setMode] = useState<Mode>(startInEdit ? 'edit' : 'view');
   const [sections, setSections] = useState<Sections>(initialSections);
   const [vitals, setVitals] = useState<Vitals>(initialVitals);
-  const [status, setStatus] = useState<Status>('idle');
+  const [savedSections, setSavedSections] = useState<Sections>(initialSections);
+  const [savedVitals, setSavedVitals] = useState<Vitals>(initialVitals);
+  const [status, setStatus] = useState<SaveStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [saving, startSaving] = useTransition();
 
-  const lastSavedSectionsRef = useRef(JSON.stringify(initialSections));
-  const lastSavedVitalsRef = useRef(JSON.stringify(initialVitals));
+  const sectionsDirty = useMemo(
+    () => JSON.stringify(sections) !== JSON.stringify(savedSections),
+    [sections, savedSections],
+  );
+  const vitalsDirty = useMemo(
+    () => JSON.stringify(vitals) !== JSON.stringify(savedVitals),
+    [vitals, savedVitals],
+  );
+  const dirty = sectionsDirty || vitalsDirty;
+  const readOnly = mode === 'view';
 
+  // Browser-level "you have unsaved changes" guard. Stays out of the way
+  // until the doctor has actually typed something they haven't saved.
   useEffect(() => {
-    const current = JSON.stringify(sections);
-    if (current === lastSavedSectionsRef.current) return;
-    setStatus('pending');
-    const id = setTimeout(async () => {
-      const res = await saveSectionsAction(consultationId, sections);
-      if (res.ok) {
-        lastSavedSectionsRef.current = current;
-        setStatus('saved');
-        setError(null);
-      } else {
-        setStatus('error');
-        setError(res.error ?? 'Erreur de sauvegarde.');
-      }
-    }, DEBOUNCE_MS);
-    return () => clearTimeout(id);
-  }, [sections, consultationId]);
+    if (!dirty) return;
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      // Required by some browsers — value is ignored, browser shows its own copy.
+      e.returnValue = '';
+    }
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [dirty]);
 
-  useEffect(() => {
-    const current = JSON.stringify(vitals);
-    if (current === lastSavedVitalsRef.current) return;
-    setStatus('pending');
-    const id = setTimeout(async () => {
-      const res = await saveVitalsAction(consultationId, vitals);
-      if (res.ok) {
-        lastSavedVitalsRef.current = current;
-        setStatus('saved');
-        setError(null);
-      } else {
+  function enterEdit() {
+    setMode('edit');
+    setStatus('idle');
+    setError(null);
+  }
+
+  function cancelEdit() {
+    if (dirty && !window.confirm('Annuler les modifications non enregistrées ?')) return;
+    setSections(savedSections);
+    setVitals(savedVitals);
+    setMode('view');
+    setStatus('idle');
+    setError(null);
+  }
+
+  function save() {
+    setStatus('saving');
+    setError(null);
+    startSaving(async () => {
+      // Only call the server for the slice that actually changed.
+      const calls: Promise<{ ok: boolean; error?: string }>[] = [];
+      if (sectionsDirty) calls.push(saveSectionsAction(consultationId, sections));
+      if (vitalsDirty) calls.push(saveVitalsAction(consultationId, vitals));
+      const results = await Promise.all(calls);
+      const failed = results.find((r) => !r.ok);
+      if (failed) {
         setStatus('error');
-        setError(res.error ?? 'Erreur de sauvegarde.');
+        setError(failed.error ?? 'Erreur de sauvegarde.');
+        return;
       }
-    }, DEBOUNCE_MS);
-    return () => clearTimeout(id);
-  }, [vitals, consultationId]);
+      setSavedSections(sections);
+      setSavedVitals(vitals);
+      setStatus('saved');
+      setMode('view');
+    });
+  }
 
   const statusLabel =
-    status === 'pending'
+    status === 'saving'
       ? 'Enregistrement…'
-      : status === 'saved'
-        ? 'Enregistré'
-        : status === 'error'
-          ? error ?? 'Erreur'
-          : 'Aucune modification';
+      : status === 'error'
+        ? error ?? 'Erreur'
+        : mode === 'edit'
+          ? dirty
+            ? 'Modifications non enregistrées'
+            : 'Modification en cours'
+          : status === 'saved'
+            ? 'Enregistré'
+            : 'Lecture seule';
 
-  const variant =
+  const variant: 'danger' | 'warning' | 'success' | 'neutral' =
     status === 'error'
       ? 'danger'
-      : status === 'pending'
+      : status === 'saving' || (mode === 'edit' && dirty)
         ? 'warning'
         : status === 'saved'
           ? 'success'
@@ -106,7 +157,7 @@ export function ConsultationEditor({
   const dotColor =
     status === 'error'
       ? 'bg-danger'
-      : status === 'pending'
+      : status === 'saving' || (mode === 'edit' && dirty)
         ? 'bg-warning animate-pulse'
         : status === 'saved'
           ? 'bg-success'
@@ -114,16 +165,25 @@ export function ConsultationEditor({
 
   return (
     <div className="space-y-3">
-      <StatusBadge variant={variant} aria-live="polite" className="tabular-nums">
-        <span aria-hidden className={`size-1.5 rounded-pill ${dotColor}`} />
-        {statusLabel}
-      </StatusBadge>
+      <div className="flex items-center justify-between gap-2">
+        <StatusBadge variant={variant} aria-live="polite" className="tabular-nums">
+          <span aria-hidden className={`size-1.5 rounded-pill ${dotColor}`} />
+          {statusLabel}
+        </StatusBadge>
+        {mode === 'view' ? (
+          <Button type="button" size="sm" variant="secondary" onClick={enterEdit}>
+            <Pencil aria-hidden />
+            Modifier
+          </Button>
+        ) : null}
+      </div>
 
       <SectionCard title="Motif">
         <Textarea
           name="motif"
           rows={2}
           value={sections.motif}
+          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, motif: e.target.value })}
         />
       </SectionCard>
@@ -132,6 +192,7 @@ export function ConsultationEditor({
         <Textarea
           rows={3}
           value={sections.historyNotes}
+          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, historyNotes: e.target.value })}
         />
       </SectionCard>
@@ -140,6 +201,7 @@ export function ConsultationEditor({
         <Textarea
           rows={4}
           value={sections.examNotes}
+          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, examNotes: e.target.value })}
         />
       </SectionCard>
@@ -152,7 +214,8 @@ export function ConsultationEditor({
               id="weightKg"
               inputMode="decimal"
               value={vitals.weightKg}
-                  onChange={(e) => setVitals({ ...vitals, weightKg: e.target.value })}
+              disabled={readOnly}
+              onChange={(e) => setVitals({ ...vitals, weightKg: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -161,7 +224,8 @@ export function ConsultationEditor({
               id="heightCm"
               inputMode="decimal"
               value={vitals.heightCm}
-                  onChange={(e) => setVitals({ ...vitals, heightCm: e.target.value })}
+              disabled={readOnly}
+              onChange={(e) => setVitals({ ...vitals, heightCm: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -170,7 +234,8 @@ export function ConsultationEditor({
               id="temperatureC"
               inputMode="decimal"
               value={vitals.temperatureC}
-                  onChange={(e) => setVitals({ ...vitals, temperatureC: e.target.value })}
+              disabled={readOnly}
+              onChange={(e) => setVitals({ ...vitals, temperatureC: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -179,7 +244,8 @@ export function ConsultationEditor({
               id="bpSystolic"
               inputMode="numeric"
               value={vitals.bpSystolic}
-                  onChange={(e) => setVitals({ ...vitals, bpSystolic: e.target.value })}
+              disabled={readOnly}
+              onChange={(e) => setVitals({ ...vitals, bpSystolic: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -188,7 +254,8 @@ export function ConsultationEditor({
               id="bpDiastolic"
               inputMode="numeric"
               value={vitals.bpDiastolic}
-                  onChange={(e) => setVitals({ ...vitals, bpDiastolic: e.target.value })}
+              disabled={readOnly}
+              onChange={(e) => setVitals({ ...vitals, bpDiastolic: e.target.value })}
             />
           </div>
           <div className="space-y-1">
@@ -197,7 +264,8 @@ export function ConsultationEditor({
               id="heartRate"
               inputMode="numeric"
               value={vitals.heartRate}
-                  onChange={(e) => setVitals({ ...vitals, heartRate: e.target.value })}
+              disabled={readOnly}
+              onChange={(e) => setVitals({ ...vitals, heartRate: e.target.value })}
             />
           </div>
         </div>
@@ -207,7 +275,8 @@ export function ConsultationEditor({
             id="vitalsNotes"
             rows={2}
             value={vitals.notes}
-              onChange={(e) => setVitals({ ...vitals, notes: e.target.value })}
+            disabled={readOnly}
+            onChange={(e) => setVitals({ ...vitals, notes: e.target.value })}
           />
         </div>
       </SectionCard>
@@ -216,6 +285,7 @@ export function ConsultationEditor({
         <Textarea
           rows={3}
           value={sections.diagnosis}
+          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, diagnosis: e.target.value })}
         />
       </SectionCard>
@@ -227,10 +297,43 @@ export function ConsultationEditor({
           rows={8}
           className="min-h-48"
           value={sections.followUpNotes}
+          disabled={readOnly}
           onChange={(e) => setSections({ ...sections, followUpNotes: e.target.value })}
           placeholder="Visites de contrôle, relecture d'examens, suivi à distance. Ex. : 2026-06-12 — retour pour relecture biologie : TSH normale, à revoir dans 6 mois."
         />
       </SectionCard>
+
+      {mode === 'edit' ? (
+        <div className="sticky bottom-3 z-10 mt-4">
+          <div className="rounded-xl border border-border bg-card shadow-card px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-small text-muted-foreground">
+              {dirty
+                ? 'Vous avez des modifications non enregistrées.'
+                : 'Aucune modification.'}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={cancelEdit}
+                disabled={saving}
+              >
+                <X aria-hidden />
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                onClick={save}
+                disabled={!dirty}
+                loading={saving}
+              >
+                <Check aria-hidden />
+                Enregistrer
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
