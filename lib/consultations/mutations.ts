@@ -89,6 +89,33 @@ export async function updateConsultationSections(
   });
 }
 
+/**
+ * Update ONLY the follow-up notes — allowed even when the consultation
+ * is finalized so the doctor can record what happened on return visits,
+ * lab-result reviews, or post-finalization observations without
+ * reopening the whole record.
+ *
+ * Returns false only when the consultation doesn't exist in this tenant.
+ */
+export async function updateConsultationFollowUp(
+  tenantId: string,
+  id: string,
+  followUpNotes: string,
+): Promise<boolean> {
+  return withTenantTx(tenantId, async (tx) => {
+    const [current] = await tx.select().from(consultations).where(eq(consultations.id, id));
+    if (!current) return false;
+    await tx
+      .update(consultations)
+      .set({
+        followUpNotes: emptyToNull(followUpNotes),
+        updatedAt: new Date(),
+      })
+      .where(eq(consultations.id, id));
+    return true;
+  });
+}
+
 export async function updateConsultationVitals(
   tenantId: string,
   consultationId: string,

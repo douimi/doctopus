@@ -6,6 +6,7 @@ import { requireDoctor } from '@/lib/auth/guards';
 import { sectionsUpdateSchema, vitalsUpdateSchema } from '@/lib/consultations/schemas';
 import {
   finalizeConsultation,
+  updateConsultationFollowUp,
   updateConsultationSections,
   updateConsultationVitals,
 } from '@/lib/consultations/mutations';
@@ -26,6 +27,36 @@ export async function saveSectionsAction(
   if (!parsedId.success || !parsed.success) return { ok: false, error: 'Données invalides.' };
   const ok = await updateConsultationSections(session.tenantId, parsedId.data.id, parsed.data);
   if (!ok) return { ok: false, error: 'Consultation finalisée ou introuvable.' };
+  return { ok: true };
+}
+
+const followUpSchema = z.string().max(10000);
+
+/**
+ * Saves only the follow-up notes. Allowed on finalized consultations
+ * (the other sections stay frozen). We audit post-finalization follow-up
+ * edits so there's a trail; pre-finalization edits go through the normal
+ * autosave and aren't audited per-keystroke.
+ */
+export async function saveFollowUpAction(
+  id: string,
+  followUpNotes: string,
+): Promise<SaveResult> {
+  const session = await requireDoctor();
+  const parsedId = idSchema.safeParse({ id });
+  const parsed = followUpSchema.safeParse(followUpNotes);
+  if (!parsedId.success || !parsed.success) return { ok: false, error: 'Données invalides.' };
+  const ok = await updateConsultationFollowUp(session.tenantId, parsedId.data.id, parsed.data);
+  if (!ok) return { ok: false, error: 'Consultation introuvable.' };
+
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'consultation.follow_up_updated',
+    entityType: 'consultation',
+    entityId: parsedId.data.id,
+  });
+
   return { ok: true };
 }
 

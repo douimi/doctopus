@@ -17,6 +17,7 @@ export type AuditAction =
   | 'consultation.finalize'
   | 'consultation.price_set'
   | 'consultation.payment_received'
+  | 'consultation.follow_up_updated'
   | 'prescription.item_added'
   | 'prescription.printed'
   | 'ai.chat_message_sent'

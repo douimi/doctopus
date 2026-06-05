@@ -24,6 +24,7 @@ const ACTION_LABEL: Record<string, string> = {
   'patient.archive': 'Patient archivé',
   'consultation.start': 'Consultation démarrée',
   'consultation.finalize': 'Consultation terminée',
+  'consultation.follow_up_updated': 'Suivi mis à jour',
   'prescription.item_added': "Médicament ajouté à l’ordonnance",
   'prescription.printed': 'Ordonnance imprimée',
   'admin.tenant.grant_credits': 'Crédits IA accordés (admin)',

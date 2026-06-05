@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { SectionCard } from '@/components/consultations/section-card';
-import { saveSectionsAction, saveVitalsAction } from './actions';
+import { saveFollowUpAction, saveSectionsAction, saveVitalsAction } from './actions';
 
 type Sections = {
   motif: string;
@@ -15,6 +15,8 @@ type Sections = {
   diagnosis: string;
   followUpNotes: string;
 };
+
+type EditableSections = Omit<Sections, 'followUpNotes'>;
 
 type Vitals = {
   weightKg: string;
@@ -43,12 +45,26 @@ export function ConsultationEditor({
   initialVitals: Vitals;
   prescriptionSlot: React.ReactNode;
 }) {
-  const [sections, setSections] = useState<Sections>(initialSections);
+  const [sections, setSections] = useState<EditableSections>({
+    motif: initialSections.motif,
+    historyNotes: initialSections.historyNotes,
+    examNotes: initialSections.examNotes,
+    diagnosis: initialSections.diagnosis,
+  });
+  const [followUpNotes, setFollowUpNotes] = useState(initialSections.followUpNotes);
   const [vitals, setVitals] = useState<Vitals>(initialVitals);
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  const lastSavedSectionsRef = useRef(JSON.stringify(initialSections));
+  const lastSavedSectionsRef = useRef(
+    JSON.stringify({
+      motif: initialSections.motif,
+      historyNotes: initialSections.historyNotes,
+      examNotes: initialSections.examNotes,
+      diagnosis: initialSections.diagnosis,
+    }),
+  );
+  const lastSavedFollowUpRef = useRef(initialSections.followUpNotes);
   const lastSavedVitalsRef = useRef(JSON.stringify(initialVitals));
 
   useEffect(() => {
@@ -57,7 +73,14 @@ export function ConsultationEditor({
     if (current === lastSavedSectionsRef.current) return;
     setStatus('pending');
     const id = setTimeout(async () => {
-      const res = await saveSectionsAction(consultationId, sections);
+      // Send all five fields — the server expects the full schema — but
+      // include the latest followUpNotes from a ref so a follow-up edit
+      // that hadn't yet been autosaved doesn't get clobbered by a stale
+      // closure value.
+      const res = await saveSectionsAction(consultationId, {
+        ...sections,
+        followUpNotes: lastSavedFollowUpRef.current,
+      });
       if (res.ok) {
         lastSavedSectionsRef.current = current;
         setStatus('saved');
@@ -69,6 +92,25 @@ export function ConsultationEditor({
     }, DEBOUNCE_MS);
     return () => clearTimeout(id);
   }, [sections, consultationId, readOnly]);
+
+  // Follow-up notes autosave — runs even when the consultation is
+  // finalized so the doctor can keep recording return-visit notes.
+  useEffect(() => {
+    if (followUpNotes === lastSavedFollowUpRef.current) return;
+    setStatus('pending');
+    const id = setTimeout(async () => {
+      const res = await saveFollowUpAction(consultationId, followUpNotes);
+      if (res.ok) {
+        lastSavedFollowUpRef.current = followUpNotes;
+        setStatus('saved');
+        setError(null);
+      } else {
+        setStatus('error');
+        setError(res.error ?? 'Erreur de sauvegarde.');
+      }
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [followUpNotes, consultationId]);
 
   useEffect(() => {
     if (readOnly) return;
@@ -89,15 +131,18 @@ export function ConsultationEditor({
     return () => clearTimeout(id);
   }, [vitals, consultationId, readOnly]);
 
-  const statusLabel = readOnly
-    ? '(lecture seule)'
-    : status === 'pending'
+  // After finalization the main sections are locked but follow-up notes
+  // remain editable, so we can't show a flat "read-only" label.
+  const statusLabel =
+    status === 'pending'
       ? 'Enregistrement…'
       : status === 'saved'
         ? 'Enregistré'
         : status === 'error'
           ? error ?? 'Erreur'
-          : 'Aucune modification';
+          : readOnly
+            ? 'Finalisée · suivi modifiable'
+            : 'Aucune modification';
 
   const variant =
     status === 'error'
@@ -238,12 +283,16 @@ export function ConsultationEditor({
 
       <SectionCard title="Traitement (ordonnance)">{prescriptionSlot}</SectionCard>
 
-      <SectionCard title="Suite / follow-up">
+      <SectionCard
+        title="Suite / follow-up"
+        hint={readOnly ? 'modifiable après finalisation' : undefined}
+      >
         <Textarea
-          rows={2}
-          value={sections.followUpNotes}
-          disabled={readOnly}
-          onChange={(e) => setSections({ ...sections, followUpNotes: e.target.value })}
+          rows={8}
+          className="min-h-48"
+          value={followUpNotes}
+          onChange={(e) => setFollowUpNotes(e.target.value)}
+          placeholder="Visites de contrôle, relecture d'examens, suivi à distance. Ex. : 2026-06-12 — retour pour relecture biologie : TSH normale, à revoir dans 6 mois."
         />
       </SectionCard>
     </div>
