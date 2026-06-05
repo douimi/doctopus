@@ -7,6 +7,7 @@ import {
   HeartPulse,
   Pencil,
   Plus,
+  Stethoscope,
   X,
 } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
@@ -200,7 +201,16 @@ export default async function PatientDetailPage({
         </div>
 
         <section className="space-y-3">
-          <h2 className="text-heading font-semibold">Consultations antérieures</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-heading font-semibold">Consultations antérieures</h2>
+            <Link
+              href={`/consultations/new?patient=${id}`}
+              className={buttonVariants({ size: 'sm', variant: 'secondary' })}
+            >
+              <Stethoscope aria-hidden />
+              Nouvelle consultation
+            </Link>
+          </div>
           <PastConsultationsList items={consultations} />
         </section>
       </div>

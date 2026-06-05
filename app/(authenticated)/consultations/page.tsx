@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { ArrowRight, Stethoscope } from 'lucide-react';
+import { ArrowRight, Plus, Stethoscope } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import { listConsultationsPage } from '@/lib/consultations/queries';
 import { Avatar } from '@/components/ui/avatar';
+import { buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LiveSearchInput } from '@/components/ui/live-search-input';
 import { LiveRefresh } from '@/components/shell/live-refresh';
@@ -83,7 +84,16 @@ export default async function ConsultationsPage({ searchParams }: Props) {
   return (
     <>
       <LiveRefresh tenantId={session.tenantId} channel="consultations-list" />
-      <PageHeader title="Consultations" description="Historique des consultations du cabinet." />
+      <PageHeader
+        title="Consultations"
+        description="Historique des consultations du cabinet."
+        actions={
+          <Link href="/consultations/new" className={buttonVariants()}>
+            <Plus aria-hidden />
+            Nouvelle consultation
+          </Link>
+        }
+      />
       <div className="px-6 py-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <LiveSearchInput
