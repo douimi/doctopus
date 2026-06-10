@@ -235,6 +235,16 @@
     background-size: 24px 24px;
   }
 
+  /* Mobile-nav drawer slide-in */
+  @keyframes doctopus-drawer-in {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
   /* Toast slide-in (used by <Toaster />) */
   @keyframes doctopus-toast-in {
     from {
