@@ -57,8 +57,12 @@ export async function createFollowUpConsultation(
         parentConsultationId: parent.id,
         consultedAt: now,
         // Pre-seed billing as free — finalize dialog still lets the
-        // doctor override if they need to charge.
+        // doctor override if they need to charge. Both isFree and
+        // paymentStatus must be set together: the
+        // consultations_free_implies_free_status_and_no_method CHECK
+        // refuses (is_free=true, payment_status='awaiting').
         isFree: true,
+        paymentStatus: 'free',
       })
       .returning();
     return created;
