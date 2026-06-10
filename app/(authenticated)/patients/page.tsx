@@ -6,7 +6,7 @@ import {
   type PatientSort,
   type PatientSortDir,
 } from '@/lib/patients/queries';
-import { ageFromDob } from '@/lib/patients/age';
+import { formatAge } from '@/lib/patients/age';
 import { Avatar } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { LiveSearchInput } from '@/components/ui/live-search-input';
@@ -164,7 +164,7 @@ export default async function PatientsPage({ searchParams }: Props) {
                         </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums">
-                        {ageFromDob(p.dateOfBirth)} ans
+                        {formatAge(p.dateOfBirth)}
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums">
                         {p.phone ?? '—'}

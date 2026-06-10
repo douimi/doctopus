@@ -25,7 +25,7 @@ export async function createPatient(
         firstName: input.firstName,
         lastName: input.lastName,
         gender: input.gender,
-        dateOfBirth: input.dateOfBirth,
+        dateOfBirth: emptyToNull(input.dateOfBirth),
         phone: emptyToNull(input.phone),
         cin: emptyToNull(input.cin ?? ''),
         coverageType: (input.coverageType as Patient['coverageType']) || null,
@@ -49,7 +49,7 @@ export async function updatePatient(
         firstName: input.firstName,
         lastName: input.lastName,
         gender: input.gender,
-        dateOfBirth: input.dateOfBirth,
+        dateOfBirth: input.dateOfBirth === undefined ? undefined : emptyToNull(input.dateOfBirth),
         phone: input.phone === undefined ? undefined : emptyToNull(input.phone),
         cin: input.cin === undefined ? undefined : emptyToNull(input.cin),
         coverageType:

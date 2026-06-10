@@ -100,13 +100,12 @@ export function EditPatientForm({ patient }: { patient: Patient }) {
               </SelectContent>
             </Select>
           </div>
-          <FormField label="Date de naissance">
+          <FormField label="Date de naissance (optionnel)">
             <Input
               id="dateOfBirth"
               name="dateOfBirth"
               type="date"
               defaultValue={patient.dateOfBirth}
-              required
             />
           </FormField>
         </div>

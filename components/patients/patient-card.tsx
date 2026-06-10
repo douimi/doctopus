@@ -1,5 +1,5 @@
 import { AlertTriangle, HeartPulse, IdCard, Phone, ShieldCheck } from 'lucide-react';
-import { ageFromDob } from '@/lib/patients/age';
+import { formatAge } from '@/lib/patients/age';
 import { coverageLabel } from '@/lib/patients/coverage';
 import { Avatar } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,7 +28,7 @@ export function PatientCard({
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted-foreground mt-1">
                 <span className="tabular-nums">
-                  {ageFromDob(patient.dateOfBirth)} ans · {patient.gender === 'm' ? 'Homme' : 'Femme'}
+                  {formatAge(patient.dateOfBirth)} · {patient.gender === 'm' ? 'Homme' : 'Femme'}
                 </span>
                 {patient.phone ? (
                   <span className="inline-flex items-center gap-1 tabular-nums">

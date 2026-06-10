@@ -12,7 +12,7 @@ export type PatientListRow = {
   lastName: string;
   phone: string | null;
   cin: string | null;
-  dateOfBirth: string;
+  dateOfBirth: string | null;
   isArchived: boolean;
 };
 

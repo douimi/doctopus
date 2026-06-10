@@ -8,7 +8,11 @@ export const patientCreateSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
   gender: z.enum(['m', 'f']),
-  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format: YYYY-MM-DD'),
+  dateOfBirth: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format: YYYY-MM-DD')
+    .optional()
+    .or(z.literal('')),
   phone: z.string().trim().max(40).optional().or(z.literal('')),
   cin: z.string().trim().regex(cinRegex, 'CIN invalide').optional().or(z.literal('')),
   coverageType: z

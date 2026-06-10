@@ -43,7 +43,7 @@ export default async function EditPatientPage({
                 firstName: patient.firstName,
                 lastName: patient.lastName,
                 gender: patient.gender,
-                dateOfBirth: patient.dateOfBirth,
+                dateOfBirth: patient.dateOfBirth ?? '',
                 phone: patient.phone ?? '',
                 cin: patient.cin ?? '',
                 coverageType: patient.coverageType ?? '',

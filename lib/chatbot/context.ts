@@ -102,7 +102,9 @@ export async function buildContext(
 
     return [
       '[Patient]',
-      `- Sexe : ${p.gender === 'm' ? 'H' : 'F'} · Âge : ${ageFromDob(p.dateOfBirth)} ans`,
+      `- Sexe : ${p.gender === 'm' ? 'H' : 'F'} · Âge : ${
+        p.dateOfBirth ? `${ageFromDob(p.dateOfBirth)} ans` : 'inconnu'
+      }`,
       `- Allergies : ${allergies.length > 0 ? allergies.map((a) => a.label).join(', ') : 'aucune connue'}`,
       `- Antécédents / chroniques : ${
         conditions.length > 0 ? conditions.map((x) => x.label).join(', ') : 'aucun connu'

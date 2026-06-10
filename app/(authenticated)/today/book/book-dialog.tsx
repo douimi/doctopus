@@ -57,12 +57,12 @@ function Submit({ disabled }: { disabled: boolean }) {
 export function BookAppointmentDialog({
   patientId,
   fullName,
-  age,
+  ageLabel,
   triggerLabel = 'Planifier un RDV',
 }: {
   patientId: string;
   fullName: string;
-  age: number;
+  ageLabel: string;
   triggerLabel?: string;
 }) {
   const [state, action] = useActionState(bookAction, initial);
@@ -101,7 +101,7 @@ export function BookAppointmentDialog({
             <div className="min-w-0">
               <DialogTitle className="truncate">{fullName}</DialogTitle>
               <DialogDescription>
-                {age} ans · planifier un nouveau rendez-vous
+                {ageLabel} · planifier un nouveau rendez-vous
               </DialogDescription>
             </div>
           </div>

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, Plus, UserSearch } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import { searchPatientsPage } from '@/lib/patients/queries';
-import { ageFromDob } from '@/lib/patients/age';
+import { formatAge } from '@/lib/patients/age';
 import { Avatar } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -108,7 +108,7 @@ export default async function BookPage({ searchParams }: Props) {
               ) : (
                 rows.map((p) => {
                   const fullName = `${p.lastName} ${p.firstName}`;
-                  const age = ageFromDob(p.dateOfBirth);
+                  const ageLabel = formatAge(p.dateOfBirth);
                   return (
                     <TableRow key={p.id} className="group/row">
                       <TableCell className="py-2">
@@ -124,7 +124,7 @@ export default async function BookPage({ searchParams }: Props) {
                         </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums">
-                        {age} ans
+                        {ageLabel}
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums">
                         {p.phone ?? '—'}
@@ -136,7 +136,7 @@ export default async function BookPage({ searchParams }: Props) {
                         <BookAppointmentDialog
                           patientId={p.id}
                           fullName={fullName}
-                          age={age}
+                          ageLabel={ageLabel}
                         />
                       </TableCell>
                     </TableRow>

@@ -81,8 +81,8 @@ function NewPatientForm() {
               </SelectContent>
             </Select>
           </div>
-          <FormField label="Date de naissance">
-            <Input id="dateOfBirth" name="dateOfBirth" type="date" required />
+          <FormField label="Date de naissance (optionnel)">
+            <Input id="dateOfBirth" name="dateOfBirth" type="date" />
           </FormField>
         </div>
       </FormSection>

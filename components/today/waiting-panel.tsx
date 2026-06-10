@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ChevronRight, Clock, Play, XCircle } from 'lucide-react';
 import type { AppointmentWithPatient } from '@/lib/appointments/queries';
-import { ageFromDob } from '@/lib/patients/age';
+import { formatAge } from '@/lib/patients/age';
 import { cancelAppointmentAction } from '@/app/(authenticated)/today/actions';
 import { startConsultationAction } from '@/app/(authenticated)/today/start/actions';
 import { Avatar } from '@/components/ui/avatar';
@@ -59,7 +59,7 @@ export function WaitingPanel({
               </Link>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-small text-muted-foreground">
                 <span className="tabular-nums">
-                  {ageFromDob(a.patient.dateOfBirth)} ans
+                  {formatAge(a.patient.dateOfBirth)}
                 </span>
                 {a.reason ? (
                   <>

@@ -7,7 +7,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import type { AppointmentWithPatient } from '@/lib/appointments/queries';
-import { ageFromDob } from '@/lib/patients/age';
+import { formatAge } from '@/lib/patients/age';
 import {
   cancelAppointmentAction,
   markArrivedAction,
@@ -92,7 +92,7 @@ export function SchedulePanel({ items }: { items: AppointmentWithPatient[] }) {
                 />
               </Link>
               <div className="text-small text-muted-foreground truncate">
-                {ageFromDob(a.patient.dateOfBirth)} ans
+                {formatAge(a.patient.dateOfBirth)}
                 {a.reason ? ` · ${a.reason}` : ''}
               </div>
             </div>

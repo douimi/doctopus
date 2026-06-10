@@ -46,13 +46,14 @@ function fmtDate(d: Date): string {
   return d.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-function ageFromDob(dob: string, now: Date = new Date()): number {
+function ageLabel(dob: string | null, now: Date = new Date()): string {
+  if (!dob) return '';
   const [y, m, d] = dob.split('-').map(Number);
   let age = now.getUTCFullYear() - y;
   const month = now.getUTCMonth() + 1;
   const day = now.getUTCDate();
   if (month < m || (month === m && day < d)) age -= 1;
-  return age;
+  return `${age} ans`;
 }
 
 export function PrescriptionPdfDocument({
@@ -93,7 +94,8 @@ export function PrescriptionPdfDocument({
 
         <View style={styles.patientBlock}>
           <Text style={styles.patientLine}>
-            {patient.lastName} {patient.firstName} — {ageFromDob(patient.dateOfBirth)} ans
+            {patient.lastName} {patient.firstName}
+            {patient.dateOfBirth ? ` — ${ageLabel(patient.dateOfBirth)}` : ''}
             {patient.gender === 'm' ? ' (H)' : ' (F)'}
           </Text>
         </View>

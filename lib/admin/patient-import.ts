@@ -15,7 +15,7 @@ import { COVERAGE_VALUES } from '@/lib/patients/coverage';
  *   - last_name        REQUIRED
  *   - first_name       REQUIRED
  *   - gender           REQUIRED   "m" | "f" (also accepts "h"/"homme"/"femme")
- *   - date_of_birth    REQUIRED   ISO YYYY-MM-DD or DD/MM/YYYY
+ *   - date_of_birth    optional   ISO YYYY-MM-DD or DD/MM/YYYY
  *   - phone            optional
  *   - cin              optional
  *   - coverage_type    optional   one of COVERAGE_VALUES (e.g. cnss, cmim, axa_maroc, ramed…)
@@ -101,7 +101,7 @@ export type ParsedPatientRow = {
   last_name: string;
   first_name: string;
   gender: 'm' | 'f';
-  date_of_birth: string;
+  date_of_birth: string | null;
   phone: string | null;
   cin: string | null;
   coverage_type: string | null;
@@ -323,7 +323,7 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
 
   // Required columns present?
   const requiredMissing: string[] = [];
-  for (const required of ['last_name', 'first_name', 'gender', 'date_of_birth'] as const) {
+  for (const required of ['last_name', 'first_name', 'gender'] as const) {
     if (!byCanonical[required]) requiredMissing.push(required);
   }
   if (requiredMissing.length > 0) {
@@ -353,7 +353,11 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
     const last_name = asString(get('last_name'));
     const first_name = asString(get('first_name'));
     const gender = parseGender(get('gender'));
-    const date_of_birth = parseDate(get('date_of_birth'));
+    // DOB is optional, but if provided it must parse cleanly — silently
+    // dropping a malformed date would mean losing data the operator
+    // typed in good faith.
+    const dobRaw = asString(get('date_of_birth'));
+    const date_of_birth = dobRaw ? parseDate(get('date_of_birth')) : null;
     const phone = asString(get('phone'));
 
     const rowErrors: ImportRowError[] = [];
@@ -363,7 +367,7 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
     if (!last_name) pushErr('last_name', 'Nom requis.');
     if (!first_name) pushErr('first_name', 'Prénom requis.');
     if (!gender) pushErr('gender', 'Sexe attendu : m / f / Homme / Femme.');
-    if (!date_of_birth) {
+    if (dobRaw && !date_of_birth) {
       pushErr('date_of_birth', 'Date de naissance attendue : YYYY-MM-DD ou DD/MM/YYYY.');
     }
 
@@ -391,7 +395,7 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
       last_name: last_name!,
       first_name: first_name!,
       gender: gender!,
-      date_of_birth: date_of_birth!,
+      date_of_birth,
       phone,
       cin: asString(get('cin')),
       coverage_type,
@@ -414,8 +418,8 @@ export function parsePatientImport(buffer: Buffer): ImportPreview {
  * rows are counted as `skipped` and not re-inserted, so an operator can
  * safely re-upload the same file after fixing a few bad rows.
  */
-function dedupKey(lastName: string, firstName: string, dob: string): string {
-  return `${lastName.trim().toLowerCase()}${firstName.trim().toLowerCase()}${dob}`;
+function dedupKey(lastName: string, firstName: string, dob: string | null): string {
+  return `${lastName.trim().toLowerCase()}|${firstName.trim().toLowerCase()}|${dob ?? ''}`;
 }
 
 export async function importPatients(

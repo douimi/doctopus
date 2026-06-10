@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, Plus, UserPlus, UserSearch } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import { searchPatientsPage } from '@/lib/patients/queries';
-import { ageFromDob } from '@/lib/patients/age';
+import { formatAge } from '@/lib/patients/age';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -123,7 +123,7 @@ export default async function WalkInPage({ searchParams }: Props) {
                         </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums">
-                        {ageFromDob(p.dateOfBirth)} ans
+                        {formatAge(p.dateOfBirth)}
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums">
                         {p.phone ?? '—'}

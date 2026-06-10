@@ -7,7 +7,7 @@ export const patients = pgTable('patients', {
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
   gender: text('gender', { enum: ['m', 'f'] }).notNull(),
-  dateOfBirth: date('date_of_birth').notNull(),
+  dateOfBirth: date('date_of_birth'),
   phone: text('phone'),
   cin: text('cin'),
   // Free-form text — validated at the Zod layer against COVERAGE_VALUES so

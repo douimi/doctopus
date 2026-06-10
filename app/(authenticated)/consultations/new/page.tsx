@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Plus, UserSearch } from 'lucide-react';
 import { requireDoctor } from '@/lib/auth/guards';
 import { getPatientById, searchPatientsPage } from '@/lib/patients/queries';
-import { ageFromDob } from '@/lib/patients/age';
+import { formatAge } from '@/lib/patients/age';
 import { Avatar } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -64,7 +64,7 @@ export default async function NewConsultationPage({ searchParams }: Props) {
               <div className="min-w-0">
                 <div className="font-medium text-foreground">{fullName}</div>
                 <div className="text-small text-muted-foreground tabular-nums">
-                  {ageFromDob(patient.dateOfBirth)} ans
+                  {formatAge(patient.dateOfBirth)}
                   {patient.phone ? ` · ${patient.phone}` : ''}
                 </div>
               </div>
@@ -171,7 +171,7 @@ export default async function NewConsultationPage({ searchParams }: Props) {
                         </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums">
-                        {ageFromDob(p.dateOfBirth)} ans
+                        {formatAge(p.dateOfBirth)}
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums">
                         {p.phone ?? '—'}
