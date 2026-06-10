@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { requireDoctor } from '@/lib/auth/guards';
 import { sectionsUpdateSchema, vitalsUpdateSchema } from '@/lib/consultations/schemas';
 import {
+  createFollowUpConsultation,
   deleteConsultation,
   finalizeConsultation,
   updateConsultationSections,
@@ -86,7 +87,37 @@ export async function finalizeConsultationAction(formData: FormData): Promise<Fi
   });
 
   revalidatePath('/today');
+  // Without this, the consultation page's cached server render still
+  // shows the "Terminer la consultation" trigger button instead of the
+  // FinalizedTarificationBadge after the action returns — the dialog
+  // closes but the button stays clickable until a hard refresh.
+  revalidatePath(`/consultations/${parsed.data.consultationId}`);
   return { ok: true };
+}
+
+export async function createFollowUpAction(formData: FormData): Promise<void> {
+  const session = await requireDoctor();
+  const parsedId = idSchema.safeParse({ id: formData.get('parentId') });
+  if (!parsedId.success) return;
+
+  const created = await createFollowUpConsultation(
+    session.tenantId,
+    parsedId.data.id,
+    session.userId,
+  );
+  if (!created) return;
+
+  await recordAudit({
+    tenantId: session.tenantId,
+    actorUserId: session.userId,
+    action: 'consultation.followup_create',
+    entityType: 'consultation',
+    entityId: created.id,
+    metadata: { parentConsultationId: parsedId.data.id },
+  });
+
+  revalidatePath(`/consultations/${parsedId.data.id}`);
+  redirect(`/consultations/${created.id}`);
 }
 
 export async function deleteConsultationAction(formData: FormData): Promise<void> {

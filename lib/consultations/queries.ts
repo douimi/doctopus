@@ -29,6 +29,50 @@ export async function getConsultationById(
   });
 }
 
+export type FollowUpSibling = {
+  id: string;
+  consultedAt: Date;
+  motif: string | null;
+  isFinalized: boolean;
+};
+
+/**
+ * Returns the parent (if this consultation is a follow-up) plus the
+ * direct follow-up children (most-recent-first). Used by the
+ * consultation page to render cross-links.
+ */
+export async function getConsultationFollowUpRelations(
+  tenantId: string,
+  consultation: Consultation,
+): Promise<{ parent: FollowUpSibling | null; children: FollowUpSibling[] }> {
+  return withTenantTx(tenantId, async (tx) => {
+    let parent: FollowUpSibling | null = null;
+    if (consultation.parentConsultationId) {
+      const [p] = await tx
+        .select({
+          id: consultations.id,
+          consultedAt: consultations.consultedAt,
+          motif: consultations.motif,
+          isFinalized: consultations.isFinalized,
+        })
+        .from(consultations)
+        .where(eq(consultations.id, consultation.parentConsultationId));
+      parent = p ?? null;
+    }
+    const children = await tx
+      .select({
+        id: consultations.id,
+        consultedAt: consultations.consultedAt,
+        motif: consultations.motif,
+        isFinalized: consultations.isFinalized,
+      })
+      .from(consultations)
+      .where(eq(consultations.parentConsultationId, consultation.id))
+      .orderBy(desc(consultations.consultedAt));
+    return { parent, children };
+  });
+}
+
 export async function listConsultationsForPatient(
   tenantId: string,
   patientId: string,

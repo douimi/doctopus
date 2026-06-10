@@ -15,6 +15,7 @@ export type AuditAction =
   | 'patient.archive'
   | 'consultation.start'
   | 'consultation.manual_create'
+  | 'consultation.followup_create'
   | 'consultation.delete'
   | 'consultation.finalize'
   | 'consultation.price_set'

@@ -11,6 +11,61 @@ import { applyTransition, canTransition } from '@/lib/appointments/state-machine
 import type { SectionsUpdateInput, VitalsUpdateInput } from './schemas';
 
 /**
+ * Create a follow-up consultation linked to a parent. Follow-ups are
+ * billed as free by default — the patient already paid for the initial
+ * visit — but the doctor can flip Gratuit off at finalization if they
+ * want to charge for a long control visit. Synthesizes a 'walkin'
+ * appointment for the FK, same pattern as createManualConsultation.
+ *
+ * Returns the new consultation, or null when the parent doesn't exist
+ * in this tenant.
+ */
+export async function createFollowUpConsultation(
+  tenantId: string,
+  parentConsultationId: string,
+  doctorId: string,
+): Promise<Consultation | null> {
+  return withTenantTx(tenantId, async (tx) => {
+    const [parent] = await tx
+      .select()
+      .from(consultations)
+      .where(and(eq(consultations.id, parentConsultationId), eq(consultations.tenantId, tenantId)));
+    if (!parent) return null;
+
+    const now = new Date();
+    const [appt] = await tx
+      .insert(appointments)
+      .values({
+        tenantId,
+        patientId: parent.patientId,
+        kind: 'walkin',
+        status: 'done',
+        arrivedAt: now,
+        startedAt: now,
+        endedAt: now,
+        createdBy: doctorId,
+      })
+      .returning();
+
+    const [created] = await tx
+      .insert(consultations)
+      .values({
+        tenantId,
+        appointmentId: appt.id,
+        patientId: parent.patientId,
+        doctorId,
+        parentConsultationId: parent.id,
+        consultedAt: now,
+        // Pre-seed billing as free — finalize dialog still lets the
+        // doctor override if they need to charge.
+        isFree: true,
+      })
+      .returning();
+    return created;
+  });
+}
+
+/**
  * Manually register a past or off-platform consultation. We still need
  * an appointment row to anchor the FK (the `appointments` table is the
  * canonical "visit happened" record), so we synthesize one as a walk-in

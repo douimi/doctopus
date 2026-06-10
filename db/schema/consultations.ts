@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   boolean,
   integer,
   numeric,
@@ -23,6 +24,13 @@ export const consultations = pgTable(
       .references(() => appointments.id, { onDelete: 'restrict' }),
     patientId: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'restrict' }),
     doctorId: uuid('doctor_id').notNull().references(() => userProfiles.id),
+    // A follow-up is a regular consultation that points back at its
+    // parent. Self-FK with SET NULL so deleting a parent doesn't
+    // cascade and lose the medical record on the follow-up.
+    parentConsultationId: uuid('parent_consultation_id').references(
+      (): AnyPgColumn => consultations.id,
+      { onDelete: 'set null' },
+    ),
     consultedAt: timestamp('consulted_at', { withTimezone: true }).notNull().defaultNow(),
     motif: text('motif'),
     historyNotes: text('history_notes'),

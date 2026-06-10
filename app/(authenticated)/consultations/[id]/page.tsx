@@ -2,7 +2,10 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { eq } from 'drizzle-orm';
 import { requireDoctor } from '@/lib/auth/guards';
-import { getConsultationById } from '@/lib/consultations/queries';
+import {
+  getConsultationById,
+  getConsultationFollowUpRelations,
+} from '@/lib/consultations/queries';
 import { getPatientDetail } from '@/lib/patients/queries';
 import { getPrescriptionForConsultation } from '@/lib/prescriptions/queries';
 import { getAutocompleteSuggestions } from '@/lib/prescriptions/autocomplete';
@@ -17,6 +20,7 @@ import { AssistantPanel } from './assistant/panel';
 import { FinalizePricingDialog } from '@/components/payments/finalize-pricing-dialog';
 import { FinalizedTarificationBadge } from '@/components/payments/finalized-tarification-badge';
 import { DeleteConsultationDialog } from './delete-dialog';
+import { FollowUpRelations } from './follow-up-relations';
 
 export default async function ConsultationPage({
   params,
@@ -30,6 +34,7 @@ export default async function ConsultationPage({
   const patientData = await getPatientDetail(session.tenantId, detail.consultation.patientId);
   if (!patientData) notFound();
   const presc = await getPrescriptionForConsultation(session.tenantId, id);
+  const followUps = await getConsultationFollowUpRelations(session.tenantId, detail.consultation);
 
   const [tenant] = await dbAdmin()
     .select({
@@ -86,6 +91,7 @@ export default async function ConsultationPage({
               <FinalizePricingDialog
                 consultationId={id}
                 defaultPriceMad={tenant?.defaultConsultationPriceMad ?? null}
+                defaultIsFree={detail.consultation.parentConsultationId !== null}
               />
             )}
             <DeleteConsultationDialog
@@ -102,6 +108,13 @@ export default async function ConsultationPage({
           patient={patientData.patient}
           allergies={patientData.allergies}
           conditions={patientData.conditions}
+        />
+
+        <FollowUpRelations
+          consultationId={id}
+          parent={followUps.parent}
+          children={followUps.children}
+          canCreate={detail.consultation.isFinalized}
         />
 
         <ConsultationEditor

@@ -17,12 +17,16 @@ import { cn } from '@/lib/utils';
 export function FinalizePricingDialog({
   consultationId,
   defaultPriceMad,
+  defaultIsFree = false,
 }: {
   consultationId: string;
   defaultPriceMad: string | null;
+  /** Follow-up consultations are pre-checked as Gratuit (the patient
+   *  already paid for the initial visit). Doctor can still uncheck. */
+  defaultIsFree?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [isFree, setIsFree] = useState(false);
+  const [isFree, setIsFree] = useState(defaultIsFree);
   const [price, setPrice] = useState(defaultPriceMad ?? '');
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -34,7 +38,7 @@ export function FinalizePricingDialog({
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (!next) {
-      setIsFree(false);
+      setIsFree(defaultIsFree);
       setPrice(defaultPriceMad ?? '');
       setError(null);
     }
