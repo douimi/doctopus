@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { createTenantChannel } from '@/lib/supabase/realtime';
 import { showToast } from '@/components/ui/toast';
 
 type AppointmentRow = {
@@ -24,8 +25,7 @@ export function WaitingArrivalsListener({ tenantId }: { tenantId: string }) {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
-    const channel = supabase
-      .channel(`waiting-toast:${tenantId}`)
+    const channel = createTenantChannel(supabase, `waiting-toast:${tenantId}`)
       .on(
         'postgres_changes',
         {

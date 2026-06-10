@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Bell, CheckCircle2, ClipboardCheck, UserPlus, Wallet } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { createTenantChannel } from '@/lib/supabase/realtime';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'doctopus.notifications.lastSeenAt';
@@ -147,8 +148,7 @@ export function NotificationBell({ tenantId }: { tenantId: string }) {
       setCounts((c) => ({ ...c, [category]: c[category] + 1 }));
     };
 
-    const channel = supabase
-      .channel(`notifications:${tenantId}`)
+    const channel = createTenantChannel(supabase, `notifications:${tenantId}`)
       .on(
         'postgres_changes',
         {

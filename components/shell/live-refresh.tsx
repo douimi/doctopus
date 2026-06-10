@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { createTenantChannel } from '@/lib/supabase/realtime';
 
 const REFRESH_DEBOUNCE_MS = 200;
 
@@ -44,7 +45,7 @@ export function LiveRefresh({
       debounceRef.current = setTimeout(() => router.refresh(), REFRESH_DEBOUNCE_MS);
     };
 
-    let ch = supabase.channel(`${channel}:${tenantId}`);
+    let ch = createTenantChannel(supabase, `${channel}:${tenantId}`);
     for (const table of tables) {
       ch = ch.on(
         'postgres_changes',
