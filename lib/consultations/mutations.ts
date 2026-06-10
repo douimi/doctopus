@@ -287,11 +287,22 @@ export async function finalizeConsultation(
 
     const [appt] = await tx.select().from(appointments).where(eq(appointments.id, c.appointmentId));
     if (!appt) throw new Error('Appointment missing');
-    if (!canTransition(appt.status, 'finalize')) {
-      throw new Error(`Cannot finalize from appointment status ${appt.status}`);
-    }
+
+    // Manual-create and follow-up flows synthesize the appointment
+    // already at status='done' (the visit happened off-platform), so
+    // there's nothing to transition — the state machine has no
+    // done→done edge by design. For those, we leave the appointment
+    // untouched and just finalize the consultation row.
     const now = new Date();
-    const patch = applyTransition(appt.status, 'finalize', now);
+    const apptPatch =
+      appt.status === 'done'
+        ? null
+        : (() => {
+            if (!canTransition(appt.status, 'finalize')) {
+              throw new Error(`Cannot finalize from appointment status ${appt.status}`);
+            }
+            return applyTransition(appt.status, 'finalize', now);
+          })();
 
     const pricingPatch = opts.isFree
       ? {
@@ -324,14 +335,16 @@ export async function finalizeConsultation(
 
     if (updated.length === 0) return 'already_finalized';
 
-    await tx
-      .update(appointments)
-      .set({
-        status: patch.status,
-        endedAt: patch.endedAt ?? appt.endedAt,
-        updatedAt: now,
-      })
-      .where(eq(appointments.id, c.appointmentId));
+    if (apptPatch) {
+      await tx
+        .update(appointments)
+        .set({
+          status: apptPatch.status,
+          endedAt: apptPatch.endedAt ?? appt.endedAt,
+          updatedAt: now,
+        })
+        .where(eq(appointments.id, c.appointmentId));
+    }
 
     return 'ok';
   });
