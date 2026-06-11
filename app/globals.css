@@ -224,6 +224,18 @@
 }
 
 @layer utilities {
+  /* Refined dark surface for the landing — soft radial spotlight at top
+     plus a sparse dot grid. Replaces the previous flat bg-black + animated
+     tentacles. Stays out of the way of section content. */
+  .bg-landing-surface {
+    background-color: oklch(0.08 0 0);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgb(56 189 248 / 0.10), transparent 70%),
+      radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.035) 1px, transparent 0);
+    background-size: auto, 32px 32px;
+    background-repeat: no-repeat, repeat;
+  }
+
   /* Subtle dotted-grid texture for app surface — adds depth without noise */
   .bg-app-surface {
     background-color: var(--muted);

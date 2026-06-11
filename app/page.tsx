@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Topbar } from '@/components/landing/topbar';
 import { ScrollProgress } from '@/components/landing/scroll-progress';
-import { Tentacles } from '@/components/landing/tentacles';
 import { Hero } from '@/components/landing/hero';
 import { ShowcaseSection } from '@/components/landing/showcase-section';
 import { ConsultationSection } from '@/components/landing/consultation-section';
@@ -21,8 +20,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="relative bg-black text-white selection:bg-sky-500/30">
-      <Tentacles />
+    <div className="relative bg-landing-surface text-white selection:bg-sky-500/30">
       <ScrollProgress />
       <div className="relative z-10">
         <Topbar />

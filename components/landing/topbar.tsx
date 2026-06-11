@@ -8,16 +8,16 @@ import { WhatsAppIcon } from './whatsapp-icon';
 
 export function Topbar() {
   const scrolled = useIsScrolled(80);
-  const logoSize = scrolled ? 56 : 128;
+  const logoSize = scrolled ? 48 : 88;
   return (
     <div
       className={`sticky top-0 z-50 backdrop-blur-md transition-all duration-300 ease-out ${
         scrolled
-          ? 'bg-black/90 border-b border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]'
-          : 'bg-black/85 border-b border-white/5'
+          ? 'bg-black/80 border-b border-white/10 shadow-[0_8px_24px_-16px_rgba(0,0,0,0.7)]'
+          : 'bg-transparent border-b border-transparent'
       }`}
     >
-      <div className="max-w-[1200px] mx-auto px-8 py-2 flex items-center justify-between">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-2 flex items-center justify-between">
         <Link
           href="/"
           aria-label="Accueil"

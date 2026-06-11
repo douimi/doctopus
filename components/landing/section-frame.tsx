@@ -16,7 +16,7 @@ export function SectionFrame({
   children,
   className,
 }: {
-  /** Optional DOM id used by the Octopus tentacles to anchor to this section. */
+  /** Optional DOM id for in-page navigation. */
   id?: string;
   children: ((revealed: boolean) => ReactNode) | ReactNode;
   className?: string;

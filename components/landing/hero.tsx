@@ -8,102 +8,71 @@ import { WhatsAppIcon } from './whatsapp-icon';
 
 export function Hero() {
   return (
-    <section className="min-h-screen px-8 py-32 flex flex-col items-center justify-center text-center relative overflow-hidden">
-      {/* Drifting gradient orbs — pure CSS keyframes, no JS */}
+    <section className="min-h-[88vh] px-6 md:px-8 pt-16 md:pt-24 pb-24 flex flex-col items-center justify-center text-center relative overflow-hidden">
+      {/* Single soft gradient wash anchored below the headline. Replaces
+          the previous three drifting orbs — same warmth, no animated
+          noise behind the type. */}
       <div
         aria-hidden
-        className="absolute top-[10%] left-[10%] w-[40rem] h-[40rem] rounded-full opacity-50 blur-3xl pointer-events-none"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/4 w-[80rem] h-[44rem] rounded-full opacity-60 blur-3xl pointer-events-none"
         style={{
           background:
-            'radial-gradient(circle at center, rgba(56,189,248,0.30) 0%, transparent 65%)',
-          animation: 'orb-drift-a 18s ease-in-out infinite',
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute bottom-[8%] right-[5%] w-[36rem] h-[36rem] rounded-full opacity-40 blur-3xl pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(circle at center, rgba(129,140,248,0.28) 0%, transparent 65%)',
-          animation: 'orb-drift-b 22s ease-in-out infinite',
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute top-[40%] right-[20%] w-[24rem] h-[24rem] rounded-full opacity-30 blur-3xl pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(circle at center, rgba(34,211,238,0.18) 0%, transparent 65%)',
-          animation: 'orb-drift-c 26s ease-in-out infinite',
+            'radial-gradient(ellipse at center, rgba(56,189,248,0.22) 0%, rgba(129,140,248,0.10) 38%, transparent 70%)',
         }}
       />
 
-      {/* Inline keyframes so the section is self-contained */}
-      <style>{`
-        @keyframes orb-drift-a {
-          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(60px, -40px, 0) scale(1.08); }
-        }
-        @keyframes orb-drift-b {
-          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(-50px, 50px, 0) scale(1.12); }
-        }
-        @keyframes orb-drift-c {
-          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(40px, 30px, 0) scale(0.92); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [style*="orb-drift"] { animation: none !important; }
-        }
-      `}</style>
-
-      <div className="relative z-10 flex flex-col items-center">
+      <div className="relative z-10 flex flex-col items-center max-w-4xl">
         <a
           href={WHATSAPP_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[12px] font-medium mb-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 hover:bg-emerald-500/25 hover:border-emerald-400/50 hover:text-emerald-200 transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-pill bg-white/[0.06] border border-white/10 text-white/80 text-[12px] font-medium mb-7 animate-in fade-in-0 slide-in-from-bottom-2 duration-700 hover:bg-white/[0.10] hover:border-white/20 hover:text-white transition-colors"
         >
-          <Sparkles className="size-3.5" aria-hidden />
-          Offre lancement · {FREE_TRIAL_MONTHS} mois gratuits
+          <Sparkles className="size-3 text-emerald-400" aria-hidden />
+          <span>Offre lancement · {FREE_TRIAL_MONTHS} mois gratuits</span>
         </a>
-        <h1 className="text-6xl md:text-8xl font-semibold tracking-tight leading-none max-w-4xl animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:100ms] [animation-fill-mode:both]">
+        <h1 className="text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] font-semibold tracking-tight leading-[1.04] animate-in fade-in-0 slide-in-from-bottom-3 duration-700 [animation-delay:100ms] [animation-fill-mode:both]">
           Le cabinet,{' '}
           <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
             repensé.
           </span>
         </h1>
-        <p className="text-xl text-white/70 max-w-xl mt-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:200ms] [animation-fill-mode:both]">
-          Consultations, ordonnances, paiements et statistiques dans une interface conçue pour les médecins du Maroc.
+        <p className="text-base md:text-lg text-white/65 max-w-xl mt-6 leading-relaxed animate-in fade-in-0 slide-in-from-bottom-3 duration-700 [animation-delay:200ms] [animation-fill-mode:both]">
+          Consultations, ordonnances, paiements et statistiques — réunis dans une
+          interface conçue pour les médecins du Maroc.
         </p>
-        <div className="flex flex-wrap gap-3 justify-center mt-10 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:300ms] [animation-fill-mode:both]">
+        <div className="flex flex-wrap gap-2.5 justify-center mt-9 animate-in fade-in-0 slide-in-from-bottom-3 duration-700 [animation-delay:300ms] [animation-fill-mode:both]">
           <Magnetic>
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg text-base font-medium bg-emerald-500 text-white hover:bg-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.4),0_18px_48px_-18px_rgba(16,185,129,0.7)] transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.35),0_16px_40px_-18px_rgba(16,185,129,0.6)] transition-all"
             >
-              <WhatsAppIcon className="size-5" />
+              <WhatsAppIcon className="size-4" />
               Essayer {FREE_TRIAL_MONTHS} mois gratuits
             </a>
           </Magnetic>
           <Magnetic>
             <Link
               href="/sign-in"
-              className="inline-flex px-7 py-3.5 rounded-lg text-base font-medium text-white border border-white/20 hover:bg-white/5 hover:border-white/40 transition-colors"
+              className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-medium text-white/85 border border-white/15 hover:bg-white/5 hover:border-white/30 hover:text-white transition-colors"
             >
               Se connecter
             </Link>
           </Magnetic>
         </div>
-        <p className="text-small text-white/40 mt-4 tabular-nums animate-in fade-in-0 duration-700 [animation-delay:400ms] [animation-fill-mode:both]">
-          Sur WhatsApp : {WHATSAPP_NUMBER_DISPLAY}
+        <p className="text-xs text-white/40 mt-5 tabular-nums animate-in fade-in-0 duration-700 [animation-delay:400ms] [animation-fill-mode:both]">
+          Sur WhatsApp · {WHATSAPP_NUMBER_DISPLAY}
         </p>
-        <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 text-white/30 text-sm animate-bounce [animation-duration:2s] [animation-delay:600ms] [animation-fill-mode:both]">
-          ↓ découvrir
-        </div>
       </div>
+
+      {/* Subtle bottom fade so the section transitions into the next
+          one without a visible seam. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-black pointer-events-none"
+      />
     </section>
   );
 }
