@@ -56,6 +56,15 @@ export async function createFollowUpConsultation(
         doctorId,
         parentConsultationId: parent.id,
         consultedAt: now,
+        // Pre-fill the clinical context from the parent visit so the
+        // doctor sees the original motif / history / exam / diagnosis
+        // and can append or edit instead of re-typing the case. The
+        // suite/follow-up notes field stays empty — that's the LAST
+        // visit's post-consultation log, this new visit starts fresh.
+        motif: parent.motif,
+        historyNotes: parent.historyNotes,
+        examNotes: parent.examNotes,
+        diagnosis: parent.diagnosis,
         // Pre-seed billing as free — finalize dialog still lets the
         // doctor override if they need to charge. Both isFree and
         // paymentStatus must be set together: the

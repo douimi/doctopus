@@ -114,23 +114,56 @@ export function ConsultationEditor({
     setStatus('saving');
     setError(null);
     startSaving(async () => {
-      // Only call the server for the slice that actually changed.
-      const calls: Promise<{ ok: boolean; error?: string }>[] = [];
-      if (sectionsDirty) calls.push(saveSectionsAction(consultationId, sections));
-      if (vitalsDirty) calls.push(saveVitalsAction(consultationId, vitals));
-      const results = await Promise.all(calls);
-      const failed = results.find((r) => !r.ok);
-      if (failed) {
-        setStatus('error');
-        setError(failed.error ?? 'Erreur de sauvegarde.');
-        return;
-      }
-      setSavedSections(sections);
-      setSavedVitals(vitals);
-      setStatus('saved');
-      setMode('view');
+      await flushDirty();
     });
   }
+
+  // Persists whatever's dirty in the editor and returns the outcome.
+  // Shared by the explicit Save button AND the FinalizePricingDialog,
+  // which dispatches a window event so it can save the doctor's
+  // unsaved edits before locking the consultation.
+  async function flushDirty(): Promise<{ ok: boolean; error?: string }> {
+    if (!sectionsDirty && !vitalsDirty) {
+      setStatus('saved');
+      setMode('view');
+      return { ok: true };
+    }
+    const calls: Promise<{ ok: boolean; error?: string }>[] = [];
+    if (sectionsDirty) calls.push(saveSectionsAction(consultationId, sections));
+    if (vitalsDirty) calls.push(saveVitalsAction(consultationId, vitals));
+    const results = await Promise.all(calls);
+    const failed = results.find((r) => !r.ok);
+    if (failed) {
+      setStatus('error');
+      setError(failed.error ?? 'Erreur de sauvegarde.');
+      return { ok: false, error: failed.error };
+    }
+    setSavedSections(sections);
+    setSavedVitals(vitals);
+    setStatus('saved');
+    setMode('view');
+    return { ok: true };
+  }
+
+  // Listen for "save what you've got" requests from siblings (the
+  // finalize dialog uses this so clicking "Terminer la consultation"
+  // never silently throws away the doctor's unsaved edits).
+  useEffect(() => {
+    function onFlush(e: Event) {
+      const detail = (e as CustomEvent<{
+        consultationId: string;
+        resolve: (r: { ok: boolean; error?: string }) => void;
+      }>).detail;
+      if (!detail || detail.consultationId !== consultationId) return;
+      void flushDirty().then(detail.resolve);
+    }
+    window.addEventListener('doctopus:flush-consultation-editor', onFlush as EventListener);
+    return () =>
+      window.removeEventListener('doctopus:flush-consultation-editor', onFlush as EventListener);
+    // flushDirty captures sections/vitals/sectionsDirty/vitalsDirty by
+    // closure — rewire whenever they change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consultationId, sections, vitals, sectionsDirty, vitalsDirty]);
 
   const statusLabel =
     status === 'saving'

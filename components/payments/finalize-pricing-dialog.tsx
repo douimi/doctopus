@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Alert } from '@/components/ui/alert';
 import { finalizeConsultationAction } from '@/app/(authenticated)/consultations/[id]/actions';
+import { flushConsultationEditor } from '@/lib/consultations/flush-editor';
 import { cn } from '@/lib/utils';
 
 export function FinalizePricingDialog({
@@ -47,6 +48,21 @@ export function FinalizePricingDialog({
   function handleSubmit() {
     setError(null);
     start(async () => {
+      // Flush any unsaved edits in the consultation editor BEFORE
+      // finalizing. Without this, clicking Terminer on an in-progress
+      // edit (with dirty motif/vitals/etc) locks the row with stale
+      // data on the server — the doctor's last changes silently
+      // disappear. The flush helper resolves ok=true when no editor
+      // is mounted, so other call sites stay unaffected.
+      const flushed = await flushConsultationEditor(consultationId);
+      if (!flushed.ok) {
+        setError(
+          flushed.error
+            ? `Échec de la sauvegarde des modifications : ${flushed.error}`
+            : 'Échec de la sauvegarde des modifications.',
+        );
+        return;
+      }
       const fd = new FormData();
       fd.set('consultationId', consultationId);
       fd.set('isFree', isFree ? 'true' : 'false');
