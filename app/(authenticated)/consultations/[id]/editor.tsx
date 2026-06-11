@@ -51,17 +51,26 @@ export function ConsultationEditor({
   consultationId,
   initialSections,
   initialVitals,
+  isFollowUp,
   prescriptionSlot,
 }: {
   consultationId: string;
   initialSections: Sections;
   initialVitals: Vitals;
+  /**
+   * Follow-up consultations land here pre-filled with the parent's
+   * motif / history / exam / vitals. The doctor's intent is to amend
+   * those during the new visit, so we open straight in edit mode
+   * instead of forcing them to click Modifier first.
+   */
+  isFollowUp?: boolean;
   prescriptionSlot: React.ReactNode;
 }) {
   // Empty consultation? Treat as fresh entry — start in edit so the doctor
   // doesn't have to click "Modifier" before typing anything. Otherwise
   // start in view; explicit "Modifier" gates every keystroke against the DB.
-  const startInEdit = isEmptySections(initialSections) && isEmptyVitals(initialVitals);
+  const startInEdit =
+    isFollowUp || (isEmptySections(initialSections) && isEmptyVitals(initialVitals));
   const [mode, setMode] = useState<Mode>(startInEdit ? 'edit' : 'view');
   const [sections, setSections] = useState<Sections>(initialSections);
   const [vitals, setVitals] = useState<Vitals>(initialVitals);

@@ -56,15 +56,15 @@ export async function createFollowUpConsultation(
         doctorId,
         parentConsultationId: parent.id,
         consultedAt: now,
-        // Pre-fill the clinical context from the parent visit so the
-        // doctor sees the original motif / history / exam / diagnosis
-        // and can append or edit instead of re-typing the case. The
-        // suite/follow-up notes field stays empty — that's the LAST
-        // visit's post-consultation log, this new visit starts fresh.
+        // Pre-fill only the "case context" fields so the doctor has the
+        // background of the prior visit without re-typing. Diagnosis is
+        // INTENTIONALLY NOT copied — the follow-up records the patient's
+        // *current* state, which may have changed. Suite / follow-up
+        // notes stays empty too (that's the parent's post-consultation
+        // log, this new visit starts fresh).
         motif: parent.motif,
         historyNotes: parent.historyNotes,
         examNotes: parent.examNotes,
-        diagnosis: parent.diagnosis,
         // Pre-seed billing as free — finalize dialog still lets the
         // doctor override if they need to charge. Both isFree and
         // paymentStatus must be set together: the
@@ -74,6 +74,27 @@ export async function createFollowUpConsultation(
         paymentStatus: 'free',
       })
       .returning();
+
+    // Copy the parent's vital signs as a starting point — the doctor
+    // can amend them with the current measurements during the follow-up.
+    const [parentVitals] = await tx
+      .select()
+      .from(consultationVitals)
+      .where(eq(consultationVitals.consultationId, parent.id));
+    if (parentVitals) {
+      await tx.insert(consultationVitals).values({
+        tenantId,
+        consultationId: created.id,
+        weightKg: parentVitals.weightKg,
+        heightCm: parentVitals.heightCm,
+        temperatureC: parentVitals.temperatureC,
+        bpSystolic: parentVitals.bpSystolic,
+        bpDiastolic: parentVitals.bpDiastolic,
+        heartRate: parentVitals.heartRate,
+        notes: parentVitals.notes,
+      });
+    }
+
     return created;
   });
 }
@@ -178,17 +199,18 @@ export async function startFromAppointment(
 
     // Walk-ins / booked appointments flagged as follow-ups carry a
     // parent_consultation_id. Mirror what createFollowUpConsultation does
-    // for the manual flow: pre-fill the clinical context from the parent
+    // for the manual flow: pre-fill motif / history / exam from the
+    // parent (NOT diagnosis — the follow-up records current state),
     // and seed billing as free.
     let parentClinicalPrefill: {
       motif: string | null;
       historyNotes: string | null;
       examNotes: string | null;
-      diagnosis: string | null;
       isFree: true;
       paymentStatus: 'free';
       parentConsultationId: string;
     } | null = null;
+    let parentVitalsToCopy: typeof consultationVitals.$inferSelect | null = null;
     if (appt.parentConsultationId) {
       const [parent] = await tx
         .select()
@@ -199,11 +221,15 @@ export async function startFromAppointment(
           motif: parent.motif,
           historyNotes: parent.historyNotes,
           examNotes: parent.examNotes,
-          diagnosis: parent.diagnosis,
           isFree: true,
           paymentStatus: 'free',
           parentConsultationId: parent.id,
         };
+        const [pv] = await tx
+          .select()
+          .from(consultationVitals)
+          .where(eq(consultationVitals.consultationId, parent.id));
+        parentVitalsToCopy = pv ?? null;
       }
     }
 
@@ -218,6 +244,21 @@ export async function startFromAppointment(
         ...(parentClinicalPrefill ?? {}),
       })
       .returning();
+
+    if (parentVitalsToCopy) {
+      await tx.insert(consultationVitals).values({
+        tenantId,
+        consultationId: created.id,
+        weightKg: parentVitalsToCopy.weightKg,
+        heightCm: parentVitalsToCopy.heightCm,
+        temperatureC: parentVitalsToCopy.temperatureC,
+        bpSystolic: parentVitalsToCopy.bpSystolic,
+        bpDiastolic: parentVitalsToCopy.bpDiastolic,
+        heartRate: parentVitalsToCopy.heartRate,
+        notes: parentVitalsToCopy.notes,
+      });
+    }
+
     return created;
   });
 }

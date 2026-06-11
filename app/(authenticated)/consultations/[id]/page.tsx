@@ -119,6 +119,7 @@ export default async function ConsultationPage({
 
         <ConsultationEditor
           consultationId={id}
+          isFollowUp={detail.consultation.parentConsultationId !== null}
           initialSections={{
             motif: detail.consultation.motif ?? '',
             historyNotes: detail.consultation.historyNotes ?? '',
