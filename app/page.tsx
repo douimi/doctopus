@@ -3,6 +3,7 @@ import { Topbar } from '@/components/landing/topbar';
 import { ScrollProgress } from '@/components/landing/scroll-progress';
 import { Tentacles } from '@/components/landing/tentacles';
 import { Hero } from '@/components/landing/hero';
+import { ShowcaseSection } from '@/components/landing/showcase-section';
 import { ConsultationSection } from '@/components/landing/consultation-section';
 import { OrdonnanceSection } from '@/components/landing/ordonnance-section';
 import { PricingSection } from '@/components/landing/pricing-section';
@@ -26,6 +27,7 @@ export default function HomePage() {
       <div className="relative z-10">
         <Topbar />
         <Hero />
+        <ShowcaseSection />
         <ConsultationSection />
         <OrdonnanceSection />
         <PricingSection />

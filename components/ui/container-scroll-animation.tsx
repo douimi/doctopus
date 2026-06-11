@@ -2,6 +2,7 @@
 
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 /**
  * Scroll-driven hero scaffold (3D card rises into place as the user
@@ -19,9 +20,12 @@ import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion
 export function ContainerScroll({
   titleComponent,
   children,
+  innerClassName,
 }: {
   titleComponent: React.ReactNode;
   children: React.ReactNode;
+  /** Override the inner "screen" surface (e.g. dark bg on the landing). */
+  innerClassName?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: containerRef });
@@ -54,7 +58,7 @@ export function ContainerScroll({
         style={{ perspective: '1000px' }}
       >
         <Header translate={translate}>{titleComponent}</Header>
-        <Card rotate={rotate} translate={translate} scale={scale}>
+        <Card rotate={rotate} translate={translate} scale={scale} innerClassName={innerClassName}>
           {children}
         </Card>
       </div>
@@ -83,11 +87,13 @@ function Card({
   rotate,
   scale,
   children,
+  innerClassName,
 }: {
   rotate: MotionValue<number>;
   scale: MotionValue<number>;
   translate: MotionValue<number>;
   children: React.ReactNode;
+  innerClassName?: string;
 }) {
   return (
     <motion.div
@@ -99,7 +105,12 @@ function Card({
       }}
       className="max-w-5xl -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full border-4 border-zinc-600 p-2 md:p-6 bg-zinc-900 rounded-[30px] shadow-2xl"
     >
-      <div className="h-full w-full overflow-hidden rounded-2xl bg-muted md:rounded-2xl md:p-4">
+      <div
+        className={cn(
+          'h-full w-full overflow-hidden rounded-2xl bg-muted md:rounded-2xl md:p-4',
+          innerClassName,
+        )}
+      >
         {children}
       </div>
     </motion.div>
