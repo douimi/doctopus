@@ -2,6 +2,7 @@
 
 import { SectionFrame } from './section-frame';
 import { StatsMockup } from './stats-mockup';
+import { MockupFrame } from './mockup-frame';
 import { SectionEyebrow } from './section-eyebrow';
 import { Parallax } from './parallax';
 
@@ -21,7 +22,9 @@ export function StatsSection() {
             Recettes du jour, du mois, de l&apos;année. Méthodes de paiement, paiements en attente, top patients. Tout ce qu&apos;il faut pour piloter.
           </p>
           <Parallax className="w-full flex flex-col items-center">
-            <StatsMockup revealed={revealed} />
+            <MockupFrame>
+              <StatsMockup revealed={revealed} />
+            </MockupFrame>
           </Parallax>
         </>
       )}

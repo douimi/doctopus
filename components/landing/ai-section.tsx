@@ -2,6 +2,7 @@
 
 import { SectionFrame } from './section-frame';
 import { AIMockup } from './ai-mockup';
+import { MockupFrame } from './mockup-frame';
 import { SectionEyebrow } from './section-eyebrow';
 import { Parallax } from './parallax';
 
@@ -21,7 +22,9 @@ export function AISection() {
             Posez une question — l&apos;assistant connaît le motif, les allergies, les antécédents du patient. Sans jamais transmettre son identité.
           </p>
           <Parallax className="w-full flex flex-col items-center">
-            <AIMockup revealed={revealed} />
+            <MockupFrame size="narrow">
+              <AIMockup revealed={revealed} />
+            </MockupFrame>
           </Parallax>
           <p className="text-sm text-white/50 mt-6 text-center max-w-2xl">
             Modèle propriétaire entraîné sur du contexte et des données du Maroc — terminologie clinique, pratiques locales, AMO/RAMED. Données patient anonymisées avant transmission.

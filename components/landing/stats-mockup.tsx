@@ -17,13 +17,7 @@ export function StatsMockup({ revealed }: { revealed: boolean }) {
   const enAttente = useCountUp(5, { startWhen: revealed, durationMs: 1200, startDelayMs: 360 });
 
   return (
-    <div className="mt-16 max-w-[900px] w-full bg-gradient-to-b from-[#1a1a1a] to-[#0d0d0d] border border-white/10 rounded-2xl p-2 shadow-2xl">
-      <div className="flex gap-1.5 px-3.5 py-2.5">
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-      </div>
-      <div className="bg-[#f5f5f5] text-slate-900 rounded-xl p-6">
+    <div className="bg-[#f5f5f5] text-slate-900 p-6">
         <div className="grid grid-cols-4 gap-3 mb-5">
           <Tile tone="success" label="Recettes" value={fmtMad(recettes)} hint="137 consultations" />
           <Tile tone="primary" label="Consultations" value={fmtInt(consultations)} hint="137 payés · 5 en attente" />
@@ -42,7 +36,6 @@ export function StatsMockup({ revealed }: { revealed: boolean }) {
             />
           ))}
         </div>
-      </div>
     </div>
   );
 }

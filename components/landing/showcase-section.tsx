@@ -32,13 +32,11 @@ export function ShowcaseSection() {
           </>
         }
       >
-        <div className="h-full w-full flex items-start justify-center">
-          {/* StatsMockup's own outer chrome (mt-16, gradient bezel) would
-              double up inside the scroll card — strip those via wrapper
-              classes so the mockup content fills the inner area cleanly. */}
-          <div className="w-full [&>div]:!mt-0 [&>div]:!max-w-none [&>div]:!bg-transparent [&>div]:!border-0 [&>div]:!shadow-none [&>div]:!p-0">
-            <StatsMockup revealed />
-          </div>
+        <div className="h-full w-full">
+          {/* StatsMockup is now chrome-less (the device frame is provided
+              by the surrounding ContainerScroll card) — we can drop the
+              strip-hack wrappers and just render the body directly. */}
+          <StatsMockup revealed />
         </div>
       </ContainerScroll>
     </section>

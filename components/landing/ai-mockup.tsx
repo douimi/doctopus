@@ -24,13 +24,7 @@ export function AIMockup({ revealed }: { revealed: boolean }) {
   const botDone = botText.length === BOT_RESPONSE.length;
 
   return (
-    <div className="mt-16 max-w-xl w-full bg-gradient-to-b from-[#1a1a1a] to-[#0d0d0d] border border-white/10 rounded-2xl p-2 shadow-2xl">
-      <div className="flex gap-1.5 px-3.5 py-2.5">
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-      </div>
-      <div className="bg-[#f5f5f5] text-slate-900 rounded-xl p-5">
+    <div className="bg-[#f5f5f5] text-slate-900 p-5">
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <div className="font-semibold text-sm mb-3.5 flex items-center gap-2">
             🤖 Assistant clinique
@@ -57,7 +51,6 @@ export function AIMockup({ revealed }: { revealed: boolean }) {
             Posez une question…
           </div>
         </div>
-      </div>
     </div>
   );
 }

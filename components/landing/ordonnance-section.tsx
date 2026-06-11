@@ -2,6 +2,7 @@
 
 import { SectionFrame } from './section-frame';
 import { OrdonnanceMockup } from './ordonnance-mockup';
+import { MockupFrame } from './mockup-frame';
 import { SectionEyebrow } from './section-eyebrow';
 import { Parallax } from './parallax';
 
@@ -21,7 +22,9 @@ export function OrdonnanceSection() {
             Recherche en temps réel sur une base de médicaments tenue à jour. PPM, base de remboursement et statut Princeps/Générique s&apos;affichent directement ; l&apos;autocomplétion mémorise vos posologies habituelles.
           </p>
           <Parallax className="w-full flex flex-col items-center">
-            <OrdonnanceMockup revealed={revealed} />
+            <MockupFrame>
+              <OrdonnanceMockup revealed={revealed} />
+            </MockupFrame>
           </Parallax>
         </>
       )}

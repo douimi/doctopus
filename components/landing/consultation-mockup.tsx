@@ -16,13 +16,7 @@ export function ConsultationMockup({ revealed }: { revealed: boolean }) {
   const diagnosticDone = diagnosticText.length === DIAGNOSTIC.length;
 
   return (
-    <div className="mt-16 max-w-[900px] w-full bg-gradient-to-b from-[#1a1a1a] to-[#0d0d0d] border border-white/10 rounded-2xl p-2 shadow-2xl">
-      <div className="flex gap-1.5 px-3.5 py-2.5">
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-        <div className="w-3 h-3 rounded-full bg-white/10" />
-      </div>
-      <div className="bg-[#f5f5f5] text-slate-900 rounded-xl p-6 min-h-[320px]">
+    <div className="bg-[#f5f5f5] text-slate-900 p-6 min-h-[320px]">
         {/* Patient card */}
         <div className="bg-white border border-slate-200 rounded-lg p-4 flex items-center gap-3.5 mb-4">
           <div className="w-12 h-12 rounded-full bg-sky-500 text-white flex items-center justify-center font-semibold">
@@ -62,7 +56,6 @@ export function ConsultationMockup({ revealed }: { revealed: boolean }) {
             {!diagnosticDone && motifDone ? <span className="opacity-60">|</span> : null}
           </div>
         </div>
-      </div>
     </div>
   );
 }

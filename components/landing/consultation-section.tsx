@@ -2,6 +2,7 @@
 
 import { SectionFrame } from './section-frame';
 import { ConsultationMockup } from './consultation-mockup';
+import { MockupFrame } from './mockup-frame';
 import { SectionEyebrow } from './section-eyebrow';
 import { Parallax } from './parallax';
 
@@ -21,7 +22,9 @@ export function ConsultationSection() {
             Motif, antécédents, examen, diagnostic, suivi, ordonnance — tout dans une seule fenêtre. L&apos;autosave veille pour vous.
           </p>
           <Parallax className="w-full flex flex-col items-center">
-            <ConsultationMockup revealed={revealed} />
+            <MockupFrame>
+              <ConsultationMockup revealed={revealed} />
+            </MockupFrame>
           </Parallax>
         </>
       )}
