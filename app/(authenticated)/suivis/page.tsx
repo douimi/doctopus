@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { ArrowRight, Plus, RefreshCw } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
-import { listFollowUpsPage } from '@/lib/consultations/queries';
+import {
+  listFollowUpsPage,
+  type ConsultationSort,
+  type ConsultationSortDir,
+} from '@/lib/consultations/queries';
 import { Avatar } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -9,6 +13,7 @@ import { LiveSearchInput } from '@/components/ui/live-search-input';
 import { LiveRefresh } from '@/components/shell/live-refresh';
 import { PageHeader } from '@/components/shell/page-header';
 import { Pagination } from '@/components/ui/pagination';
+import { SortableHeader } from '@/components/ui/sortable-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import {
   Table,
@@ -23,9 +28,10 @@ import {
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;
+const SORTS: ReadonlyArray<ConsultationSort> = ['patient', 'consultedAt', 'status'];
 
 type Props = {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; sort?: string; dir?: string }>;
 };
 
 function fmtDate(d: Date): string {
@@ -34,22 +40,45 @@ function fmtDate(d: Date): string {
 
 export default async function FollowUpsPage({ searchParams }: Props) {
   const session = await requireSession();
-  const { q = '', page: pageRaw } = await searchParams;
+  const { q = '', page: pageRaw, sort: sortRaw, dir: dirRaw } = await searchParams;
   const trimmed = q.trim();
   const requestedPage = Number.parseInt(pageRaw ?? '1', 10) || 1;
+  const sort: ConsultationSort = SORTS.includes(sortRaw as ConsultationSort)
+    ? (sortRaw as ConsultationSort)
+    : 'consultedAt';
+  const dir: ConsultationSortDir = dirRaw === 'asc' ? 'asc' : 'desc';
+
   const { rows, total, page, totalPages } = await listFollowUpsPage(
     session.tenantId,
     trimmed,
-    { page: requestedPage, pageSize: PAGE_SIZE },
+    { page: requestedPage, pageSize: PAGE_SIZE, sort, dir },
   );
 
-  const buildHref = (n: number) => {
-    const params = new URLSearchParams();
-    if (trimmed) params.set('q', trimmed);
-    if (n > 1) params.set('page', String(n));
-    const qs = params.toString();
+  const buildHref = (params: {
+    q?: string;
+    page?: number;
+    sort?: ConsultationSort;
+    dir?: ConsultationSortDir;
+  }) => {
+    const sp = new URLSearchParams();
+    if (params.q ?? trimmed) sp.set('q', params.q ?? trimmed);
+    if ((params.page ?? page) > 1) sp.set('page', String(params.page ?? page));
+    const s = params.sort ?? sort;
+    const d = params.dir ?? dir;
+    if (s !== 'consultedAt' || d !== 'desc') {
+      sp.set('sort', s);
+      sp.set('dir', d);
+    }
+    const qs = sp.toString();
     return qs ? `/suivis?${qs}` : '/suivis';
   };
+
+  const sortHref = (col: ConsultationSort) =>
+    buildHref({
+      page: 1,
+      sort: col,
+      dir: sort === col && dir === 'desc' ? 'asc' : 'desc',
+    });
 
   return (
     <>
@@ -80,10 +109,34 @@ export default async function FollowUpsPage({ searchParams }: Props) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Patient</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead>
+                  <SortableHeader
+                    href={sortHref('patient')}
+                    active={sort === 'patient'}
+                    dir={dir}
+                  >
+                    Patient
+                  </SortableHeader>
+                </TableHead>
+                <TableHead>
+                  <SortableHeader
+                    href={sortHref('consultedAt')}
+                    active={sort === 'consultedAt'}
+                    dir={dir}
+                  >
+                    Date
+                  </SortableHeader>
+                </TableHead>
                 <TableHead>Motif</TableHead>
-                <TableHead>Statut</TableHead>
+                <TableHead>
+                  <SortableHeader
+                    href={sortHref('status')}
+                    active={sort === 'status'}
+                    dir={dir}
+                  >
+                    Statut
+                  </SortableHeader>
+                </TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -145,7 +198,11 @@ export default async function FollowUpsPage({ searchParams }: Props) {
           </Table>
         </div>
 
-        <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          buildHref={(n) => buildHref({ page: n })}
+        />
       </div>
     </>
   );

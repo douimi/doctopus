@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowDown, ArrowRight, ArrowUp, Plus, Users } from 'lucide-react';
+import { ArrowRight, Plus, Users } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import {
   searchPatientsPage,
@@ -12,6 +12,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { LiveSearchInput } from '@/components/ui/live-search-input';
 import { PageHeader } from '@/components/shell/page-header';
 import { Pagination } from '@/components/ui/pagination';
+import { SortableHeader } from '@/components/ui/sortable-header';
 import {
   Table,
   TableBody,
@@ -59,8 +60,6 @@ export default async function PatientsPage({ searchParams }: Props) {
     sort: 'name',
     dir: sort === 'name' && dir === 'asc' ? 'desc' : 'asc',
   });
-  const sortedByName = sort === 'name';
-  const SortIcon = sortedByName ? (dir === 'asc' ? ArrowUp : ArrowDown) : null;
 
   return (
     <>
@@ -104,21 +103,13 @@ export default async function PatientsPage({ searchParams }: Props) {
             <TableHeader>
               <TableRow>
                 <TableHead>
-                  <Link
+                  <SortableHeader
                     href={toggleNameSortHref}
-                    aria-sort={
-                      sortedByName ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'
-                    }
-                    className="inline-flex items-center gap-1 -mx-1 px-1 rounded hover:text-foreground transition-colors"
-                    style={{ transitionDuration: 'var(--duration-fast)' }}
+                    active={sort === 'name'}
+                    dir={dir}
                   >
                     Patient
-                    {SortIcon ? (
-                      <SortIcon className="size-3" aria-hidden />
-                    ) : (
-                      <ArrowUp className="size-3 opacity-30" aria-hidden />
-                    )}
-                  </Link>
+                  </SortableHeader>
                 </TableHead>
                 <TableHead>Âge</TableHead>
                 <TableHead>Téléphone</TableHead>

@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, desc, eq, ilike, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
 import {
   consultations,
@@ -210,17 +210,48 @@ export type ConsultationPage = {
   totalPages: number;
 };
 
+export type ConsultationSort = 'patient' | 'consultedAt' | 'status';
+export type ConsultationSortDir = 'asc' | 'desc';
+
+function consultationOrderBy(
+  sort: ConsultationSort,
+  dir: ConsultationSortDir,
+): SQL[] {
+  const direction = dir === 'asc' ? asc : desc;
+  if (sort === 'patient') {
+    return [direction(patients.lastName), direction(patients.firstName)];
+  }
+  if (sort === 'status') {
+    // Treat draft → awaiting → paid → free as the natural lifecycle.
+    // Postgres sorts text alphabetically so we lean on an expression.
+    return [
+      direction(consultations.isFinalized),
+      direction(consultations.paymentStatus),
+      desc(consultations.consultedAt),
+    ];
+  }
+  return [direction(consultations.consultedAt)];
+}
+
 /**
  * Paginated variant of listConsultations. `page` is 1-indexed; out-of-
- * range pages clamp to a valid value. Same ordering (most recent first)
- * and same patient-name search as the non-paginated version.
+ * range pages clamp to a valid value. Same patient-name search as the
+ * non-paginated version. Default sort: most recent consultedAt first.
  */
 export async function listConsultationsPage(
   tenantId: string,
   query: string,
-  opts: { page?: number; pageSize?: number } = {},
+  opts: {
+    page?: number;
+    pageSize?: number;
+    sort?: ConsultationSort;
+    dir?: ConsultationSortDir;
+  } = {},
 ): Promise<ConsultationPage> {
   const pageSize = Math.min(Math.max(opts.pageSize ?? 25, 1), 100);
+  const sort = opts.sort ?? 'consultedAt';
+  const dir = opts.dir ?? 'desc';
+  const orderBy = consultationOrderBy(sort, dir);
   const trimmed = query.trim();
 
   return withTenantTx(tenantId, async (tx) => {
@@ -257,7 +288,7 @@ export async function listConsultationsPage(
       .from(consultations)
       .innerJoin(patients, eq(patients.id, consultations.patientId))
       .where(where)
-      .orderBy(desc(consultations.consultedAt))
+      .orderBy(...orderBy)
       .limit(pageSize)
       .offset(offset);
 
@@ -289,9 +320,17 @@ export async function listConsultationsPage(
 export async function listFollowUpsPage(
   tenantId: string,
   query: string,
-  opts: { page?: number; pageSize?: number } = {},
+  opts: {
+    page?: number;
+    pageSize?: number;
+    sort?: ConsultationSort;
+    dir?: ConsultationSortDir;
+  } = {},
 ): Promise<ConsultationPage> {
   const pageSize = Math.min(Math.max(opts.pageSize ?? 25, 1), 100);
+  const sort = opts.sort ?? 'consultedAt';
+  const dir = opts.dir ?? 'desc';
+  const orderBy = consultationOrderBy(sort, dir);
   const trimmed = query.trim();
 
   return withTenantTx(tenantId, async (tx) => {
@@ -332,7 +371,7 @@ export async function listFollowUpsPage(
       .from(consultations)
       .innerJoin(patients, eq(patients.id, consultations.patientId))
       .where(where)
-      .orderBy(desc(consultations.consultedAt))
+      .orderBy(...orderBy)
       .limit(pageSize)
       .offset(offset);
 
