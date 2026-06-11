@@ -201,6 +201,22 @@ export function BookAppointmentDialog({
               />
             </div>
 
+            <label className="flex items-start gap-2 cursor-pointer text-small">
+              <input
+                type="checkbox"
+                name="isFollowUp"
+                value="true"
+                className="mt-0.5 size-4 rounded border-border"
+              />
+              <span>
+                <span className="font-medium">C&apos;est un suivi</span>{' '}
+                <span className="text-muted-foreground">
+                  — rattacher à la dernière consultation du patient (gratuit
+                  par défaut, motif et antécédents pré-remplis).
+                </span>
+              </span>
+            </label>
+
             {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
 
             <div className="flex justify-end gap-2 pt-1">

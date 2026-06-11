@@ -16,6 +16,12 @@ export const appointments = pgTable('appointments', {
   }).notNull(),
   kind: text('kind', { enum: ['scheduled', 'walkin'] }).notNull(),
   reason: text('reason'),
+  // Optional link to a previous consultation when this appointment is
+  // booked as a follow-up. The FK to consultations(id) ON DELETE SET
+  // NULL is enforced at the DB level by migration 0015 — we leave the
+  // .references() off here to dodge the circular import between this
+  // schema and db/schema/consultations.ts.
+  parentConsultationId: uuid('parent_consultation_id'),
   createdBy: uuid('created_by').notNull().references(() => userProfiles.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

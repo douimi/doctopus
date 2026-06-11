@@ -176,6 +176,37 @@ export async function startFromAppointment(
       })
       .where(eq(appointments.id, appointmentId));
 
+    // Walk-ins / booked appointments flagged as follow-ups carry a
+    // parent_consultation_id. Mirror what createFollowUpConsultation does
+    // for the manual flow: pre-fill the clinical context from the parent
+    // and seed billing as free.
+    let parentClinicalPrefill: {
+      motif: string | null;
+      historyNotes: string | null;
+      examNotes: string | null;
+      diagnosis: string | null;
+      isFree: true;
+      paymentStatus: 'free';
+      parentConsultationId: string;
+    } | null = null;
+    if (appt.parentConsultationId) {
+      const [parent] = await tx
+        .select()
+        .from(consultations)
+        .where(eq(consultations.id, appt.parentConsultationId));
+      if (parent) {
+        parentClinicalPrefill = {
+          motif: parent.motif,
+          historyNotes: parent.historyNotes,
+          examNotes: parent.examNotes,
+          diagnosis: parent.diagnosis,
+          isFree: true,
+          paymentStatus: 'free',
+          parentConsultationId: parent.id,
+        };
+      }
+    }
+
     const [created] = await tx
       .insert(consultations)
       .values({
@@ -184,6 +215,7 @@ export async function startFromAppointment(
         patientId: appt.patientId,
         doctorId,
         consultedAt: now,
+        ...(parentClinicalPrefill ?? {}),
       })
       .returning();
     return created;

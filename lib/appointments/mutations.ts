@@ -20,6 +20,7 @@ export async function bookAppointment(
         status: 'scheduled',
         kind: 'scheduled',
         reason: input.reason && input.reason.length > 0 ? input.reason : null,
+        parentConsultationId: input.parentConsultationId ?? null,
         createdBy,
       })
       .returning();
@@ -43,6 +44,7 @@ export async function walkIn(
         kind: 'walkin',
         arrivedAt: now,
         reason: input.reason && input.reason.length > 0 ? input.reason : null,
+        parentConsultationId: input.parentConsultationId ?? null,
         createdBy,
       })
       .returning();

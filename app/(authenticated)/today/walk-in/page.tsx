@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Plus, UserPlus, UserSearch } from 'lucide-react';
+import { ArrowLeft, Plus, RefreshCw, UserPlus, UserSearch } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import { searchPatientsPage } from '@/lib/patients/queries';
 import { formatAge } from '@/lib/patients/age';
@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/shell/page-header';
-import { walkInDirectAction } from './actions';
+import { walkInDirectAction, walkInFollowUpAction } from './actions';
 
 const PAGE_SIZE = 25;
 
@@ -132,17 +132,32 @@ export default async function WalkInPage({ searchParams }: Props) {
                         {p.cin ?? '—'}
                       </TableCell>
                       <TableCell className="text-right pr-3">
-                        <form action={walkInDirectAction} className="inline-flex">
-                          <input type="hidden" name="patientId" value={p.id} />
-                          <Button
-                            type="submit"
-                            size="sm"
-                            aria-label={`Mettre ${fullName} en salle d'attente`}
-                          >
-                            <UserPlus aria-hidden />
-                            Mettre en salle
-                          </Button>
-                        </form>
+                        <div className="inline-flex items-center gap-1.5">
+                          <form action={walkInFollowUpAction} className="inline-flex">
+                            <input type="hidden" name="patientId" value={p.id} />
+                            <Button
+                              type="submit"
+                              size="sm"
+                              variant="secondary"
+                              aria-label={`Mettre ${fullName} en salle d'attente comme suivi`}
+                              title="Suivi : rattaché à sa dernière consultation"
+                            >
+                              <RefreshCw aria-hidden />
+                              Suivi
+                            </Button>
+                          </form>
+                          <form action={walkInDirectAction} className="inline-flex">
+                            <input type="hidden" name="patientId" value={p.id} />
+                            <Button
+                              type="submit"
+                              size="sm"
+                              aria-label={`Mettre ${fullName} en salle d'attente`}
+                            >
+                              <UserPlus aria-hidden />
+                              Mettre en salle
+                            </Button>
+                          </form>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
