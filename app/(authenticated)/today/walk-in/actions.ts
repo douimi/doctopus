@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { requireSession } from '@/lib/auth/session';
 import { walkIn } from '@/lib/appointments/mutations';
 import { walkInSchema } from '@/lib/appointments/schemas';
-import { getLatestPrimaryConsultationForPatient } from '@/lib/consultations/queries';
 
 /**
  * One-click "Mettre en salle d'attente" — fired from a per-row Button on
@@ -23,32 +22,31 @@ export async function walkInDirectAction(formData: FormData): Promise<void> {
 }
 
 /**
- * Walk-in flagged as a follow-up — same flow as walkInDirectAction but
- * looks up the patient's latest primary consultation and stores it as
- * the appointment's parent_consultation_id so that when the doctor
- * starts the consultation, it inherits the parent + the clinical
- * pre-fill (see startFromAppointment in lib/consultations/mutations).
+ * Walk-in flagged as a follow-up. Takes both the patient id AND the
+ * specific parent consultation id the doctor picked in /today/walk-in/suivi,
+ * stores it on the appointment so that when the consultation starts it
+ * inherits the parent and the clinical pre-fill (see startFromAppointment).
  *
- * If the patient has no eligible parent (never seen them before),
- * silently falls back to a regular walk-in — the doctor sees the same
- * outcome as clicking "Mettre en salle" and isn't blocked on an
- * accidental click.
+ * If the parent id is missing or invalid, silently falls back to a
+ * regular walk-in — better to put the patient in the waiting room than
+ * to bounce a doctor with a form error mid-rush.
  */
 export async function walkInFollowUpAction(formData: FormData): Promise<void> {
   const session = await requireSession();
-  const parsedPatient = z
-    .object({ patientId: z.string().uuid() })
-    .safeParse({ patientId: formData.get('patientId') });
-  if (!parsedPatient.success) return;
-
-  const parent = await getLatestPrimaryConsultationForPatient(
-    session.tenantId,
-    parsedPatient.data.patientId,
-  );
+  const parsed = z
+    .object({
+      patientId: z.string().uuid(),
+      parentId: z.string().uuid().optional(),
+    })
+    .safeParse({
+      patientId: formData.get('patientId'),
+      parentId: formData.get('parentId') ?? undefined,
+    });
+  if (!parsed.success) return;
 
   await walkIn(session.tenantId, session.userId, {
-    patientId: parsedPatient.data.patientId,
-    parentConsultationId: parent?.id ?? null,
+    patientId: parsed.data.patientId,
+    parentConsultationId: parsed.data.parentId ?? null,
   });
   redirect('/today');
 }

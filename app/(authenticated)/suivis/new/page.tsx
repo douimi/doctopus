@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Plus, RefreshCw, UserSearch } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus, UserSearch } from 'lucide-react';
 import { requireDoctor } from '@/lib/auth/guards';
-import { getLatestPrimaryConsultationForPatient } from '@/lib/consultations/queries';
+import { listPatientConsultationsForPicker } from '@/lib/consultations/queries';
 import { getPatientById, searchPatientsPage } from '@/lib/patients/queries';
 import { formatAge } from '@/lib/patients/age';
 import { Alert } from '@/components/ui/alert';
 import { Avatar } from '@/components/ui/avatar';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LiveSearchInput } from '@/components/ui/live-search-input';
 import { PageHeader } from '@/components/shell/page-header';
@@ -37,17 +37,15 @@ export default async function NewFollowUpPage({ searchParams }: Props) {
   const session = await requireDoctor();
   const { q = '', page: pageRaw, patient: patientId } = await searchParams;
 
-  // Mode 1 — patient pre-selected: look up the most recent primary
-  // consultation and prompt to confirm. If the patient has nothing on
-  // file, fall through to an explanatory empty state.
+  // Mode 1 — patient pre-selected: list every consultation the patient
+  // has on file and let the doctor pick which one to attach the
+  // follow-up to. (Auto-picking the latest is wrong when the patient
+  // has multiple concurrent issues — the doctor needs to choose.)
   if (patientId) {
     const patient = await getPatientById(session.tenantId, patientId);
     if (!patient) notFound();
     const fullName = `${patient.lastName} ${patient.firstName}`;
-    const parent = await getLatestPrimaryConsultationForPatient(
-      session.tenantId,
-      patient.id,
-    );
+    const candidates = await listPatientConsultationsForPicker(session.tenantId, patient.id);
 
     return (
       <>
@@ -63,7 +61,7 @@ export default async function NewFollowUpPage({ searchParams }: Props) {
             </Link>
           }
           title="Nouveau suivi"
-          description="Enregistrez une visite de contrôle rattachée à une consultation précédente."
+          description="Choisissez la consultation à laquelle rattacher ce suivi."
         />
         <div className="px-6 py-6 max-w-2xl space-y-4">
           <div className="rounded-xl border border-border bg-card shadow-card p-4 space-y-4">
@@ -78,38 +76,50 @@ export default async function NewFollowUpPage({ searchParams }: Props) {
               </div>
             </div>
 
-            {parent ? (
+            {candidates.length > 0 ? (
               <>
-                <div className="rounded-lg border border-border bg-muted/30 p-3 text-small">
-                  <div className="font-medium text-foreground mb-0.5">
-                    Rattaché à la consultation du {fmtDate(parent.consultedAt)}
-                  </div>
-                  <div className="text-muted-foreground line-clamp-2">
-                    {parent.motif ?? 'Aucun motif renseigné.'}
-                  </div>
-                  <Link
-                    href={`/consultations/${parent.id}`}
-                    className="inline-flex items-center gap-1 mt-1.5 text-foreground/80 hover:text-primary transition-colors"
-                    style={{ transitionDuration: 'var(--duration-fast)' }}
-                  >
-                    Voir la consultation parente
-                    <ArrowRight className="size-3" aria-hidden />
-                  </Link>
-                </div>
-
                 <p className="text-small text-muted-foreground">
-                  Le motif, les antécédents, l&apos;examen et le diagnostic
-                  seront repris automatiquement &mdash; vous pourrez les
-                  modifier dans l&apos;éditeur.
+                  Le motif, les antécédents, l&apos;examen et les constantes
+                  de la consultation choisie seront repris &mdash; vous
+                  pourrez tout modifier ensuite.
                 </p>
-
-                <form action={createFollowUpAction}>
-                  <input type="hidden" name="parentId" value={parent.id} />
-                  <Button type="submit" className="w-full sm:w-auto">
-                    <RefreshCw aria-hidden />
-                    Créer le suivi
-                  </Button>
-                </form>
+                <ul className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+                  {candidates.map((c) => (
+                    <li key={c.id}>
+                      <form action={createFollowUpAction} className="contents">
+                        <input type="hidden" name="parentId" value={c.id} />
+                        <button
+                          type="submit"
+                          className="w-full text-left flex items-start gap-3 px-3 py-3 hover:bg-muted/40 focus-visible:outline-none focus-visible:bg-muted/60 transition-colors"
+                          style={{ transitionDuration: 'var(--duration-fast)' }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 text-small text-muted-foreground tabular-nums">
+                              {fmtDate(c.consultedAt)}
+                              {c.isFollowUp ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-foreground/70 text-[10px] uppercase tracking-wide font-medium">
+                                  Suivi
+                                </span>
+                              ) : null}
+                              {!c.isFinalized ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-warning-tint text-warning-foreground text-[10px] uppercase tracking-wide font-medium">
+                                  En cours
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="text-foreground line-clamp-1 mt-0.5">
+                              {c.motif ?? 'Aucun motif renseigné.'}
+                            </div>
+                          </div>
+                          <ArrowRight
+                            className="size-4 text-muted-foreground shrink-0 mt-1"
+                            aria-hidden
+                          />
+                        </button>
+                      </form>
+                    </li>
+                  ))}
+                </ul>
               </>
             ) : (
               <Alert variant="warning">

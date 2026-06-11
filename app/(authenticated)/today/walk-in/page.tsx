@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/shell/page-header';
-import { walkInDirectAction, walkInFollowUpAction } from './actions';
+import { walkInDirectAction } from './actions';
 
 const PAGE_SIZE = 25;
 
@@ -133,19 +133,15 @@ export default async function WalkInPage({ searchParams }: Props) {
                       </TableCell>
                       <TableCell className="text-right pr-3">
                         <div className="inline-flex items-center gap-1.5">
-                          <form action={walkInFollowUpAction} className="inline-flex">
-                            <input type="hidden" name="patientId" value={p.id} />
-                            <Button
-                              type="submit"
-                              size="sm"
-                              variant="secondary"
-                              aria-label={`Mettre ${fullName} en salle d'attente comme suivi`}
-                              title="Suivi : rattaché à sa dernière consultation"
-                            >
-                              <RefreshCw aria-hidden />
-                              Suivi
-                            </Button>
-                          </form>
+                          <Link
+                            href={`/today/walk-in/suivi?patient=${p.id}`}
+                            className={buttonVariants({ size: 'sm', variant: 'secondary' })}
+                            aria-label={`Mettre ${fullName} en salle d'attente comme suivi`}
+                            title="Suivi : choisir la consultation parente"
+                          >
+                            <RefreshCw aria-hidden />
+                            Suivi
+                          </Link>
                           <form action={walkInDirectAction} className="inline-flex">
                             <input type="hidden" name="patientId" value={p.id} />
                             <Button

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useEffect, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { CalendarPlus, Clock } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
@@ -16,7 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { bookAction } from './actions';
+import type { FollowUpParentCandidate } from '@/lib/consultations/queries';
+import { bookAction, listFollowUpParentCandidatesAction } from './actions';
 import type { BookState } from './types';
 
 const initial: BookState = { error: null };
@@ -69,6 +70,10 @@ export function BookAppointmentDialog({
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(todayIso());
   const [time, setTime] = useState('');
+  const [isFollowUp, setIsFollowUp] = useState(false);
+  const [parentId, setParentId] = useState('');
+  const [parents, setParents] = useState<FollowUpParentCandidate[] | null>(null);
+  const [parentsLoading, setParentsLoading] = useState(false);
 
   const today = useMemo(() => todayIso(), []);
   const tomorrow = useMemo(() => tomorrowIso(), []);
@@ -79,8 +84,28 @@ export function BookAppointmentDialog({
       // Reset on open so reopening doesn't keep stale values.
       setDate(today);
       setTime('');
+      setIsFollowUp(false);
+      setParentId('');
+      setParents(null);
     }
   }
+
+  // Lazy-load the patient's consultations the first time the doctor
+  // ticks "C'est un suivi". Re-uses the cached list on subsequent toggles.
+  useEffect(() => {
+    if (!isFollowUp || parents !== null || parentsLoading) return;
+    setParentsLoading(true);
+    void listFollowUpParentCandidatesAction(patientId)
+      .then((rows) => {
+        setParents(rows);
+        if (rows.length > 0) setParentId(rows[0].id);
+      })
+      .finally(() => setParentsLoading(false));
+  }, [isFollowUp, parents, parentsLoading, patientId]);
+
+  const noEligibleParent = isFollowUp && parents !== null && parents.length === 0;
+  const submitDisabled =
+    !date || !time || (isFollowUp && (parentsLoading || noEligibleParent || !parentId));
 
   return (
     <>
@@ -201,21 +226,64 @@ export function BookAppointmentDialog({
               />
             </div>
 
-            <label className="flex items-start gap-2 cursor-pointer text-small">
-              <input
-                type="checkbox"
-                name="isFollowUp"
-                value="true"
-                className="mt-0.5 size-4 rounded border-border"
-              />
-              <span>
-                <span className="font-medium">C&apos;est un suivi</span>{' '}
-                <span className="text-muted-foreground">
-                  — rattacher à la dernière consultation du patient (gratuit
-                  par défaut, motif et antécédents pré-remplis).
+            <input
+              type="hidden"
+              name="parentConsultationId"
+              value={isFollowUp ? parentId : ''}
+            />
+            <div className="space-y-2">
+              <label className="flex items-start gap-2 cursor-pointer text-small">
+                <input
+                  type="checkbox"
+                  checked={isFollowUp}
+                  onChange={(e) => setIsFollowUp(e.target.checked)}
+                  className="mt-0.5 size-4 rounded border-border"
+                />
+                <span>
+                  <span className="font-medium">C&apos;est un suivi</span>{' '}
+                  <span className="text-muted-foreground">
+                    — gratuit par défaut, motif / antécédents / examen /
+                    constantes pré-remplis.
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
+              {isFollowUp ? (
+                parentsLoading ? (
+                  <p className="text-small text-muted-foreground ml-6">
+                    Chargement des consultations précédentes…
+                  </p>
+                ) : noEligibleParent ? (
+                  <p className="text-small text-warning-foreground ml-6">
+                    Aucune consultation précédente pour ce patient.
+                  </p>
+                ) : (
+                  <div className="ml-6 space-y-1">
+                    <Label htmlFor="parent-id" className="text-small">
+                      Consultation parente
+                    </Label>
+                    <select
+                      id="parent-id"
+                      value={parentId}
+                      onChange={(e) => setParentId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border border-border bg-card text-body focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+                    >
+                      {(parents ?? []).map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {new Date(c.consultedAt).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                          {c.isFollowUp ? ' · Suivi' : ''}
+                          {' — '}
+                          {c.motif ?? 'Motif non renseigné'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )
+              ) : null}
+            </div>
 
             {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
 
@@ -227,7 +295,7 @@ export function BookAppointmentDialog({
               >
                 Annuler
               </Button>
-              <Submit disabled={!date || !time} />
+              <Submit disabled={submitDisabled} />
             </div>
           </form>
         </DialogContent>

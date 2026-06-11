@@ -86,6 +86,49 @@ export async function listConsultationsForPatient(
   });
 }
 
+export type FollowUpParentCandidate = {
+  id: string;
+  consultedAt: Date;
+  motif: string | null;
+  isFinalized: boolean;
+  isFollowUp: boolean;
+};
+
+/**
+ * Lightweight list of a patient's consultations for the "pick a parent"
+ * UX. Doesn't filter out follow-ups — chaining a follow-up to a previous
+ * follow-up is rare but legitimate (post-control control), and the
+ * doctor sees a "Suivi" tag on those rows in the picker.
+ */
+export async function listPatientConsultationsForPicker(
+  tenantId: string,
+  patientId: string,
+  opts: { limit?: number } = {},
+): Promise<FollowUpParentCandidate[]> {
+  const limit = Math.min(opts.limit ?? 25, 100);
+  return withTenantTx(tenantId, async (tx) => {
+    const rows = await tx
+      .select({
+        id: consultations.id,
+        consultedAt: consultations.consultedAt,
+        motif: consultations.motif,
+        isFinalized: consultations.isFinalized,
+        parentConsultationId: consultations.parentConsultationId,
+      })
+      .from(consultations)
+      .where(eq(consultations.patientId, patientId))
+      .orderBy(desc(consultations.consultedAt))
+      .limit(limit);
+    return rows.map((r) => ({
+      id: r.id,
+      consultedAt: r.consultedAt,
+      motif: r.motif,
+      isFinalized: r.isFinalized,
+      isFollowUp: r.parentConsultationId !== null,
+    }));
+  });
+}
+
 export async function getOpenConsultationForAppointment(
   tenantId: string,
   appointmentId: string,
