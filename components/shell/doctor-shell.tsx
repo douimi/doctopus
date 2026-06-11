@@ -2,6 +2,7 @@ import {
   BarChart3,
   CalendarDays,
   History,
+  RefreshCw,
   Settings,
   Stethoscope,
   Users,
@@ -56,6 +57,9 @@ export function DoctorShell({
         </SidebarNavItem>
         <SidebarNavItem href="/consultations" icon={<Stethoscope className="size-4" aria-hidden />}>
           Consultations
+        </SidebarNavItem>
+        <SidebarNavItem href="/suivis" icon={<RefreshCw className="size-4" aria-hidden />}>
+          Suivis
         </SidebarNavItem>
         <SidebarNavItem href="/patients" icon={<Users className="size-4" aria-hidden />}>
           Patients

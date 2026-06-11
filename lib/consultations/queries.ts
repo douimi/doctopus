@@ -1,5 +1,5 @@
 import 'server-only';
-import { desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
 import {
   consultations,
@@ -234,5 +234,112 @@ export async function listConsultationsPage(
       pageSize,
       totalPages,
     };
+  });
+}
+
+/**
+ * Paginated list of follow-ups — consultations whose
+ * parent_consultation_id is not null. Same shape as listConsultationsPage
+ * (so the same UI components render it) but filtered down to the
+ * follow-up rows for the dedicated /suivis section.
+ */
+export async function listFollowUpsPage(
+  tenantId: string,
+  query: string,
+  opts: { page?: number; pageSize?: number } = {},
+): Promise<ConsultationPage> {
+  const pageSize = Math.min(Math.max(opts.pageSize ?? 25, 1), 100);
+  const trimmed = query.trim();
+
+  return withTenantTx(tenantId, async (tx) => {
+    const followUpOnly = isNotNull(consultations.parentConsultationId);
+    const where = trimmed
+      ? and(
+          followUpOnly,
+          or(
+            ilike(patients.firstName, `%${escapeIlike(trimmed)}%`),
+            ilike(patients.lastName, `%${escapeIlike(trimmed)}%`),
+          ),
+        )
+      : followUpOnly;
+
+    const [{ count }] = await tx
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(consultations)
+      .innerJoin(patients, eq(patients.id, consultations.patientId))
+      .where(where);
+
+    const total = Number(count) || 0;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(Math.max(opts.page ?? 1, 1), totalPages);
+    const offset = (page - 1) * pageSize;
+
+    const rows = await tx
+      .select({
+        id: consultations.id,
+        patientId: consultations.patientId,
+        lastName: patients.lastName,
+        firstName: patients.firstName,
+        consultedAt: consultations.consultedAt,
+        motif: consultations.motif,
+        isFinalized: consultations.isFinalized,
+        paymentStatus: consultations.paymentStatus,
+        priceMad: consultations.priceMad,
+      })
+      .from(consultations)
+      .innerJoin(patients, eq(patients.id, consultations.patientId))
+      .where(where)
+      .orderBy(desc(consultations.consultedAt))
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      rows: rows.map((r) => ({
+        id: r.id,
+        patientId: r.patientId,
+        patientFullName: `${r.lastName} ${r.firstName}`.trim(),
+        consultedAt: r.consultedAt,
+        motif: r.motif,
+        isFinalized: r.isFinalized,
+        paymentStatus: r.paymentStatus as 'awaiting' | 'paid' | 'free',
+        priceMad: r.priceMad,
+      })),
+      total,
+      page,
+      pageSize,
+      totalPages,
+    };
+  });
+}
+
+/**
+ * Most recent non-follow-up consultation for a patient. Used by the
+ * manual follow-up creation flow on /suivis/new to auto-pick the parent
+ * (the doctor wouldn't normally chain a follow-up onto another
+ * follow-up — they want the original visit).
+ *
+ * Returns null when the patient has no eligible parent yet.
+ */
+export async function getLatestPrimaryConsultationForPatient(
+  tenantId: string,
+  patientId: string,
+): Promise<{ id: string; consultedAt: Date; motif: string | null } | null> {
+  return withTenantTx(tenantId, async (tx) => {
+    const [row] = await tx
+      .select({
+        id: consultations.id,
+        consultedAt: consultations.consultedAt,
+        motif: consultations.motif,
+      })
+      .from(consultations)
+      .where(
+        and(
+          eq(consultations.patientId, patientId),
+          isNull(consultations.parentConsultationId),
+        ),
+      )
+      .orderBy(desc(consultations.consultedAt))
+      .limit(1);
+    return row ?? null;
   });
 }
