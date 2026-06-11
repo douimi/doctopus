@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="relative bg-landing-surface text-white selection:bg-sky-500/30">
+    <div className="relative bg-landing-surface text-foreground selection:bg-sky-500/25">
       <ScrollProgress />
       <div className="relative z-10">
         <Topbar />

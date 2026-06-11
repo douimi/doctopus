@@ -13,7 +13,7 @@ export function Topbar() {
     <div
       className={`sticky top-0 z-50 backdrop-blur-md transition-all duration-300 ease-out ${
         scrolled
-          ? 'bg-black/80 border-b border-white/10 shadow-[0_8px_24px_-16px_rgba(0,0,0,0.7)]'
+          ? 'bg-white/75 border-b border-foreground/10 shadow-[0_8px_24px_-18px_rgba(0,0,0,0.18)]'
           : 'bg-transparent border-b border-transparent'
       }`}
     >
@@ -52,7 +52,7 @@ export function Topbar() {
           </a>
           <Link
             href="/sign-in"
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-black hover:bg-white/90 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-foreground/80 border border-foreground/15 hover:bg-white hover:border-foreground/25 hover:text-foreground transition-colors"
           >
             Se connecter
           </Link>

@@ -1,6 +1,7 @@
 'use client';
 
 import { SectionFrame } from './section-frame';
+import { MockupFrame } from './mockup-frame';
 import { SectionEyebrow } from './section-eyebrow';
 import { Parallax } from './parallax';
 
@@ -10,23 +11,18 @@ export function PricingSection() {
       {(revealed) => (
         <>
           <SectionEyebrow revealed={revealed}>03 — Tarification & paiements</SectionEyebrow>
-          <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight max-w-3xl text-center">
+          <h2 className="text-4xl md:text-6xl font-semibold tracking-[-0.02em] leading-[1.05] text-foreground max-w-3xl text-center">
             Du diagnostic au paiement.{' '}
-            <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">
               Sans friction.
             </span>
           </h2>
-          <p className="text-xl text-white/70 max-w-2xl mt-6 text-center">
+          <p className="text-xl text-foreground/70 max-w-2xl mt-6 text-center">
             Le médecin clôture, l&apos;assistant encaisse — chacun voit ce qu&apos;il doit voir. Espèces, carte, chèque, virement.
           </p>
           <Parallax className="w-full flex flex-col items-center">
-            <div className="mt-16 max-w-[900px] w-full bg-gradient-to-b from-[#1a1a1a] to-[#0d0d0d] border border-white/10 rounded-2xl p-2 shadow-2xl">
-        <div className="flex gap-1.5 px-3.5 py-2.5">
-          <div className="w-3 h-3 rounded-full bg-white/10" />
-          <div className="w-3 h-3 rounded-full bg-white/10" />
-          <div className="w-3 h-3 rounded-full bg-white/10" />
-        </div>
-        <div className="bg-[#f5f5f5] text-slate-900 rounded-xl p-6 grid grid-cols-2 gap-5">
+            <MockupFrame>
+              <div className="bg-[#f5f5f5] text-slate-900 p-6 grid grid-cols-2 gap-5">
           <div>
             <div className="text-sm font-semibold text-slate-600 mb-3">Médecin · Clôture</div>
             <div className="bg-white border border-slate-200 rounded-xl p-6">
@@ -76,8 +72,8 @@ export function PricingSection() {
               </div>
             </div>
           </div>
-            </div>
-          </div>
+              </div>
+            </MockupFrame>
           </Parallax>
         </>
       )}

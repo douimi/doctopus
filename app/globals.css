@@ -224,16 +224,17 @@
 }
 
 @layer utilities {
-  /* Refined dark surface for the landing — soft radial spotlight at top
-     plus a sparse dot grid. Replaces the previous flat bg-black + animated
-     tentacles. Stays out of the way of section content. */
+  /* Stripe-inspired light landing surface — soft pastel mesh of sky,
+     indigo and rose washes layered on a near-white base. Replaces the
+     dark theme; pairs with dark MockupFrames that now look like real
+     screen captures on a polished marketing page. */
   .bg-landing-surface {
-    background-color: oklch(0.08 0 0);
+    background-color: oklch(0.985 0.005 240);
     background-image:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgb(56 189 248 / 0.10), transparent 70%),
-      radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.035) 1px, transparent 0);
-    background-size: auto, 32px 32px;
-    background-repeat: no-repeat, repeat;
+      radial-gradient(ellipse 70% 55% at 18% 0%, rgb(56 189 248 / 0.18), transparent 65%),
+      radial-gradient(ellipse 60% 45% at 82% 8%, rgb(129 140 248 / 0.16), transparent 65%),
+      radial-gradient(ellipse 80% 50% at 50% 95%, rgb(244 114 182 / 0.10), transparent 70%);
+    background-attachment: fixed, fixed, fixed;
   }
 
   /* Subtle dotted-grid texture for app surface — adds depth without noise */

@@ -17,16 +17,16 @@ export function ShowcaseSection() {
         innerClassName="bg-zinc-950 p-2 md:p-6"
         titleComponent={
           <>
-            <p className="text-small font-medium text-white/50 uppercase tracking-[0.18em] mb-3">
+            <p className="text-xs font-medium text-foreground/55 uppercase tracking-[0.2em] mb-3">
               Vue d&apos;ensemble
             </p>
-            <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight text-white">
+            <h2 className="text-4xl md:text-6xl font-semibold tracking-[-0.02em] leading-[1.05] text-foreground">
               Tout votre cabinet.{' '}
-              <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">
                 Sur un seul écran.
               </span>
             </h2>
-            <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto mt-4">
+            <p className="text-lg md:text-xl text-foreground/65 max-w-2xl mx-auto mt-4 leading-relaxed">
               Recettes, consultations, paiements en attente — en temps réel.
             </p>
           </>
