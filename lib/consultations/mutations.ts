@@ -146,10 +146,13 @@ export async function createManualConsultation(
  * this consultation has consultation_id set to NULL so the ledger
  * stays intact (we don't want to lose accounting history).
  *
- * The synthetic appointment row from a manual create is intentionally
- * left behind — it's harmless (status='done', no scheduled time, hidden
- * from agenda views) and removing it would require us to know whether
- * the appointment was "manual" or real.
+ * If the associated appointment was still open (waiting or
+ * in_consultation) we mark it cancelled — leaving it in_consultation
+ * would leave the patient stuck on /today's "En consultation" panel
+ * with no way to click through (the consultation is gone).
+ * Terminal-state appointments (done / cancelled / no_show / scheduled
+ * that never arrived) stay as they are — the synthetic appointment
+ * from a manual create is done from the start and is harmless.
  *
  * Returns false when the consultation doesn't exist in this tenant.
  */
@@ -158,11 +161,35 @@ export async function deleteConsultation(
   id: string,
 ): Promise<boolean> {
   return withTenantTx(tenantId, async (tx) => {
+    // Read the appointment link BEFORE the delete so we can heal it.
+    const [c] = await tx
+      .select({ appointmentId: consultations.appointmentId })
+      .from(consultations)
+      .where(and(eq(consultations.id, id), eq(consultations.tenantId, tenantId)));
+    if (!c) return false;
+
     const result = await tx
       .delete(consultations)
       .where(and(eq(consultations.id, id), eq(consultations.tenantId, tenantId)))
       .returning({ id: consultations.id });
-    return result.length > 0;
+    if (result.length === 0) return false;
+
+    const [appt] = await tx
+      .select()
+      .from(appointments)
+      .where(eq(appointments.id, c.appointmentId));
+    if (appt && (appt.status === 'waiting' || appt.status === 'in_consultation')) {
+      await tx
+        .update(appointments)
+        .set({
+          status: 'cancelled',
+          endedAt: appt.endedAt ?? new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(appointments.id, c.appointmentId));
+    }
+
+    return true;
   });
 }
 

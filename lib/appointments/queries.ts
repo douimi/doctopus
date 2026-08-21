@@ -1,7 +1,13 @@
 import 'server-only';
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
-import { appointments, patients, type Patient, type Appointment } from '@/db/schema';
+import {
+  appointments,
+  consultations,
+  patients,
+  type Appointment,
+  type Patient,
+} from '@/db/schema';
 
 export type AppointmentWithPatient = Appointment & {
   patient: Pick<Patient, 'id' | 'firstName' | 'lastName' | 'phone' | 'dateOfBirth'>;
@@ -71,6 +77,11 @@ export async function listWaiting(tenantId: string): Promise<AppointmentWithPati
 
 export async function listInConsultation(tenantId: string): Promise<AppointmentWithPatient[]> {
   return withTenantTx(tenantId, async (tx) => {
+    // Inner-join to consultations so orphan appointments (deleted
+    // consultation) and drifted ones (consultation already finalized
+    // but appointment stuck at in_consultation) can't leak into the
+    // /today panel. Defense in depth against the two drift classes
+    // migrations 0016 + 0017 healed retroactively.
     const rows = await tx
       .select({
         appt: appointments,
@@ -84,7 +95,13 @@ export async function listInConsultation(tenantId: string): Promise<AppointmentW
       })
       .from(appointments)
       .innerJoin(patients, eq(patients.id, appointments.patientId))
-      .where(eq(appointments.status, 'in_consultation'))
+      .innerJoin(consultations, eq(consultations.appointmentId, appointments.id))
+      .where(
+        and(
+          eq(appointments.status, 'in_consultation'),
+          eq(consultations.isFinalized, false),
+        ),
+      )
       .orderBy(asc(appointments.startedAt));
     return rows.map((r) => ({ ...r.appt, patient: r.patient }));
   });
