@@ -365,7 +365,30 @@ export async function finalizeConsultation(
   return withTenantTx(tenantId, async (tx) => {
     const [c] = await tx.select().from(consultations).where(eq(consultations.id, id));
     if (!c) return 'not_found';
-    if (c.isFinalized) return 'already_finalized';
+
+    // If the consultation is already finalized but the appointment
+    // drifted (waiting / in_consultation) we still want to heal the
+    // appointment so /today stops showing "En consultation" for a row
+    // that's actually done. Return the same 'already_finalized'
+    // outcome — the dialog treats it as a no-op — but not before the
+    // repair.
+    if (c.isFinalized) {
+      const [appt] = await tx
+        .select()
+        .from(appointments)
+        .where(eq(appointments.id, c.appointmentId));
+      if (appt && (appt.status === 'waiting' || appt.status === 'in_consultation')) {
+        await tx
+          .update(appointments)
+          .set({
+            status: 'done',
+            endedAt: appt.endedAt ?? c.finalizedAt ?? new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(appointments.id, c.appointmentId));
+      }
+      return 'already_finalized';
+    }
 
     const [appt] = await tx.select().from(appointments).where(eq(appointments.id, c.appointmentId));
     if (!appt) throw new Error('Appointment missing');
