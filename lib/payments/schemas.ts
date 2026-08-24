@@ -4,7 +4,13 @@ export const finalizePricingSchema = z
   .object({
     consultationId: z.string().uuid(),
     isFree: z.boolean(),
-    priceMad: z.string().optional(),
+    // Accept both "250.50" and "250,50" — French keypads emit a comma
+    // by default and we don't want to reject those with a useless
+    // "Données invalides". Normalize to a dot before the checks below.
+    priceMad: z
+      .string()
+      .optional()
+      .transform((v) => (v == null ? v : v.replace(',', '.'))),
   })
   .refine(
     (d) => d.isFree || (d.priceMad != null && d.priceMad !== ''),

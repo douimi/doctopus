@@ -14,6 +14,11 @@ import {
 } from '@/lib/consultations/mutations';
 import { recordAudit } from '@/lib/audit/record';
 import { finalizePricingSchema } from '@/lib/payments/schemas';
+import {
+  CONSULTATION_SECTION_LABELS,
+  CONSULTATION_VITALS_LABELS,
+  firstIssueFr,
+} from '@/lib/zod-fr';
 
 const idSchema = z.object({ id: z.string().uuid() });
 
@@ -25,8 +30,17 @@ export async function saveSectionsAction(
 ): Promise<SaveResult> {
   const session = await requireDoctor();
   const parsedId = idSchema.safeParse({ id });
+  if (!parsedId.success) {
+    return { ok: false, error: 'Identifiant de consultation invalide.' };
+  }
   const parsed = sectionsUpdateSchema.safeParse(data);
-  if (!parsedId.success || !parsed.success) return { ok: false, error: 'Données invalides.' };
+  if (!parsed.success) {
+    console.warn('[saveSectionsAction] invalid data', parsed.error.issues);
+    return {
+      ok: false,
+      error: firstIssueFr(parsed.error, CONSULTATION_SECTION_LABELS),
+    };
+  }
   const ok = await updateConsultationSections(session.tenantId, parsedId.data.id, parsed.data);
   if (!ok) return { ok: false, error: 'Consultation introuvable.' };
   return { ok: true };
@@ -38,8 +52,17 @@ export async function saveVitalsAction(
 ): Promise<SaveResult> {
   const session = await requireDoctor();
   const parsedId = idSchema.safeParse({ id });
+  if (!parsedId.success) {
+    return { ok: false, error: 'Identifiant de consultation invalide.' };
+  }
   const parsed = vitalsUpdateSchema.safeParse(data);
-  if (!parsedId.success || !parsed.success) return { ok: false, error: 'Données invalides.' };
+  if (!parsed.success) {
+    console.warn('[saveVitalsAction] invalid data', parsed.error.issues);
+    return {
+      ok: false,
+      error: firstIssueFr(parsed.error, CONSULTATION_VITALS_LABELS),
+    };
+  }
   const ok = await updateConsultationVitals(session.tenantId, parsedId.data.id, parsed.data);
   if (!ok) return { ok: false, error: 'Consultation introuvable.' };
   return { ok: true };

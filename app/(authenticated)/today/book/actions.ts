@@ -32,7 +32,10 @@ export async function bookAction(_: BookState, formData: FormData): Promise<Book
     reason: formData.get('reason'),
     parentConsultationId,
   });
-  if (!parsed.success) return { error: 'Données invalides.' };
+  if (!parsed.success) {
+    console.warn('[bookAction] invalid data', parsed.error.issues);
+    return { error: parsed.error.issues[0]?.message ?? 'Données invalides.' };
+  }
 
   await bookAppointment(session.tenantId, session.userId, parsed.data);
   redirect('/today');
