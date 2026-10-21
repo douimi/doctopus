@@ -86,6 +86,40 @@ export async function listConsultationsForPatient(
   });
 }
 
+export type LatestHistoryNote = { consultationId: string; consultedAt: Date; text: string };
+
+/**
+ * Most recent non-empty per-consultation "history" note for a patient,
+ * excluding the current consultation. Bridges the pre-0018 era where
+ * antécédents were only written inside consultations, so the doctor can
+ * pull them into the patient's record without digging.
+ */
+export async function getLatestHistoryNote(
+  tenantId: string,
+  patientId: string,
+  excludeConsultationId?: string,
+): Promise<LatestHistoryNote | null> {
+  return withTenantTx(tenantId, async (tx) => {
+    const conds: SQL[] = [
+      eq(consultations.patientId, patientId),
+      isNotNull(consultations.historyNotes),
+      sql`btrim(${consultations.historyNotes}) <> ''`,
+    ];
+    if (excludeConsultationId) conds.push(sql`${consultations.id} <> ${excludeConsultationId}`);
+    const [row] = await tx
+      .select({
+        consultationId: consultations.id,
+        consultedAt: consultations.consultedAt,
+        text: consultations.historyNotes,
+      })
+      .from(consultations)
+      .where(and(...conds))
+      .orderBy(desc(consultations.consultedAt))
+      .limit(1);
+    return row && row.text ? { ...row, text: row.text } : null;
+  });
+}
+
 export type FollowUpParentCandidate = {
   id: string;
   consultedAt: Date;

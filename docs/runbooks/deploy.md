@@ -52,7 +52,7 @@ pnpm exec supabase db push
 (`https://app.supabase.com/project/<project-ref>`).
 
 This applies every migration in `supabase/migrations/` in order
-(0000 → 0012, plus the timestamp-prefixed RLS files).
+(0000 → 0018, plus the timestamp-prefixed RLS files).
 
 **Verify**:
 

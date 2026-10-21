@@ -5,6 +5,7 @@ import { requireDoctor } from '@/lib/auth/guards';
 import {
   getConsultationById,
   getConsultationFollowUpRelations,
+  getLatestHistoryNote,
 } from '@/lib/consultations/queries';
 import { getPatientDetail } from '@/lib/patients/queries';
 import { getPrescriptionForConsultation } from '@/lib/prescriptions/queries';
@@ -12,6 +13,7 @@ import { getAutocompleteSuggestions } from '@/lib/prescriptions/autocomplete';
 import { dbAdmin } from '@/db/client';
 import { tenants } from '@/db/schema';
 import { PatientCard } from '@/components/patients/patient-card';
+import { PatientHistoryPanel } from '@/components/patients/patient-history-panel';
 import { LiveRefresh } from '@/components/shell/live-refresh';
 import { PageHeader } from '@/components/shell/page-header';
 import { ConsultationEditor } from './editor';
@@ -35,6 +37,11 @@ export default async function ConsultationPage({
   if (!patientData) notFound();
   const presc = await getPrescriptionForConsultation(session.tenantId, id);
   const followUps = await getConsultationFollowUpRelations(session.tenantId, detail.consultation);
+  const latestHistoryNote = await getLatestHistoryNote(
+    session.tenantId,
+    detail.consultation.patientId,
+    id,
+  );
 
   const [tenant] = await dbAdmin()
     .select({
@@ -68,6 +75,22 @@ export default async function ConsultationPage({
 
   const v = detail.vitals;
   const patientName = `${patientData.patient.lastName} ${patientData.patient.firstName}`;
+  const p = patientData.patient;
+  const historyPanelProps = {
+    patientId: p.id,
+    initial: {
+      historyMedical: p.historyMedical ?? '',
+      historySurgical: p.historySurgical ?? '',
+      historyFamily: p.historyFamily ?? '',
+      historyTreatments: p.historyTreatments ?? '',
+      historyLifestyle: p.historyLifestyle ?? '',
+    },
+    allergies: patientData.allergies.map((a) => a.label),
+    conditions: patientData.conditions.map((c) => c.label),
+    updatedAt: p.historyUpdatedAt,
+    latestNote: latestHistoryNote,
+    canEdit: true,
+  };
   return (
     <>
       <LiveRefresh tenantId={session.tenantId} channel={`consultation-${id}`} />
@@ -108,7 +131,12 @@ export default async function ConsultationPage({
           patient={patientData.patient}
           allergies={patientData.allergies}
           conditions={patientData.conditions}
+          hideClinical
         />
+
+        {/* Below lg the side column drops under the editor, so the record
+            is repeated here to stay on screen without scrolling. */}
+        <PatientHistoryPanel {...historyPanelProps} className="lg:hidden" />
 
         <FollowUpRelations
           consultationId={id}
@@ -146,11 +174,17 @@ export default async function ConsultationPage({
           }
         />
       </div>
-      <div className="lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] min-w-0">
-        <AssistantPanel
-          consultationId={id}
-          state={assistantState}
+      <div className="lg:sticky lg:top-4 lg:self-start lg:h-[calc(100vh-2rem)] min-w-0 flex flex-col gap-4">
+        <PatientHistoryPanel
+          {...historyPanelProps}
+          className="hidden lg:flex shrink-0 max-h-[55%]"
         />
+        <div className="min-h-0 flex-1">
+          <AssistantPanel
+            consultationId={id}
+            state={assistantState}
+          />
+        </div>
       </div>
     </div>
     </>

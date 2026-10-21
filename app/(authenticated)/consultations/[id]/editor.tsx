@@ -230,7 +230,7 @@ export function ConsultationEditor({
         />
       </SectionCard>
 
-      <SectionCard title="Antécédents / historique">
+      <SectionCard title="Histoire de la maladie" hint="Antécédents : voir le dossier patient">
         <Textarea
           rows={3}
           value={sections.historyNotes}

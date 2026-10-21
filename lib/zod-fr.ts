@@ -20,10 +20,18 @@ export function firstIssueFr(
 
 export const CONSULTATION_SECTION_LABELS: Record<string, string> = {
   motif: 'Motif',
-  historyNotes: 'Antécédents',
+  historyNotes: 'Histoire de la maladie',
   examNotes: 'Examen clinique',
   diagnosis: 'Diagnostic',
   followUpNotes: 'Suite / follow-up',
+};
+
+export const PATIENT_HISTORY_LABELS: Record<string, string> = {
+  historyMedical: 'Antécédents médicaux',
+  historySurgical: 'Antécédents chirurgicaux',
+  historyFamily: 'Antécédents familiaux',
+  historyTreatments: 'Traitements en cours',
+  historyLifestyle: 'Habitudes de vie',
 };
 
 export const CONSULTATION_VITALS_LABELS: Record<string, string> = {

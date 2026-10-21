@@ -7,7 +7,7 @@ import {
   patientChronicConditions,
   type Patient,
 } from '@/db/schema';
-import type { PatientCreateInput, PatientUpdateInput } from './schemas';
+import type { PatientCreateInput, PatientHistoryInput, PatientUpdateInput } from './schemas';
 
 function emptyToNull(v: string | undefined): string | null {
   return v && v.length > 0 ? v : null;
@@ -62,6 +62,28 @@ export async function updatePatient(
         updatedAt: new Date(),
       })
       .where(eq(patients.id, input.id))
+      .returning();
+    return row ?? null;
+  });
+}
+
+export async function updatePatientHistory(
+  tenantId: string,
+  input: PatientHistoryInput,
+): Promise<Patient | null> {
+  return withTenantTx(tenantId, async (tx) => {
+    const [row] = await tx
+      .update(patients)
+      .set({
+        historyMedical: emptyToNull(input.historyMedical),
+        historySurgical: emptyToNull(input.historySurgical),
+        historyFamily: emptyToNull(input.historyFamily),
+        historyTreatments: emptyToNull(input.historyTreatments),
+        historyLifestyle: emptyToNull(input.historyLifestyle),
+        historyUpdatedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(patients.id, input.patientId))
       .returning();
     return row ?? null;
   });

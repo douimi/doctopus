@@ -10,10 +10,13 @@ export function PatientCard({
   patient,
   allergies,
   conditions,
+  hideClinical = false,
 }: {
   patient: Patient;
   allergies: PatientAllergy[];
   conditions: PatientChronicCondition[];
+  /** Set when a PatientHistoryPanel already shows allergies/conditions alongside. */
+  hideClinical?: boolean;
 }) {
   const fullName = `${patient.lastName} ${patient.firstName}`;
   return (
@@ -53,7 +56,7 @@ export function PatientCard({
           ) : null}
         </div>
 
-        {allergies.length > 0 || conditions.length > 0 ? (
+        {!hideClinical && (allergies.length > 0 || conditions.length > 0) ? (
           <div className="flex flex-wrap gap-1.5 border-t border-border pt-3">
             {allergies.map((a) => (
               <StatusBadge key={a.id} variant="danger" icon={AlertTriangle}>

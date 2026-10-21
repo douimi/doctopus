@@ -16,6 +16,13 @@ export const patients = pgTable('patients', {
   coverageId: text('coverage_id'),
   address: text('address'),
   notes: text('notes'),
+  // Patient-level antécédents, shown on every consultation (migration 0018).
+  historyMedical: text('history_medical'),
+  historySurgical: text('history_surgical'),
+  historyFamily: text('history_family'),
+  historyTreatments: text('history_treatments'),
+  historyLifestyle: text('history_lifestyle'),
+  historyUpdatedAt: timestamp('history_updated_at', { withTimezone: true }),
   isArchived: boolean('is_archived').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

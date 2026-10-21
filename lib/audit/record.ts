@@ -12,6 +12,7 @@ export type AuditAction =
   | 'tenant.member_reactivated'
   | 'patient.create'
   | 'patient.update'
+  | 'patient.history_update'
   | 'patient.archive'
   | 'consultation.start'
   | 'consultation.manual_create'

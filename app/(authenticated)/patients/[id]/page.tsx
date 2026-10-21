@@ -17,7 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PatientCard } from '@/components/patients/patient-card';
-import { listConsultationsForPatient } from '@/lib/consultations/queries';
+import { PatientHistoryPanel } from '@/components/patients/patient-history-panel';
+import { getLatestHistoryNote, listConsultationsForPatient } from '@/lib/consultations/queries';
 import { PastConsultationsList } from '@/components/consultations/past-consultations-list';
 import { PageHeader } from '@/components/shell/page-header';
 import { archivePatientAction } from './actions';
@@ -34,6 +35,8 @@ export default async function PatientDetailPage({
   const data = await getPatientDetail(session.tenantId, id);
   if (!data) notFound();
   const consultations = await listConsultationsForPatient(session.tenantId, id);
+  const latestHistoryNote = await getLatestHistoryNote(session.tenantId, id);
+  const p = data.patient;
 
   return (
     <>
@@ -76,6 +79,23 @@ export default async function PatientDetailPage({
           patient={data.patient}
           allergies={data.allergies}
           conditions={data.conditions}
+          hideClinical
+        />
+
+        <PatientHistoryPanel
+          patientId={id}
+          initial={{
+            historyMedical: p.historyMedical ?? '',
+            historySurgical: p.historySurgical ?? '',
+            historyFamily: p.historyFamily ?? '',
+            historyTreatments: p.historyTreatments ?? '',
+            historyLifestyle: p.historyLifestyle ?? '',
+          }}
+          allergies={data.allergies.map((a) => a.label)}
+          conditions={data.conditions.map((c) => c.label)}
+          updatedAt={p.historyUpdatedAt}
+          latestNote={latestHistoryNote}
+          canEdit={session.role === 'doctor'}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,7 +163,7 @@ export default async function PatientDetailPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <HeartPulse className="size-4 text-warning" aria-hidden />
-                Antécédents / chroniques
+                Maladies chroniques
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -172,7 +192,7 @@ export default async function PatientDetailPage({
                 ))}
                 {data.conditions.length === 0 ? (
                   <li className="text-small text-muted-foreground italic">
-                    Aucun antécédent.
+                    Aucune maladie chronique.
                   </li>
                 ) : null}
               </ul>
@@ -192,7 +212,7 @@ export default async function PatientDetailPage({
                     required
                   />
                 </div>
-                <Button type="submit" size="default" aria-label="Ajouter un antécédent">
+                <Button type="submit" size="default" aria-label="Ajouter une maladie chronique">
                   <Plus aria-hidden />
                 </Button>
               </form>

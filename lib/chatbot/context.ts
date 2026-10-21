@@ -109,10 +109,19 @@ export async function buildContext(
       `- Antécédents / chroniques : ${
         conditions.length > 0 ? conditions.map((x) => x.label).join(', ') : 'aucun connu'
       }`,
+      ...[
+        ['Antécédents médicaux', p.historyMedical],
+        ['Antécédents chirurgicaux', p.historySurgical],
+        ['Antécédents familiaux', p.historyFamily],
+        ['Traitements en cours', p.historyTreatments],
+        ['Habitudes de vie', p.historyLifestyle],
+      ]
+        .filter(([, v]) => v && v.trim().length > 0)
+        .map(([label, v]) => `- ${label} : ${v}`),
       '',
       '[Consultation en cours]',
       `Motif : ${c.motif ?? '(non renseigné)'}`,
-      `Antécédents / historique : ${c.historyNotes ?? '(non renseigné)'}`,
+      `Histoire de la maladie / antécédents notés : ${c.historyNotes ?? '(non renseigné)'}`,
       `Examen : ${c.examNotes ?? '(non renseigné)'}`,
       vitalsLine ? `Constantes : ${vitalsLine}` : 'Constantes : (non renseignées)',
       `Diagnostic provisoire : ${c.diagnosis ?? '(non renseigné)'}`,

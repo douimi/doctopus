@@ -21,6 +21,7 @@ const ACTION_LABEL: Record<string, string> = {
   'tenant.invite_consumed': 'Invitation acceptée',
   'patient.create': 'Patient créé',
   'patient.update': 'Patient modifié',
+  'patient.history_update': 'Antécédents modifiés',
   'patient.archive': 'Patient archivé',
   'consultation.start': 'Consultation démarrée',
   'consultation.manual_create': 'Consultation enregistrée manuellement',

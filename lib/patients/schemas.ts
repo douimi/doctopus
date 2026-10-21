@@ -40,5 +40,17 @@ export const removeLabelSchema = z.object({
   id: z.string().uuid(),
 });
 
+const historyField = z.string().trim().max(4000).optional().or(z.literal(''));
+
+export const patientHistorySchema = z.object({
+  patientId: z.string().uuid(),
+  historyMedical: historyField,
+  historySurgical: historyField,
+  historyFamily: historyField,
+  historyTreatments: historyField,
+  historyLifestyle: historyField,
+});
+
+export type PatientHistoryInput = z.infer<typeof patientHistorySchema>;
 export type PatientCreateInput = z.infer<typeof patientCreateSchema>;
 export type PatientUpdateInput = z.infer<typeof patientUpdateSchema>;
