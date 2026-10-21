@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useTypewriter, useCountUp } from '@/components/landing/animations';
+import { useTypewriter, useCountUp, usePrefersReducedMotion } from '@/components/landing/animations';
 
 describe('useTypewriter', () => {
   beforeEach(() => {
@@ -191,5 +191,39 @@ describe('useCountUp', () => {
       rerender({ start: false });
     });
     expect(result.current).toBe(50);
+  });
+});
+
+describe('usePrefersReducedMotion', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function mockMatchMedia(matches: boolean) {
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches,
+          media: query,
+          onchange: null,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          addListener: () => {},
+          removeListener: () => {},
+          dispatchEvent: () => false,
+        }) as unknown as MediaQueryList,
+    );
+  }
+
+  it('is true when the OS asks for reduced motion', () => {
+    mockMatchMedia(true);
+    const { result } = renderHook(() => usePrefersReducedMotion());
+    expect(result.current).toBe(true);
+  });
+
+  it('is false otherwise', () => {
+    mockMatchMedia(false);
+    const { result } = renderHook(() => usePrefersReducedMotion());
+    expect(result.current).toBe(false);
   });
 });

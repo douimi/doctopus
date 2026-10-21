@@ -1,63 +1,81 @@
 'use client';
 
 import Link from 'next/link';
-import { BrandLockup } from '@/components/ui/brand';
+import { cn } from '@/lib/utils';
 import { useIsScrolled } from './animations';
-import { FREE_TRIAL_MONTHS, WHATSAPP_URL } from './contact';
-import { WhatsAppIcon } from './whatsapp-icon';
+import { LandingLogo } from './logo';
+import { WhatsAppLink } from './whatsapp-link';
+import { container, focusRing } from './styles';
 
+const NAV = [
+  { href: '#fonctionnalites', label: 'Fonctionnalités' },
+  { href: '#statistiques', label: 'Statistiques' },
+  { href: '#offre', label: 'Offre' },
+  { href: '#faq', label: 'Questions' },
+];
+
+/**
+ * Fixed-height sticky header (no logo resize on scroll: that reflowed the
+ * whole bar on every threshold crossing). Only the border/shadow appear
+ * once the page is scrolled. No backdrop-blur: it is expensive on mobile
+ * GPUs, a near-opaque white does the job.
+ */
 export function Topbar() {
-  const scrolled = useIsScrolled(80);
-  const logoSize = scrolled ? 48 : 88;
+  const scrolled = useIsScrolled(8);
   return (
-    <div
-      className={`sticky top-0 z-50 backdrop-blur-md transition-all duration-300 ease-out ${
+    <header
+      className={cn(
+        'sticky top-0 z-50 border-b bg-white/95 transition-[border-color,box-shadow] duration-150',
         scrolled
-          ? 'bg-white/75 border-b border-foreground/10 shadow-[0_8px_24px_-18px_rgba(0,0,0,0.18)]'
-          : 'bg-transparent border-b border-transparent'
-      }`}
+          ? 'border-slate-200 shadow-[0_1px_2px_rgb(15_23_42/0.05)]'
+          : 'border-transparent',
+      )}
     >
-      <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-2 flex items-center justify-between">
-        <Link
-          href="/"
-          aria-label="Accueil"
-          className="flex items-center transition-transform duration-300 ease-out"
-        >
-          <div
-            className="transition-all duration-300 ease-out"
-            style={{ width: logoSize, height: logoSize }}
-          >
-            <BrandLockup size={logoSize} />
-          </div>
+      <div className={cn(container, 'flex h-16 items-center justify-between gap-3')}>
+        <Link href="/" aria-label="Doctopus, accueil" className={cn('-ml-1 rounded-md', focusRing)}>
+          <LandingLogo size={80} priority className="!size-16 sm:!size-20 sm:-my-2" />
         </Link>
-        <div className="flex items-center gap-2">
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.4),0_8px_24px_-12px_rgba(16,185,129,0.6)] transition-all"
-            aria-label={`Contacter sur WhatsApp pour ${FREE_TRIAL_MONTHS} mois gratuits`}
-          >
-            <WhatsAppIcon className="size-4" />
-            <span>{FREE_TRIAL_MONTHS} mois gratuits</span>
-          </a>
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="sm:hidden inline-flex items-center justify-center size-9 rounded-lg bg-emerald-500 text-white"
-            aria-label="WhatsApp"
-          >
-            <WhatsAppIcon className="size-4" />
-          </a>
+
+        <nav aria-label="Sections" className="hidden md:block">
+          <ul className="flex items-center gap-1">
+            {NAV.map((n) => (
+              <li key={n.href}>
+                <a
+                  href={n.href}
+                  className={cn(
+                    'rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900',
+                    focusRing,
+                  )}
+                >
+                  {n.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Link
             href="/sign-in"
-            className="px-4 py-2 rounded-lg text-sm font-medium text-foreground/80 border border-foreground/15 hover:bg-white hover:border-foreground/25 hover:text-foreground transition-colors"
+            className={cn(
+              'inline-flex h-10 items-center rounded-lg px-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 sm:px-3',
+              focusRing,
+            )}
           >
-            Se connecter
+            <span className="sm:hidden">Connexion</span>
+            <span className="hidden sm:inline">Se connecter</span>
           </Link>
+          <WhatsAppLink
+            className={cn(
+              'inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 sm:px-4',
+              focusRing,
+            )}
+          >
+            <span className="sm:hidden">Essai gratuit</span>
+            <span className="hidden sm:inline">Essayer gratuitement</span>
+          </WhatsAppLink>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

@@ -1,33 +1,34 @@
 'use client';
 
-import { SectionFrame } from './section-frame';
+import { FeatureSection } from './feature-section';
 import { OrdonnanceMockup } from './ordonnance-mockup';
-import { MockupFrame } from './mockup-frame';
-import { SectionEyebrow } from './section-eyebrow';
-import { Parallax } from './parallax';
 
 export function OrdonnanceSection() {
   return (
-    <SectionFrame id="section-ordonnance">
-      {(revealed) => (
-        <>
-          <SectionEyebrow revealed={revealed}>02 — Ordonnance intelligente</SectionEyebrow>
-          <h2 className="text-4xl md:text-6xl font-semibold tracking-[-0.02em] leading-[1.05] text-foreground max-w-3xl text-center">
-            Une base à jour.{' '}
-            <span className="bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">
-              Avec prix et remboursement.
-            </span>
-          </h2>
-          <p className="text-xl text-foreground/70 max-w-2xl mt-6 text-center">
-            Recherche en temps réel sur une base de médicaments tenue à jour. PPM, base de remboursement et statut Princeps/Générique s&apos;affichent directement ; l&apos;autocomplétion mémorise vos posologies habituelles.
-          </p>
-          <Parallax className="w-full flex flex-col items-center">
-            <MockupFrame>
-              <OrdonnanceMockup revealed={revealed} />
-            </MockupFrame>
-          </Parallax>
-        </>
-      )}
-    </SectionFrame>
+    <FeatureSection
+      id="ordonnance"
+      muted
+      reverse
+      eyebrow="Ordonnance"
+      title="Le catalogue des médicaments au Maroc, dans votre ordonnance."
+      lead="Tapez quelques lettres du nom commercial ou de la DCI : Doctopus interroge le catalogue des médicaments commercialisés au Maroc et affiche le prix public et le statut de chaque spécialité."
+      points={[
+        {
+          title: 'Prix public et statut.',
+          body: 'Princeps ou générique, remboursable ou non : vous le voyez avant de prescrire.',
+        },
+        {
+          title: 'Vos posologies habituelles.',
+          body: 'Les posologies et durées que vous utilisez le plus vous sont proposées en un clic.',
+        },
+        {
+          title: 'Ordonnance PDF à votre en-tête.',
+          body: 'Logo, coordonnées du cabinet et INPE, avec votre signature et votre cachet. Prête à imprimer.',
+        },
+      ]}
+      mockupLabel="Aperçu de la recherche de médicament : la saisie « doli » propose Doliprane 1 g et 500 mg, Dolicox et Doli pédiatrique, avec prix, statut princeps ou générique et remboursement."
+      mockupPath="consultations/ordonnance"
+      mockup={(revealed) => <OrdonnanceMockup revealed={revealed} />}
+    />
   );
 }

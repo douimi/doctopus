@@ -1,36 +1,47 @@
 'use client';
 
-import { SectionFrame } from './section-frame';
+import Link from 'next/link';
+import { FeatureSection } from './feature-section';
 import { AIMockup } from './ai-mockup';
-import { MockupFrame } from './mockup-frame';
-import { SectionEyebrow } from './section-eyebrow';
-import { Parallax } from './parallax';
+import { focusRing } from './styles';
 
 export function AISection() {
   return (
-    <SectionFrame id="section-ai">
-      {(revealed) => (
-        <>
-          <SectionEyebrow revealed={revealed}>05 — Assistant clinique IA</SectionEyebrow>
-          <h2 className="text-4xl md:text-6xl font-semibold tracking-[-0.02em] leading-[1.05] text-foreground max-w-3xl text-center">
-            Un coup de main,{' '}
-            <span className="bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">
-              quand vous en avez besoin.
-            </span>
-          </h2>
-          <p className="text-xl text-foreground/70 max-w-2xl mt-6 text-center">
-            Posez une question — l&apos;assistant connaît le motif, les allergies, les antécédents du patient. Sans jamais transmettre son identité.
-          </p>
-          <Parallax className="w-full flex flex-col items-center">
-            <MockupFrame size="narrow">
-              <AIMockup revealed={revealed} />
-            </MockupFrame>
-          </Parallax>
-          <p className="text-sm text-foreground/55 mt-6 text-center max-w-2xl">
-            Modèle propriétaire entraîné sur du contexte et des données du Maroc — terminologie clinique, pratiques locales, AMO/RAMED. Données patient anonymisées avant transmission.
-          </p>
-        </>
-      )}
-    </SectionFrame>
+    <FeatureSection
+      id="assistant-ia"
+      eyebrow="Assistant clinique IA · en option"
+      title="Un second avis rapide, qui a lu le dossier."
+      lead="Posez votre question en français pendant la consultation. L’assistant connaît le motif, les constantes, les allergies, les antécédents et les dernières ordonnances du patient."
+      points={[
+        {
+          title: 'Identité jamais transmise.',
+          body: 'Le nom, le CIN, le téléphone et l’adresse du patient ne sont jamais envoyés.',
+        },
+        {
+          title: 'Médicaments vérifiés.',
+          body: 'Pour les prix et la disponibilité, il interroge le catalogue des médicaments au Maroc au lieu d’inventer.',
+        },
+        {
+          title: 'Une aide, pas un diagnostic.',
+          body: 'Il propose des pistes ; le jugement clinique reste le vôtre.',
+        },
+      ]}
+      aside={
+        <p className="text-sm leading-relaxed text-slate-600">
+          L’assistant s’active à la demande pour votre cabinet. Il s’appuie sur des fournisseurs
+          d’IA tiers, listés sur notre page{' '}
+          <Link
+            href="/static/sous-traitants"
+            className={`rounded-sm font-medium text-sky-700 underline underline-offset-2 hover:text-sky-800 ${focusRing}`}
+          >
+            sous-traitants
+          </Link>
+          .
+        </p>
+      }
+      mockupLabel="Aperçu de l’assistant clinique : à la question « Je peux lui prescrire de l’amoxicilline ? », il rappelle l’allergie à la pénicilline inscrite au dossier et propose un traitement symptomatique."
+      mockupPath="consultations/assistant"
+      mockup={(revealed) => <AIMockup revealed={revealed} />}
+    />
   );
 }

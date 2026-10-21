@@ -1,33 +1,38 @@
 'use client';
 
-import { SectionFrame } from './section-frame';
+import { FeatureSection } from './feature-section';
 import { StatsMockup } from './stats-mockup';
-import { MockupFrame } from './mockup-frame';
-import { SectionEyebrow } from './section-eyebrow';
-import { Parallax } from './parallax';
 
 export function StatsSection() {
   return (
-    <SectionFrame id="section-stats">
-      {(revealed) => (
-        <>
-          <SectionEyebrow revealed={revealed}>04 — Statistiques</SectionEyebrow>
-          <h2 className="text-4xl md:text-6xl font-semibold tracking-[-0.02em] leading-[1.05] text-foreground max-w-3xl text-center">
-            Votre cabinet,{' '}
-            <span className="bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">
-              en chiffres.
-            </span>
-          </h2>
-          <p className="text-xl text-foreground/70 max-w-2xl mt-6 text-center">
-            Recettes du jour, du mois, de l&apos;année. Méthodes de paiement, paiements en attente, top patients. Tout ce qu&apos;il faut pour piloter.
-          </p>
-          <Parallax className="w-full flex flex-col items-center">
-            <MockupFrame>
-              <StatsMockup revealed={revealed} />
-            </MockupFrame>
-          </Parallax>
-        </>
-      )}
-    </SectionFrame>
+    <FeatureSection
+      id="statistiques"
+      muted
+      reverse
+      eyebrow="Statistiques"
+      title="Ce mois-ci, mieux ou moins bien que le mois dernier ?"
+      lead="Chaque indicateur est comparé au mois précédent, à date égale : au 21 octobre, Doctopus compare avec le 1er–21 septembre, pas avec le mois entier. Vous savez tout de suite où vous en êtes."
+      points={[
+        {
+          title: 'Un écart sur chaque indicateur.',
+          body: 'Recettes, consultations, prix moyen et paiements en attente, en % par rapport au mois choisi.',
+        },
+        {
+          title: 'Recettes cumulées.',
+          body: 'La courbe du mois en cours superposée à celle du mois de comparaison, jour par jour.',
+        },
+        {
+          title: 'Évolution sur 12 mois.',
+          body: 'Graphique et tableau mois par mois pour repérer les saisons creuses et les pics.',
+        },
+        {
+          title: 'Et le détail.',
+          body: 'Recettes par jour et par méthode de paiement, paiements en attente, patients les plus fidèles.',
+        },
+      ]}
+      mockupLabel="Aperçu des statistiques d’octobre comparées à septembre : recettes 37 450 MAD en hausse de 12 %, consultations +8 %, prix moyen +4 %, paiements en attente −29 %, courbe des recettes cumulées et évolution sur 12 mois."
+      mockupPath="stats"
+      mockup={(revealed) => <StatsMockup revealed={revealed} />}
+    />
   );
 }

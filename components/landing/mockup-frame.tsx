@@ -1,38 +1,50 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Shared device-frame for every landing-page mockup. Replaces the old
- * per-mockup chrome (macOS-style traffic-light dots + gradient bezel)
- * with a clean rounded zinc frame that visually matches the
- * ContainerScroll showcase up top — single dark surface, subtle inner
- * border, soft drop shadow.
- *
- * Each mockup renders only its body now; sections wrap it in this frame.
+ * Light "browser window" around every product mockup. Mirrors the app's
+ * Quiet-clinical surfaces: slate-50 canvas, white panels, slate-200
+ * hairlines. The whole mockup is exposed to assistive tech as ONE image
+ * with a descriptive label; its fake content is aria-hidden so screen
+ * readers don't read invented patient data as page content.
  */
 export function MockupFrame({
   children,
+  label,
+  path,
   className,
-  size = 'wide',
 }: {
   children: ReactNode;
+  /** Accessible description of what the mockup shows. */
+  label: string;
+  /** Fake address-bar path, e.g. "consultations". */
+  path: string;
   className?: string;
-  /** `wide` = 900px (default), `narrow` = xl. */
-  size?: 'wide' | 'narrow';
 }) {
   return (
-    <div
+    <figure
+      role="img"
+      aria-label={label}
       className={cn(
-        'mt-10 md:mt-12 mx-auto w-full',
-        size === 'narrow' ? 'max-w-xl' : 'max-w-[900px]',
-        'bg-zinc-900 border border-zinc-700/50 rounded-2xl p-1.5',
-        'shadow-[0_30px_70px_-20px_rgba(0,0,0,0.55)]',
+        'w-full min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white',
+        'shadow-[0_1px_2px_rgb(15_23_42/0.04),0_24px_48px_-24px_rgb(15_23_42/0.18)]',
         className,
       )}
     >
-      <div className="rounded-[14px] overflow-hidden">{children}</div>
-    </div>
+      <div aria-hidden className="select-none">
+        <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2">
+          <span className="flex gap-1">
+            <span className="size-2 rounded-full bg-slate-200" />
+            <span className="size-2 rounded-full bg-slate-200" />
+            <span className="size-2 rounded-full bg-slate-200" />
+          </span>
+          <span className="mx-auto min-w-0 truncate rounded-md bg-slate-100 px-3 py-0.5 text-[11px] text-slate-500 tabular-nums">
+            mydoctopus.tech/{path}
+          </span>
+          <span className="w-8" />
+        </div>
+        <div className="bg-slate-50 text-slate-900">{children}</div>
+      </div>
+    </figure>
   );
 }

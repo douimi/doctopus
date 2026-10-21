@@ -1,71 +1,49 @@
 import Link from 'next/link';
-import { Check, Sparkles } from 'lucide-react';
-import { FREE_TRIAL_MONTHS, WHATSAPP_NUMBER_DISPLAY, WHATSAPP_URL } from './contact';
-import { WhatsAppIcon } from './whatsapp-icon';
-
-const HIGHLIGHTS = [
-  'Aucune carte bancaire requise',
-  'Vos données restent dans votre cabinet',
-  'Mise en route le jour même',
-];
+import { cn } from '@/lib/utils';
+import { FREE_TRIAL_MONTHS } from './contact';
+import { WhatsAppLink } from './whatsapp-link';
+import { btnPrimaryLg, container, focusRing } from './styles';
 
 export function CTASection() {
   return (
-    <section className="px-8 py-32 flex justify-center relative">
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'radial-gradient(ellipse at center, rgba(16,185,129,0.15) 0%, transparent 60%)',
-        }}
-      />
-      <div className="relative z-10 max-w-3xl w-full rounded-3xl border border-emerald-300/40 bg-white/70 backdrop-blur-sm p-10 md:p-14 text-center shadow-[0_30px_70px_-30px_rgba(16,185,129,0.25)]">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-pill bg-emerald-100 border border-emerald-300/60 text-emerald-800 text-[12px] font-medium mb-6">
-          <Sparkles className="size-3.5" aria-hidden />
-          Offre de lancement
+    <section aria-labelledby="cta-title" className="py-16 sm:py-20 lg:py-24">
+      <div className={container}>
+        <div className="relative overflow-hidden rounded-2xl bg-slate-900 px-6 py-12 text-center sm:px-12 sm:py-16">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_0%,rgb(56_189_248/0.22),transparent_70%)]"
+          />
+          <div className="relative">
+            <h2
+              id="cta-title"
+              className="mx-auto max-w-2xl text-3xl font-semibold leading-[1.1] tracking-[-0.02em] text-white text-balance sm:text-4xl"
+            >
+              Prêt à simplifier votre cabinet ?
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
+              {FREE_TRIAL_MONTHS} mois gratuits, sans engagement. Écrivez-nous : nous mettons votre
+              cabinet en place avec vous.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <WhatsAppLink
+                className={cn(btnPrimaryLg, 'w-full sm:w-auto focus-visible:ring-offset-slate-900')}
+                iconClassName="size-5"
+              >
+                Démarrer sur WhatsApp
+              </WhatsAppLink>
+              <Link
+                href="/sign-in"
+                className={cn(
+                  'inline-flex h-12 w-full items-center justify-center rounded-lg border border-white/25 px-6 text-base font-medium text-white transition-colors hover:bg-white/10 sm:w-auto',
+                  focusRing,
+                  'focus-visible:ring-sky-400 focus-visible:ring-offset-slate-900',
+                )}
+              >
+                J&apos;ai déjà un compte
+              </Link>
+            </div>
+          </div>
         </div>
-        <h2 className="text-4xl md:text-6xl font-semibold tracking-[-0.02em] leading-[1.05] text-foreground">
-          {FREE_TRIAL_MONTHS} mois gratuits.{' '}
-          <span className="bg-gradient-to-br from-emerald-600 to-sky-600 bg-clip-text text-transparent">
-            Sans engagement.
-          </span>
-        </h2>
-        <p className="text-xl text-foreground/70 max-w-xl mt-6 mx-auto">
-          Contactez-nous sur WhatsApp pour obtenir votre accès et installer
-          Doctopus dans votre cabinet aujourd&apos;hui.
-        </p>
-
-        <ul className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-small text-foreground/80">
-          {HIGHLIGHTS.map((h) => (
-            <li key={h} className="inline-flex items-center gap-1.5">
-              <Check className="size-3.5 text-emerald-600" aria-hidden />
-              {h}
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-10">
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-lg text-base font-semibold bg-emerald-500 text-white hover:bg-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.4),0_22px_56px_-18px_rgba(16,185,129,0.7)] transition-all"
-          >
-            <WhatsAppIcon className="size-5" />
-            Démarrer sur WhatsApp
-          </a>
-          <Link
-            href="/sign-in"
-            className="px-7 py-4 rounded-lg text-base font-medium text-foreground/80 border border-foreground/15 hover:bg-foreground/5 hover:border-foreground/25 hover:text-foreground transition-colors"
-          >
-            J&apos;ai déjà un compte
-          </Link>
-        </div>
-
-        <p className="text-small text-foreground/55 mt-6 tabular-nums">
-          {WHATSAPP_NUMBER_DISPLAY}
-        </p>
       </div>
     </section>
   );

@@ -1,81 +1,84 @@
-'use client';
+import { ArrowDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { FREE_TRIAL_MONTHS } from './contact';
+import { MockupFrame } from './mockup-frame';
+import { TodayMockup } from './today-mockup';
+import { WhatsAppLink } from './whatsapp-link';
+import { btnPrimaryLg, btnSecondaryLg, container } from './styles';
 
-import Link from 'next/link';
-import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
-import { Magnetic } from './magnetic';
-import { FREE_TRIAL_MONTHS, WHATSAPP_NUMBER_DISPLAY, WHATSAPP_URL } from './contact';
-import { WhatsAppIcon } from './whatsapp-icon';
+const REASSURANCE = [
+  'Sans engagement',
+  'Sans carte bancaire',
+  'Reprise de vos données par notre équipe',
+  'Rien à installer',
+];
 
+/**
+ * Server component: the h1 (the LCP element) is in the initial HTML and
+ * painted without waiting for JS or an entrance animation.
+ */
 export function Hero() {
   return (
-    <section className="relative px-6 md:px-8 pt-20 md:pt-28 pb-28 md:pb-40 overflow-hidden">
-      <div className="relative z-10 max-w-[1100px] mx-auto flex flex-col items-center text-center">
-        {/* Eyebrow */}
-        <a
-          href={WHATSAPP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-pill bg-white/70 backdrop-blur-sm border border-foreground/10 text-foreground/80 text-[12px] font-medium mb-7 shadow-[0_1px_2px_rgb(0_0_0/0.04)] animate-in fade-in-0 slide-in-from-bottom-2 duration-700 hover:bg-white hover:border-foreground/20 hover:text-foreground transition-colors"
-        >
-          <Sparkles className="size-3 text-emerald-600" aria-hidden />
-          <span>
-            Offre lancement &middot; {FREE_TRIAL_MONTHS} mois gratuits
-          </span>
-          <ArrowRight className="size-3 text-foreground/40" aria-hidden />
-        </a>
+    <section aria-labelledby="hero-title" className="relative overflow-hidden">
+      {/* Landing-only mesh, scoped to the hero (no fixed attachment: that
+          forces a full repaint on every scroll frame on mobile). */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[640px] bg-[radial-gradient(ellipse_60%_55%_at_15%_0%,rgb(56_189_248/0.16),transparent_70%),radial-gradient(ellipse_50%_45%_at_85%_5%,rgb(129_140_248/0.13),transparent_70%)]"
+      />
+      <div
+        className={cn(
+          container,
+          'relative grid items-center gap-12 pb-16 pt-10 sm:pt-16 lg:grid-cols-2 lg:gap-12 lg:pb-24 lg:pt-20',
+        )}
+      >
+        <div className="min-w-0">
+          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[13px] font-medium text-slate-700">
+            <span aria-hidden className="size-1.5 rounded-full bg-emerald-600" />
+            Logiciel médical conçu pour le Maroc
+          </p>
+          <h1
+            id="hero-title"
+            className="text-[2.5rem] font-semibold leading-[1.05] tracking-[-0.025em] text-slate-900 text-balance sm:text-5xl lg:text-[3.5rem]"
+          >
+            Votre cabinet médical,{' '}
+            <span className="bg-gradient-to-br from-sky-700 via-indigo-600 to-fuchsia-700 bg-clip-text text-transparent">
+              simplifié.
+            </span>
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600 text-pretty">
+            Dossier patient et antécédents, ordonnances avec le catalogue des médicaments au Maroc,
+            salle d&apos;attente, encaissements et statistiques. Un seul outil, en français, pour
+            le médecin et son assistant(e).
+          </p>
 
-        {/* Headline */}
-        <h1 className="text-[2.5rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] font-semibold tracking-[-0.025em] leading-[1.02] text-foreground max-w-4xl animate-in fade-in-0 slide-in-from-bottom-3 duration-700 [animation-delay:100ms] [animation-fill-mode:both]">
-          Le cabinet m&eacute;dical,{' '}
-          <span className="bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">
-            simplifi&eacute;.
-          </span>
-        </h1>
-
-        {/* Sub-headline */}
-        <p className="text-lg md:text-xl text-foreground/65 max-w-2xl mt-6 leading-relaxed animate-in fade-in-0 slide-in-from-bottom-3 duration-700 [animation-delay:200ms] [animation-fill-mode:both]">
-          Consultations, ordonnances, paiements et statistiques &mdash; r&eacute;unis
-          dans une interface con&ccedil;ue pour les m&eacute;decins du Maroc.
-        </p>
-
-        {/* CTAs */}
-        <div className="flex flex-wrap gap-2.5 justify-center mt-9 animate-in fade-in-0 slide-in-from-bottom-3 duration-700 [animation-delay:300ms] [animation-fill-mode:both]">
-          <Magnetic>
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] transition-all"
-            >
-              <WhatsAppIcon className="size-4" />
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <WhatsAppLink className={btnPrimaryLg} iconClassName="size-5">
               Essayer {FREE_TRIAL_MONTHS} mois gratuits
-              <ArrowRight className="size-4" aria-hidden />
+            </WhatsAppLink>
+            <a href="#fonctionnalites" className={btnSecondaryLg}>
+              Découvrir les fonctionnalités
+              <ArrowDown className="size-4" aria-hidden />
             </a>
-          </Magnetic>
-          <Magnetic>
-            <Link
-              href="/sign-in"
-              className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-medium text-foreground/80 bg-white/60 backdrop-blur-sm border border-foreground/15 hover:bg-white hover:border-foreground/25 hover:text-foreground transition-colors"
-            >
-              Se connecter
-            </Link>
-          </Magnetic>
+          </div>
+
+          <ul className="mt-7 grid grid-cols-1 gap-x-6 gap-y-2 text-sm text-slate-600 sm:grid-cols-2">
+            {REASSURANCE.map((r) => (
+              <li key={r} className="flex items-center gap-2">
+                <Check className="size-4 shrink-0 text-emerald-700" aria-hidden />
+                {r}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Trust line */}
-        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-7 text-xs text-foreground/55 animate-in fade-in-0 duration-700 [animation-delay:400ms] [animation-fill-mode:both]">
-          <span className="inline-flex items-center gap-1.5">
-            <ShieldCheck className="size-3.5 text-emerald-600" aria-hidden />
-            Conforme RGPD-MA
-          </span>
-          <span aria-hidden className="text-foreground/20">
-            &middot;
-          </span>
-          <span>Conçu au Maroc</span>
-          <span aria-hidden className="text-foreground/20">
-            &middot;
-          </span>
-          <span className="tabular-nums">WhatsApp · {WHATSAPP_NUMBER_DISPLAY}</span>
+        <div className="min-w-0">
+          <MockupFrame
+            path="today"
+            label="Aperçu de l’écran Aujourd’hui de Doctopus : indicateurs du jour, salle d’attente avec temps d’attente et bouton Commencer, paiements à encaisser."
+          >
+            <TodayMockup />
+          </MockupFrame>
         </div>
       </div>
     </section>

@@ -1,33 +1,36 @@
 'use client';
 
-import { SectionFrame } from './section-frame';
+import { FeatureSection } from './feature-section';
 import { ConsultationMockup } from './consultation-mockup';
-import { MockupFrame } from './mockup-frame';
-import { SectionEyebrow } from './section-eyebrow';
-import { Parallax } from './parallax';
 
 export function ConsultationSection() {
   return (
-    <SectionFrame id="section-consultation">
-      {(revealed) => (
-        <>
-          <SectionEyebrow revealed={revealed}>01 — Consultation</SectionEyebrow>
-          <h2 className="text-4xl md:text-6xl font-semibold tracking-[-0.02em] leading-[1.05] text-foreground max-w-3xl text-center">
-            Une consultation complète.{' '}
-            <span className="bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">
-              Sans paperasse.
-            </span>
-          </h2>
-          <p className="text-xl text-foreground/70 max-w-2xl mt-6 text-center">
-            Motif, antécédents, examen, diagnostic, suivi, ordonnance — tout dans une seule fenêtre. L&apos;autosave veille pour vous.
-          </p>
-          <Parallax className="w-full flex flex-col items-center">
-            <MockupFrame>
-              <ConsultationMockup revealed={revealed} />
-            </MockupFrame>
-          </Parallax>
-        </>
-      )}
-    </SectionFrame>
+    <FeatureSection
+      id="consultation"
+      eyebrow="Dossier & consultation"
+      title="Les antécédents sous les yeux, pendant toute la consultation."
+      lead="Allergies, pathologies chroniques et antécédents structurés restent affichés à côté de votre saisie. Plus besoin de fouiller le dossier pendant que le patient attend."
+      points={[
+        {
+          title: 'Allergies et pathologies en tête.',
+          body: 'Une allergie documentée est signalée en rouge à chaque consultation, avant que vous ne prescriviez.',
+        },
+        {
+          title: 'Antécédents structurés.',
+          body: 'Médicaux, chirurgicaux, familiaux, traitements en cours et habitudes de vie, tenus à jour au niveau du patient.',
+        },
+        {
+          title: 'Une consultation complète sur un écran.',
+          body: 'Motif, constantes, histoire de la maladie, examen clinique, diagnostic, ordonnance et suite à donner, enregistrés automatiquement pendant la saisie.',
+        },
+        {
+          title: 'Suivis reliés.',
+          body: 'Un contrôle se rattache à sa consultation d’origine ; l’historique du patient reste à portée de clic.',
+        },
+      ]}
+      mockupLabel="Aperçu de l’écran de consultation : antécédents structurés et allergie à la pénicilline affichés à gauche ; motif, constantes, diagnostic et ordonnance à droite."
+      mockupPath="consultations"
+      mockup={(revealed) => <ConsultationMockup revealed={revealed} />}
+    />
   );
 }

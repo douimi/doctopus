@@ -1,11 +1,37 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+function subscribeReducedMotion(onChange: () => void) {
+  if (typeof window === 'undefined' || !window.matchMedia) return () => {};
+  const mql = window.matchMedia(REDUCED_MOTION_QUERY);
+  mql.addEventListener('change', onChange);
+  return () => mql.removeEventListener('change', onChange);
+}
+
+/**
+ * True when the visitor asked the OS to reduce motion. Server snapshot is
+ * `false`; mockups then jump straight to their final state on the client.
+ */
+export function usePrefersReducedMotion(): boolean {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => (typeof window !== 'undefined' && window.matchMedia
+      ? window.matchMedia(REDUCED_MOTION_QUERY).matches
+      : false),
+    () => false,
+  );
+}
 
 /**
  * Reveal-on-scroll hook backed by IntersectionObserver. One-shot: once
  * `revealed` flips true, the observer disconnects and the value never
  * goes back to false. Server-side rendering returns `revealed: false`.
+ *
+ * On the landing it only *triggers* mockup micro-animations; content is
+ * never hidden behind it (no opacity-0 until JS runs).
  */
 export function useReveal<T extends HTMLElement>(
   options: { threshold?: number; rootMargin?: string } = {},
@@ -18,8 +44,9 @@ export function useReveal<T extends HTMLElement>(
     const node = ref.current;
     if (!node) return;
     if (typeof IntersectionObserver === 'undefined') {
-      setRevealed(true);
-      return;
+      // No observer (very old browser): reveal on the next tick.
+      const id = setTimeout(() => setRevealed(true), 0);
+      return () => clearTimeout(id);
     }
     const obs = new IntersectionObserver(
       (entries) => {
@@ -131,36 +158,8 @@ export function useCountUp(
 }
 
 /**
- * Tracks document scroll progress 0..1. Updates only when value changes
- * by ≥ 0.5%. Server-side returns 0.
- */
-export function useScrollProgress(): number {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    const compute = () => {
-      const max =
-        document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      if (max <= 0) return 0;
-      return Math.min(1, Math.max(0, window.scrollY / max));
-    };
-    const onScroll = () => setProgress((p) => {
-      const next = compute();
-      return Math.abs(next - p) > 0.005 ? next : p;
-    });
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-    };
-  }, []);
-  return progress;
-}
-
-/**
- * True once `window.scrollY` exceeds `threshold` px (hysteresis-free).
- * Use to compactify a sticky header after the user scrolls past the hero.
+ * True once `window.scrollY` exceeds `threshold` px. Only re-renders when
+ * the boolean actually flips (React bails out on identical state).
  */
 export function useIsScrolled(threshold = 80): boolean {
   const [scrolled, setScrolled] = useState(false);
@@ -171,90 +170,4 @@ export function useIsScrolled(threshold = 80): boolean {
     return () => window.removeEventListener('scroll', onScroll);
   }, [threshold]);
   return scrolled;
-}
-
-/**
- * Returns a ref + a `style` object for a subtle parallax effect.
- * The element translates vertically based on its distance from the
- * viewport center, scaled by `strength` (positive = element moves
- * upward faster than scroll). Off when prefers-reduced-motion is set.
- */
-export function useParallax<T extends HTMLElement>(
-  strength = 0.08,
-): { ref: React.RefObject<T | null>; style: React.CSSProperties } {
-  const ref = useRef<T | null>(null);
-  const [offset, setOffset] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) return;
-    let raf: number | null = null;
-    const compute = () => {
-      raf = null;
-      const node = ref.current;
-      if (!node) return;
-      const rect = node.getBoundingClientRect();
-      const center = window.innerHeight / 2;
-      const elementCenter = rect.top + rect.height / 2;
-      const delta = elementCenter - center;
-      setOffset(-delta * strength);
-    };
-    const onScroll = () => {
-      if (raf !== null) return;
-      raf = requestAnimationFrame(compute);
-    };
-    compute();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (raf !== null) cancelAnimationFrame(raf);
-    };
-  }, [strength]);
-
-  return {
-    ref,
-    style: { transform: `translate3d(0, ${offset.toFixed(1)}px, 0)`, willChange: 'transform' },
-  };
-}
-
-/**
- * Mouse-magnetic hover translation. Returns onMouseMove / onMouseLeave
- * handlers and a transform style. The element translates a fraction of
- * the cursor offset, capped to avoid overshooting. Off under
- * prefers-reduced-motion.
- */
-export function useMagnetic(strength = 0.25, max = 12) {
-  const [transform, setTransform] = useState<string>('translate3d(0,0,0)');
-  const reduceRef = useRef<boolean>(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    reduceRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }, []);
-
-  const onMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLElement>) => {
-      if (reduceRef.current) return;
-      const rect = e.currentTarget.getBoundingClientRect();
-      const dx = (e.clientX - (rect.left + rect.width / 2)) * strength;
-      const dy = (e.clientY - (rect.top + rect.height / 2)) * strength;
-      const cx = Math.max(-max, Math.min(max, dx));
-      const cy = Math.max(-max, Math.min(max, dy));
-      setTransform(`translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0)`);
-    },
-    [strength, max],
-  );
-
-  const onMouseLeave = useCallback(() => {
-    setTransform('translate3d(0,0,0)');
-  }, []);
-
-  return {
-    onMouseMove,
-    onMouseLeave,
-    style: { transform, transition: 'transform 220ms cubic-bezier(0.16,1,0.3,1)' },
-  };
 }
