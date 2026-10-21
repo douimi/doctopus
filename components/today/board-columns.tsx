@@ -16,13 +16,37 @@ export type BoardColumn = {
 };
 
 /**
- * Lays out the /today columns: three side by side from xl, stacked in
- * the same (role-dependent) order below, and one at a time behind a
- * segmented control on phones. Column content is server-rendered and
- * passed in, so realtime refreshes keep working unchanged.
+ * Lays out the /today board. The first column is the primary one (the
+ * waiting room): from lg it takes the wide left track so patient names
+ * and actions have room, and the other columns stack in a narrower right
+ * track. Below lg everything stacks in order; on phones one column shows
+ * at a time behind a segmented control. Column content is server-rendered
+ * and passed in, so realtime refreshes keep working unchanged.
  */
 export function BoardColumns({ columns }: { columns: BoardColumn[] }) {
   const [active, setActive] = useState(columns[0]?.key ?? '');
+  const [primary, ...secondary] = columns;
+
+  const renderColumn = (c: BoardColumn) => (
+    <section
+      key={c.key}
+      aria-labelledby={`col-${c.key}`}
+      className={cn('min-w-0 space-y-3', active === c.key ? 'block' : 'hidden md:block')}
+    >
+      <header className="flex min-h-8 items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 id={`col-${c.key}`} className="truncate text-heading font-semibold text-foreground">
+            {c.title}
+          </h2>
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-muted px-1.5 text-micro font-semibold tabular-nums text-muted-foreground">
+            {c.count}
+          </span>
+        </div>
+        {c.aside ? <div className="shrink-0 text-small text-muted-foreground">{c.aside}</div> : null}
+      </header>
+      {c.content}
+    </section>
+  );
 
   return (
     <div className="space-y-4">
@@ -40,27 +64,11 @@ export function BoardColumns({ columns }: { columns: BoardColumn[] }) {
         ))}
       </SegmentedControl>
 
-      <div className="grid gap-6 xl:grid-cols-3 xl:items-start">
-        {columns.map((c) => (
-          <section
-            key={c.key}
-            aria-labelledby={`col-${c.key}`}
-            className={cn('min-w-0 space-y-3', active === c.key ? 'block' : 'hidden md:block')}
-          >
-            <header className="flex min-h-8 items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <h2 id={`col-${c.key}`} className="truncate text-heading font-semibold text-foreground">
-                  {c.title}
-                </h2>
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-muted px-1.5 text-micro font-semibold tabular-nums text-muted-foreground">
-                  {c.count}
-                </span>
-              </div>
-              {c.aside ? <div className="shrink-0 text-small text-muted-foreground">{c.aside}</div> : null}
-            </header>
-            {c.content}
-          </section>
-        ))}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+        {primary ? renderColumn(primary) : null}
+        {secondary.length > 0 ? (
+          <div className="min-w-0 space-y-6">{secondary.map(renderColumn)}</div>
+        ) : null}
       </div>
     </div>
   );

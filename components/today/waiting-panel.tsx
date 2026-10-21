@@ -49,7 +49,7 @@ export function WaitingPanel({
             <div className="min-w-0 flex-1">
               <Link
                 href={`/patients/${a.patient.id}`}
-                className="block truncate rounded-sm text-body font-medium text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="block break-words rounded-sm text-body font-medium text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {fullName}
               </Link>
@@ -132,7 +132,7 @@ export function InConsultationPanel({
             <li key={a.id} className="flex min-h-14 items-center gap-3 px-4 py-2.5">
               <span className="size-2 shrink-0 rounded-full bg-info" aria-hidden />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-body font-medium text-foreground">{fullName}</div>
+                <div className="break-words text-body font-medium text-foreground">{fullName}</div>
                 <div className="text-small text-muted-foreground tabular-nums">
                   {since ? `Depuis ${since}` : 'En cours'}
                 </div>

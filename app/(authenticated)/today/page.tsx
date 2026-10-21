@@ -23,8 +23,7 @@ function capitalize(s: string): string {
 }
 
 /**
- * /today — role-aware board (UX brief §3.2). Doctor: Salle d'attente ·
- * Agenda · À encaisser. Assistant: Agenda · Salle d'attente · À encaisser.
+ * /today — board: Salle d'attente (primary, wide) · Agenda · À encaisser.
  * RDV and walk-in open as dialogs over the board; LiveRefresh keeps
  * every column in sync through Supabase Realtime.
  */
@@ -98,9 +97,9 @@ export default async function TodayPage() {
     ),
   };
 
-  const columns = isDoctor
-    ? [waitingColumn, agendaColumn, paymentsColumn]
-    : [agendaColumn, waitingColumn, paymentsColumn];
+  // The waiting room is the board's priority for both roles: it gets the
+  // wide primary column, agenda and payments stack beside it.
+  const columns = [waitingColumn, agendaColumn, paymentsColumn];
 
   return (
     <>
