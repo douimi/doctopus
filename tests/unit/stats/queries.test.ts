@@ -7,7 +7,9 @@ import {
   getRevenueByMethod,
   getOutstandingPayments,
   getTopPatients,
+  getMonthlySeries,
 } from '@/lib/stats/queries';
+import { currentMonthKey, monthBoundsUtc, shiftMonthKey } from '@/lib/time';
 
 describe('stats queries', () => {
   let tenantId: string;
@@ -123,6 +125,31 @@ describe('stats queries', () => {
       expect(r.totalCount).toBe(4);
       expect(r.paidCount).toBe(2);
       expect(Number(r.totalRevenue)).toBeCloseTo(250 + 300);
+    });
+  });
+
+  describe('explicit period window', () => {
+    it('accepts [start, end) bounds instead of a range', async () => {
+      const r = await getRevenueSummary(tenantId, {
+        startUtc: new Date(Date.now() - 40 * 86_400_000),
+        endUtc: new Date(Date.now() - 35 * 86_400_000),
+      });
+      expect(r.totalCount).toBe(0);
+    });
+  });
+
+  describe('getMonthlySeries', () => {
+    it('zero-fills months and totals match the seeded data', async () => {
+      const to = currentMonthKey();
+      const from = shiftMonthKey(to, -2);
+      const rows = await getMonthlySeries(tenantId, from, to);
+      expect(rows.map((r) => r.month)).toEqual([from, shiftMonthKey(to, -1), to]);
+      expect(rows[0].totalCount).toBe(0);
+      expect(rows.reduce((n, r) => n + r.totalCount, 0)).toBe(5);
+      expect(rows.reduce((n, r) => n + Number(r.revenue), 0)).toBeCloseTo(900);
+      const cur = await getRevenueSummary(tenantId, monthBoundsUtc(to));
+      expect(rows[2].totalCount).toBe(cur.totalCount);
+      expect(Number(rows[2].revenue)).toBeCloseTo(Number(cur.totalRevenue));
     });
   });
 

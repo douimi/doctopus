@@ -1,5 +1,47 @@
 import type { ComponentType } from 'react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+export type StatComparison = {
+  /** Relative change as a ratio (0.12 = +12 %); null when the baseline is 0. */
+  ratio: number | null;
+  /** e.g. "vs sept. 2026 (1–21)". */
+  label: string;
+  /** The baseline value, already formatted, shown on hover/for screen readers. */
+  previous?: string;
+  /** For metrics where a rise is bad (e.g. unpaid amounts). */
+  invert?: boolean;
+};
+
+function formatRatio(r: number): string {
+  const pct = Math.round(r * 100);
+  return `${pct > 0 ? '+' : pct < 0 ? '−' : ''}${Math.abs(pct)} %`;
+}
+
+function ComparisonLine({ c }: { c: StatComparison }) {
+  const flat = c.ratio !== null && Math.round(c.ratio * 100) === 0;
+  const up = c.ratio !== null && c.ratio > 0 && !flat;
+  const good = c.invert ? !up : up;
+  const Icon = c.ratio === null || flat ? ArrowRight : up ? ArrowUpRight : ArrowDownRight;
+  const tone =
+    c.ratio === null || flat
+      ? 'text-muted-foreground'
+      : good
+        ? 'text-success'
+        : 'text-danger';
+  return (
+    <div className="flex flex-wrap items-center gap-x-1.5 text-small" title={c.previous ? `Avant : ${c.previous}` : undefined}>
+      <span className={cn('inline-flex items-center gap-0.5 font-medium tabular-nums', tone)}>
+        <Icon className="size-3.5" aria-hidden />
+        {c.ratio === null ? 'nouveau' : formatRatio(c.ratio)}
+      </span>
+      <span className="text-muted-foreground">
+        {c.label}
+        {c.previous ? <span className="tabular-nums"> · {c.previous}</span> : null}
+      </span>
+    </div>
+  );
+}
 
 export function StatCard({
   label,
@@ -7,6 +49,7 @@ export function StatCard({
   hint,
   icon: Icon,
   tone = 'admin',
+  comparison,
   className,
 }: {
   label: string;
@@ -14,6 +57,7 @@ export function StatCard({
   hint?: string;
   icon?: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
   tone?: 'admin' | 'primary' | 'success' | 'warning' | 'danger';
+  comparison?: StatComparison;
   className?: string;
 }) {
   const toneClasses: Record<NonNullable<typeof tone>, string> = {
@@ -51,6 +95,7 @@ export function StatCard({
         {hint ? (
           <div className="text-small text-muted-foreground">{hint}</div>
         ) : null}
+        {comparison ? <ComparisonLine c={comparison} /> : null}
       </div>
     </div>
   );

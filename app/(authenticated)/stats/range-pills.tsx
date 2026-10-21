@@ -10,9 +10,13 @@ const LABELS: Record<StatsRange, string> = {
 
 const RANGES: StatsRange[] = ['today', '7d', '30d', '90d'];
 
-export function RangePills({ active }: { active: StatsRange }) {
+/** `active === 'month'` is the calendar-month comparison view (default). */
+export function RangePills({ active }: { active: StatsRange | 'month' }) {
   return (
-    <div role="tablist" aria-label="Plage de temps" className="inline-flex gap-1">
+    <div role="tablist" aria-label="Plage de temps" className="inline-flex flex-wrap gap-1">
+      <FilterPill href="/stats" active={active === 'month'}>
+        Par mois
+      </FilterPill>
       {RANGES.map((r) => (
         <FilterPill key={r} href={`/stats?range=${r}`} active={r === active}>
           {LABELS[r]}
