@@ -32,17 +32,20 @@ test('day view: book scheduled, then walk-in, then mark arrived', async ({ page 
   });
 
   // Book a scheduled appointment for today
-  await page.goto('/today/book');
-  await page.getByLabel(/Recherche patient/).fill('Tazi');
-  await page.getByRole('button', { name: 'Rechercher' }).click();
-  await page.getByRole('radio').first().check();
-  await page.getByLabel('Heure').fill('10:30');
-  await page.getByRole('button', { name: /Enregistrer/ }).click();
-  await expect(page).toHaveURL(/\/today/);
-  await expect(page.getByText('Tazi Salma')).toBeVisible();
+  // The board opens the RDV flow as a dialog: pick the patient, then a slot.
+  await page.goto('/today');
+  await page.getByRole('button', { name: 'Rendez-vous' }).first().click();
+  await page.getByRole('combobox').fill('Tazi');
+  await page.getByRole('option', { name: /Tazi Salma/ }).click();
+  await page.getByRole('button', { name: '10:30' }).click();
+  await page.getByRole('button', { name: /Confirmer le rendez-vous/ }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(
+    page.locator('section').filter({ hasText: /Agenda du jour/ }).getByText('Tazi Salma'),
+  ).toBeVisible();
 
   // Mark them arrived
-  await page.getByRole('button', { name: 'arrivé' }).first().click();
+  await page.getByRole('button', { name: /Marquer Tazi Salma arrivé/ }).click();
   await expect(
     page.locator('section').filter({ hasText: /Salle d.attente/ }).getByText('Tazi Salma'),
   ).toBeVisible();
@@ -56,12 +59,13 @@ test('day view: book scheduled, then walk-in, then mark arrived', async ({ page 
     phone: '+212622223333',
   });
 
+  // Full-page fallback of the walk-in flow (same picker + form as the dialog).
   await page.goto('/today/walk-in');
-  await page.getByLabel(/Recherche patient/).fill('Alaoui');
-  await page.getByRole('button', { name: 'Rechercher' }).click();
-  await page.getByRole('radio').first().check();
-  await page.getByRole('button', { name: /salle d.attente/i }).click();
-  await expect(page).toHaveURL(/\/today/);
+  await page.getByRole('combobox').fill('Alaoui');
+  await page.getByRole('option', { name: /Alaoui Karim/ }).click();
+  await page.getByLabel('Motif').fill('Fièvre');
+  await page.getByRole('button', { name: /Mettre en salle d.attente/ }).click();
+  await expect(page).toHaveURL(/\/today$/);
   await expect(
     page.locator('section').filter({ hasText: /Salle d.attente/ }).getByText('Alaoui Karim'),
   ).toBeVisible();

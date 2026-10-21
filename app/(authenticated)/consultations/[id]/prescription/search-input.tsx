@@ -18,11 +18,8 @@ export function MedicationSearchInput({
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setHits([]);
-      setError(null);
-      return;
-    }
+    // Short queries render nothing (see `active` below) — no request.
+    if (trimmed.length < 2) return;
     const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       try {
@@ -51,6 +48,10 @@ export function MedicationSearchInput({
     };
   }, [query]);
 
+  const active = query.trim().length >= 2;
+  const visibleHits = active ? hits : [];
+  const visibleError = active ? error : null;
+
   return (
     <div className="space-y-1">
       <Input
@@ -59,12 +60,12 @@ export function MedicationSearchInput({
         onChange={(e) => setQuery(e.target.value)}
         disabled={disabled}
       />
-      {error ? (
-        <p className="text-small text-danger">{error}</p>
+      {visibleError ? (
+        <p role="alert" className="text-small text-danger-ink">{visibleError}</p>
       ) : null}
-      {hits.length > 0 ? (
-        <ul className="border rounded-md max-h-72 overflow-auto text-small bg-card">
-          {hits.map((h) => (
+      {visibleHits.length > 0 ? (
+        <ul className="max-h-72 overflow-auto rounded-lg border border-border bg-popover text-small shadow-popover">
+          {visibleHits.map((h) => (
             <li key={h.codeEan13}>
               <button
                 type="button"
@@ -83,18 +84,18 @@ export function MedicationSearchInput({
                       <span className="text-muted-foreground"> · {h.formeDosage}</span>
                     ) : null}
                   </span>
-                  <span className="block text-xs text-muted-foreground">
+                  <span className="block text-small text-muted-foreground">
                     {h.dci}
                     {h.presentation ? ` · ${h.presentation}` : ''}
                   </span>
                   <span className="mt-1 inline-flex items-center gap-1 flex-wrap">
                     {h.typeMed ? (
-                      <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      <span className="text-micro font-semibold uppercase px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
                         {h.typeMed === 'PRINCEPS' ? 'Princeps' : h.typeMed === 'GENERIQUE' ? 'Générique' : h.typeMed}
                       </span>
                     ) : null}
                     {h.isReimbursable ? (
-                      <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-success-tint text-success">
+                      <span className="text-micro font-semibold uppercase px-1.5 py-0.5 rounded-md bg-success-tint text-success-ink">
                         Remboursé
                       </span>
                     ) : null}
@@ -103,7 +104,7 @@ export function MedicationSearchInput({
                 <span className="shrink-0 text-right tabular-nums">
                   <span className="block text-foreground">{formatMad(h.ppm)}</span>
                   {h.isReimbursable && h.pbrPpm && h.pbrPpm !== h.ppm ? (
-                    <span className="block text-[11px] text-muted-foreground">
+                    <span className="block text-micro text-muted-foreground">
                       base remb. {formatMad(h.pbrPpm)}
                     </span>
                   ) : null}

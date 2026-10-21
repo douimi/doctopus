@@ -10,12 +10,17 @@ import { recordAudit, recordAuditUnscoped } from '@/lib/audit/record';
 import { isAdminEmail } from '@/lib/auth/admin';
 
 const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().trim().email('Adresse email invalide.'),
+  password: z.string().min(1, 'Saisissez votre mot de passe.'),
   next: z.string().optional(),
 });
 
-export type SignInState = { error: string | null };
+export type SignInState = {
+  error: string | null;
+  fieldErrors?: { email?: string; password?: string };
+  /** Echoed back so the email survives React 19's form reset on error. */
+  email?: string;
+};
 
 export async function signInAction(_: SignInState, formData: FormData): Promise<SignInState> {
   const parsed = schema.safeParse({
@@ -23,7 +28,22 @@ export async function signInAction(_: SignInState, formData: FormData): Promise<
     password: formData.get('password'),
     next: formData.get('next'),
   });
-  if (!parsed.success) return { error: 'Email ou mot de passe invalide.' };
+  const rawEmail = String(formData.get('email') ?? '');
+  if (!parsed.success) {
+    const fieldErrors: NonNullable<SignInState['fieldErrors']> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0];
+      if ((key === 'email' || key === 'password') && !fieldErrors[key]) {
+        fieldErrors[key] = issue.message;
+      }
+    }
+    const hasFieldError = Boolean(fieldErrors.email || fieldErrors.password);
+    return {
+      error: hasFieldError ? null : 'Email ou mot de passe invalide.',
+      fieldErrors,
+      email: rawEmail,
+    };
+  }
 
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({
@@ -32,7 +52,10 @@ export async function signInAction(_: SignInState, formData: FormData): Promise<
   });
   if (error) {
     recordAuditUnscoped('auth.sign_in_failed', { email: parsed.data.email });
-    return { error: 'Identifiants incorrects.' };
+    return {
+      error: 'Identifiants incorrects. Vérifiez votre email et votre mot de passe.',
+      email: rawEmail,
+    };
   }
 
   const { data: userData } = await supabase.auth.getUser();

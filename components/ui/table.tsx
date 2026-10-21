@@ -1,15 +1,21 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
+/**
+ * Plain table primitives. Wrap in `<div className="panel overflow-hidden">`
+ * for the bordered surface. `density="compact"` tightens rows (stats tables).
+ */
 export function Table({
   className,
+  density = 'comfortable',
   ...props
-}: React.ComponentProps<'table'>) {
+}: React.ComponentProps<'table'> & { density?: 'comfortable' | 'compact' }) {
   return (
-    <div className="w-full overflow-x-auto" data-slot="table-wrapper">
+    <div className="relative w-full overflow-x-auto" data-slot="table-wrapper">
       <table
         data-slot="table"
-        className={cn('w-full text-body caption-bottom', className)}
+        data-density={density}
+        className={cn('w-full caption-bottom text-body', className)}
         {...props}
       />
     </div>
@@ -23,10 +29,7 @@ export function TableHeader({
   return (
     <thead
       data-slot="table-header"
-      className={cn(
-        'bg-muted [&_tr]:border-b border-border',
-        className,
-      )}
+      className={cn('bg-canvas [&_tr]:border-b [&_tr]:border-border', className)}
       {...props}
     />
   );
@@ -53,10 +56,9 @@ export function TableRow({
     <tr
       data-slot="table-row"
       className={cn(
-        'border-b border-border transition-colors hover:bg-muted/40',
+        'border-b border-border transition-colors duration-(--duration-fast) hover:bg-muted/50 data-[state=selected]:bg-primary-tint',
         className,
       )}
-      style={{ transitionDuration: 'var(--duration-fast)' }}
       {...props}
     />
   );
@@ -70,7 +72,7 @@ export function TableHead({
     <th
       data-slot="table-head"
       className={cn(
-        'px-3 py-2.5 text-left text-small uppercase tracking-wide font-medium text-muted-foreground',
+        'eyebrow h-10 px-4 text-left align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0',
         className,
       )}
       {...props}
@@ -85,7 +87,7 @@ export function TableCell({
   return (
     <td
       data-slot="table-cell"
-      className={cn('px-3 py-2.5 align-middle', className)}
+      className={cn('px-4 py-3 align-middle in-data-[density=compact]:py-2', className)}
       {...props}
     />
   );
@@ -104,10 +106,7 @@ export function TableEmpty({
     <tr data-slot="table-empty">
       <td
         colSpan={colSpan}
-        className={cn(
-          'px-3 py-10 text-center text-muted-foreground text-body',
-          className,
-        )}
+        className={cn('px-4 py-12 text-center text-body text-muted-foreground', className)}
       >
         {children}
       </td>

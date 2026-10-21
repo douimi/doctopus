@@ -14,6 +14,13 @@ import {
 import { EmptyState } from '@/components/ui/empty-state';
 import { useChartTokens } from '@/lib/charts/tokens';
 import { formatMad } from '@/lib/medications/format';
+import {
+  ChartPanel,
+  axisProps,
+  gridProps,
+  tooltipContentStyle,
+  tooltipLabelStyle,
+} from './chart-style';
 
 export type CumulativePoint = { day: number; current: number | null; compare: number | null };
 
@@ -35,31 +42,32 @@ export function CumulativeChart({
   const hasData = data.some((d) => (d.current ?? 0) > 0 || (d.compare ?? 0) > 0);
   if (!hasData) {
     return (
-      <EmptyState
-        icon={TrendingUp}
-        title="Aucune recette"
-        description="Aucune recette enregistrée sur ces deux mois."
-      />
+      <div className="panel">
+        <EmptyState
+          icon={TrendingUp}
+          title="Aucune recette"
+          description="Aucune recette enregistrée sur ces deux mois."
+        />
+      </div>
     );
   }
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card p-3">
+    <ChartPanel>
       <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={t['--border']} vertical={false} />
-          <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke={t['--muted-foreground']} tickLine={false} />
-          <YAxis
-            tick={{ fontSize: 11 }}
-            stroke={t['--muted-foreground']}
-            tickLine={false}
-            axisLine={false}
-            width={56}
-          />
+        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid {...gridProps(t)} />
+          <XAxis dataKey="day" {...axisProps(t)} />
+          <YAxis {...axisProps(t)} width={56} />
           <Tooltip
+            contentStyle={tooltipContentStyle}
+            labelStyle={tooltipLabelStyle}
             labelFormatter={(d) => `Jour ${d}`}
             formatter={(v) => (typeof v === 'number' ? formatMad(String(v)) : String(v))}
           />
-          <Legend iconType="plainline" wrapperStyle={{ fontSize: 12 }} />
+          <Legend
+            iconType="plainline"
+            wrapperStyle={{ fontSize: 12, color: 'var(--muted-foreground)', textTransform: 'capitalize' }}
+          />
           <Line
             type="monotone"
             dataKey="compare"
@@ -80,6 +88,6 @@ export function CumulativeChart({
           />
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </ChartPanel>
   );
 }

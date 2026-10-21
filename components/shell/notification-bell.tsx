@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Bell, CheckCircle2, ClipboardCheck, UserPlus, Wallet } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { createTenantChannel } from '@/lib/supabase/realtime';
+import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'doctopus.notifications.lastSeenAt';
@@ -73,7 +74,8 @@ export function NotificationBell({ tenantId }: { tenantId: string }) {
   const pathname = usePathname();
   const [counts, setCounts] = useState<Counts>(ZERO_COUNTS);
   const [open, setOpen] = useState(false);
-  const lastSeenAtRef = useRef<number>(Date.now());
+  // Seeded from localStorage (or now) in the bootstrap effect below.
+  const lastSeenAtRef = useRef<number>(0);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   const total = counts.arrival + counts.finalized + counts.payment;
@@ -102,15 +104,17 @@ export function NotificationBell({ tenantId }: { tenantId: string }) {
   }, []);
 
   // Reset counter automatically when the user is on /today (the screen
-  // that fully renders these events).
+  // that fully renders these events). The state reset happens during
+  // render (React's "adjust state on prop change" pattern); the effect only
+  // persists the new lastSeenAt.
+  const onToday = pathname === '/today';
+  if (onToday && total > 0) setCounts(ZERO_COUNTS);
   useEffect(() => {
-    if (pathname === '/today' && total > 0) {
-      const now = Date.now();
-      lastSeenAtRef.current = now;
-      window.localStorage.setItem(STORAGE_KEY, String(now));
-      setCounts(ZERO_COUNTS);
-    }
-  }, [pathname, total]);
+    if (!onToday) return;
+    const now = Date.now();
+    lastSeenAtRef.current = now;
+    window.localStorage.setItem(STORAGE_KEY, String(now));
+  }, [onToday, total]);
 
   // Close the popover when clicking outside.
   useEffect(() => {
@@ -206,17 +210,16 @@ export function NotificationBell({ tenantId }: { tenantId: string }) {
         aria-haspopup="menu"
         title={titleText}
         className={cn(
-          'relative inline-flex items-center justify-center size-9 rounded-md transition-colors',
-          'hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40',
-          hasUnread ? 'text-foreground' : 'text-muted-foreground',
+          buttonVariants({ variant: 'ghost', size: 'icon' }),
+          'relative',
+          hasUnread && 'text-foreground',
         )}
-        style={{ transitionDuration: 'var(--duration-fast)' }}
       >
         <Bell className="size-4" aria-hidden />
         {hasUnread ? (
           <span
             aria-hidden
-            className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-pill bg-danger text-[10px] font-semibold text-danger-foreground tabular-nums leading-none"
+            className="absolute top-1 right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-none tabular-nums text-danger-foreground ring-2 ring-sidebar"
           >
             {displayCount}
           </span>
@@ -226,7 +229,7 @@ export function NotificationBell({ tenantId }: { tenantId: string }) {
       {open && hasUnread ? (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-2 z-30 w-64 rounded-xl border border-border bg-card shadow-card overflow-hidden"
+          className="absolute right-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-popover"
         >
           <ul className="divide-y divide-border">
             {(Object.entries(counts) as [Category, number][])
@@ -234,9 +237,9 @@ export function NotificationBell({ tenantId }: { tenantId: string }) {
               .map(([key, n]) => {
                 const Icon = CATEGORY_META[key].icon;
                 return (
-                  <li key={key} className="px-3 py-2 flex items-center gap-2.5">
-                    <Icon className="size-4 text-muted-foreground shrink-0" aria-hidden />
-                    <span className="flex-1 text-small text-foreground">
+                  <li key={key} className="flex items-center gap-2.5 px-3 py-2.5 text-small">
+                    <Icon className="size-4 shrink-0 text-subtle-foreground" aria-hidden />
+                    <span className="flex-1 text-foreground">
                       {CATEGORY_META[key].label(n)}
                     </span>
                   </li>
@@ -246,11 +249,10 @@ export function NotificationBell({ tenantId }: { tenantId: string }) {
           <button
             type="button"
             onClick={clearAndGo}
-            className="w-full px-3 py-2 text-small font-medium text-left border-t border-border bg-muted/30 hover:bg-muted transition-colors flex items-center gap-2"
-            style={{ transitionDuration: 'var(--duration-fast)' }}
+            className="flex w-full items-center gap-2 border-t border-border bg-canvas px-3 py-2.5 text-left text-small font-medium text-primary transition-colors duration-(--duration-fast) hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
           >
-            <CheckCircle2 className="size-4 text-success" aria-hidden />
-            Marquer comme lu et voir l’aujourd’hui
+            <CheckCircle2 className="size-4" aria-hidden />
+            Marquer comme lu · voir Aujourd’hui
           </button>
         </div>
       ) : null}

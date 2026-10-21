@@ -4,6 +4,13 @@ import { useRouter } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useChartTokens } from '@/lib/charts/tokens';
 import { formatMad } from '@/lib/medications/format';
+import {
+  ChartPanel,
+  axisProps,
+  gridProps,
+  tooltipContentStyle,
+  tooltipLabelStyle,
+} from './chart-style';
 
 export type MonthlyBar = { key: string; label: string; revenue: number };
 
@@ -24,20 +31,16 @@ export function MonthlyChart({
   const t = useChartTokens();
   const router = useRouter();
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card p-3">
+    <ChartPanel>
       <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={t['--border']} vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke={t['--muted-foreground']} tickLine={false} />
-          <YAxis
-            tick={{ fontSize: 11 }}
-            stroke={t['--muted-foreground']}
-            tickLine={false}
-            axisLine={false}
-            width={56}
-          />
+        <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid {...gridProps(t)} />
+          <XAxis dataKey="label" {...axisProps(t)} />
+          <YAxis {...axisProps(t)} width={56} />
           <Tooltip
             cursor={{ fill: t['--muted'] }}
+            contentStyle={tooltipContentStyle}
+            labelStyle={tooltipLabelStyle}
             formatter={(v) => (typeof v === 'number' ? formatMad(String(v)) : String(v))}
           />
           <Bar
@@ -65,6 +68,6 @@ export function MonthlyChart({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </ChartPanel>
   );
 }

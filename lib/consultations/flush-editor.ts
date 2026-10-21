@@ -1,32 +1,76 @@
 'use client';
 
+import { useEffect, useEffectEvent } from 'react';
+
 /**
- * Asks the currently-mounted ConsultationEditor (if any) to persist its
- * dirty state before a higher-level action proceeds. Used by the
- * finalize dialog so clicking "Terminer la consultation" never throws
- * away unsaved edits.
+ * "Save what you've got" bus between the consultation page's editors
+ * (clinical sections + vitals, prescription) and higher-level actions
+ * such as the finalize dialog.
  *
- * Resolves `{ ok: true }` immediately if no editor is mounted (or it
- * has nothing to flush), so callers don't have to special-case that.
+ * Every mounted editor for the consultation registers a participant.
+ * `flushConsultationEditor` dispatches one synchronous event; each
+ * participant hands back a promise through `waitUntil`, and the caller
+ * waits for ALL of them — no timeout, so a slow save can never be
+ * overtaken by the finalize call. A participant can also refuse
+ * (`ok: false`) to block the action with a message, e.g. a medication
+ * picked in the prescription editor but never added.
+ *
+ * Resolves `{ ok: true }` immediately when nothing is mounted.
  */
-export function flushConsultationEditor(
+
+export const FLUSH_EVENT = 'doctopus:flush-consultation-editor';
+
+export type FlushSummary = {
+  /** Current diagnosis text (after the flush). */
+  diagnosis?: string;
+  /** Number of saved prescription lines. */
+  rxCount?: number;
+  prescriptionId?: string | null;
+};
+
+export type FlushResult = { ok: boolean; error?: string; summary?: FlushSummary };
+
+type FlushRequest = {
+  consultationId: string;
+  waitUntil: (p: Promise<FlushResult>) => void;
+};
+
+export async function flushConsultationEditor(consultationId: string): Promise<FlushResult> {
+  const pending: Promise<FlushResult>[] = [];
+  window.dispatchEvent(
+    new CustomEvent<FlushRequest>(FLUSH_EVENT, {
+      detail: { consultationId, waitUntil: (p) => pending.push(p) },
+    }),
+  );
+  if (pending.length === 0) return { ok: true };
+  const results = await Promise.all(
+    pending.map((p) =>
+      p.catch(
+        (): FlushResult => ({ ok: false, error: 'Erreur de sauvegarde. Réessayez.' }),
+      ),
+    ),
+  );
+  const summary: FlushSummary = {};
+  for (const r of results) Object.assign(summary, r.summary);
+  const failed = results.find((r) => !r.ok);
+  return failed ? { ok: false, error: failed.error, summary } : { ok: true, summary };
+}
+
+/** Registers `handler` as a flush participant for this consultation. */
+export function useConsultationFlush(
   consultationId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  return new Promise((resolve) => {
-    let resolved = false;
-    const settle = (r: { ok: boolean; error?: string }) => {
-      if (resolved) return;
-      resolved = true;
-      clearTimeout(timeout);
-      resolve(r);
-    };
-    // Fallback: if no editor is listening (different page, race, etc.)
-    // we want the calling flow to keep going rather than hang.
-    const timeout = setTimeout(() => settle({ ok: true }), 400);
-    window.dispatchEvent(
-      new CustomEvent('doctopus:flush-consultation-editor', {
-        detail: { consultationId, resolve: settle },
-      }),
-    );
+  handler: () => Promise<FlushResult>,
+): void {
+  const onFlush = useEffectEvent((req: FlushRequest) => {
+    req.waitUntil(handler());
   });
+  useEffect(() => {
+    function listener(e: Event) {
+      const detail = (e as CustomEvent<FlushRequest>).detail;
+      if (!detail || detail.consultationId !== consultationId) return;
+      onFlush(detail);
+    }
+    window.addEventListener(FLUSH_EVENT, listener);
+    return () => window.removeEventListener(FLUSH_EVENT, listener);
+  }, [consultationId]);
 }

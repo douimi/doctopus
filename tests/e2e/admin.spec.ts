@@ -83,6 +83,9 @@ test('admin can log in, see dashboard, grant credits, and revoke an invite', asy
   const pendingRow = page.locator('tr').filter({ hasText: 'En attente' }).first();
   await expect(pendingRow).toBeVisible();
   await pendingRow.getByRole('button', { name: 'Révoquer' }).click();
+  // Revoking now asks for confirmation in a dialog.
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Révoquer' }).click();
+  await expect(page.getByText('Invitation révoquée.')).toBeVisible({ timeout: 5000 });
   await page.reload();
   await page.waitForLoadState('networkidle');
   await expect(page.getByText('Révoquée').first()).toBeVisible({ timeout: 10000 });

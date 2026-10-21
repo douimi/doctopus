@@ -24,7 +24,6 @@ export function BrandLockup({
       width={size}
       height={size}
       priority={priority}
-      unoptimized
       className={cn('object-contain', className)}
       style={{ width: size, height: size }}
     />

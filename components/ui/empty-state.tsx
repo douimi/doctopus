@@ -6,6 +6,8 @@ export type EmptyStateProps = {
   title: string;
   description?: string;
   action?: ReactNode;
+  /** `sm` = compact, icon-less variant for empty states inside cards. */
+  size?: 'default' | 'sm';
   className?: string;
 };
 
@@ -14,20 +16,24 @@ export function EmptyState({
   title,
   description,
   action,
+  size = 'default',
   className,
 }: EmptyStateProps) {
+  const compact = size === 'sm';
   return (
     <div
       data-slot="empty-state"
       className={cn(
-        'flex flex-col items-center justify-center text-center py-12 px-6 gap-3',
+        'flex flex-col items-center justify-center gap-3 px-6 text-center',
+        compact ? 'py-6' : 'py-10',
         className,
       )}
     >
-      {Icon ? (
+      {Icon && !compact ? (
+        // Neutral disc on purpose: empty is not a brand moment.
         <div
           aria-hidden
-          className="flex items-center justify-center size-12 rounded-pill bg-primary-tint text-primary"
+          className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-inset ring-border"
         >
           <Icon className="size-5" aria-hidden />
         </div>
@@ -35,7 +41,7 @@ export function EmptyState({
       <div className="space-y-1">
         <p className="text-heading font-semibold text-foreground">{title}</p>
         {description ? (
-          <p className="text-body text-muted-foreground max-w-sm mx-auto">{description}</p>
+          <p className="mx-auto max-w-sm text-body text-muted-foreground">{description}</p>
         ) : null}
       </div>
       {action ? <div className="mt-1">{action}</div> : null}

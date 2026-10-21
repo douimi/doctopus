@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
-import { Activity, AlertCircle, Award, CalendarRange, LineChart, PieChart } from 'lucide-react';
 import { requireDoctor } from '@/lib/auth/guards';
+import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
-import { StatCard, type StatComparison } from '@/components/admin/stat-card';
+import { StatCard, type StatComparison } from '@/components/ui/stat-card';
 import { Section } from '@/components/ui/section';
 import {
   getMonthlySeries,
@@ -181,18 +181,20 @@ export default async function StatsPage({
   return (
     <>
       <PageHeader title="Statistiques" description="Recettes et activité du cabinet." />
-      <div className="px-6 py-6 space-y-6">
-        <div className="space-y-3">
-          <RangePills active={range ?? 'month'} />
-          {month ? (
-            <MonthControls
-              month={month}
-              compare={compareMonth ?? ''}
-              months={monthOptions}
-              prevHref={month > oldestMonth ? `/stats?month=${shiftMonthKey(month, -1)}` : null}
-              nextHref={month < thisMonth ? `/stats?month=${shiftMonthKey(month, 1)}` : null}
-            />
-          ) : null}
+      <PageBody>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <RangePills active={range ?? 'month'} />
+            {month ? (
+              <MonthControls
+                month={month}
+                compare={compareMonth ?? ''}
+                months={monthOptions}
+                prevHref={month > oldestMonth ? `/stats?month=${shiftMonthKey(month, -1)}` : null}
+                nextHref={month < thisMonth ? `/stats?month=${shiftMonthKey(month, 1)}` : null}
+              />
+            ) : null}
+          </div>
           {elapsed && compareMonth ? (
             <p className="text-small text-muted-foreground">
               Mois en cours : les écarts comparent du 1er au {elapsed} de chaque mois.
@@ -200,30 +202,28 @@ export default async function StatsPage({
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            tone="success"
             label="Recettes"
             value={formatMad(summary.totalRevenue)}
             hint={`${summary.paidCount} consultations payées`}
             comparison={cmp?.revenue}
           />
           <StatCard
-            tone="primary"
             label="Consultations"
             value={String(summary.totalCount)}
             hint={`${summary.paidCount} payés · ${summary.awaitingCount} en attente · ${summary.freeCount} gratuits`}
             comparison={cmp?.count}
           />
           <StatCard
-            tone="admin"
             label="Prix moyen"
             value={summary.avgPrice ? formatMad(summary.avgPrice) : '—'}
             hint="par consultation payante"
             comparison={cmp?.avg}
           />
+          {/* Only the number that needs action gets a tone. */}
           <StatCard
-            tone="warning"
+            tone={summary.awaitingCount > 0 ? 'warning' : 'neutral'}
             label="En attente"
             value={String(summary.awaitingCount)}
             hint={`${formatMad(summary.awaitingTotal)} à encaisser`}
@@ -233,8 +233,11 @@ export default async function StatsPage({
 
         {month && compareMonth ? (
           <Section
-            icon={LineChart}
-            title={`Recettes cumulées — ${periodLabel} vs ${formatMonthKeyFr(compareMonth)}`}
+            title={
+              <span className="capitalize">
+                Recettes cumulées — {periodLabel} vs {formatMonthKeyFr(compareMonth)}
+              </span>
+            }
           >
             <CumulativeChart
               data={cumulativeData}
@@ -244,11 +247,11 @@ export default async function StatsPage({
           </Section>
         ) : null}
 
-        <Section icon={Activity} title="Recettes par jour">
+        <Section title="Recettes par jour">
           <RevenueChart daily={revenueByDay} />
         </Section>
 
-        <Section icon={CalendarRange} title="Évolution mois par mois">
+        <Section title="Évolution mois par mois">
           <MonthlyChart
             data={monthly.map((r) => ({
               key: r.month,
@@ -261,18 +264,20 @@ export default async function StatsPage({
           <MonthlyTable rows={monthly} labels={monthLabels} selected={month} runningMonth={thisMonth} />
         </Section>
 
-        <Section icon={PieChart} title="Recettes par méthode">
-          <MethodChart byMethod={revenueByMethod} />
-        </Section>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Section title="Recettes par méthode">
+            <MethodChart byMethod={revenueByMethod} />
+          </Section>
 
-        <Section icon={AlertCircle} title="Paiements en attente" count={outstanding.length}>
+          <Section title="Top 10 patients" count={topPatients.length}>
+            <TopPatientsTable rows={topPatients} />
+          </Section>
+        </div>
+
+        <Section title="Paiements en attente" count={outstanding.length}>
           <OutstandingTable rows={outstanding} />
         </Section>
-
-        <Section icon={Award} title="Top 10 patients" count={topPatients.length}>
-          <TopPatientsTable rows={topPatients} />
-        </Section>
-      </div>
+      </PageBody>
     </>
   );
 }

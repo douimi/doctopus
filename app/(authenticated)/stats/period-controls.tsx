@@ -8,8 +8,10 @@ import { cn } from '@/lib/utils';
 
 export type MonthOption = { key: string; label: string };
 
+// Native <select> on purpose (instant GET navigation, good on mobile);
+// styled like the design-system field.
 const selectClass =
-  'h-8 rounded-lg border border-input bg-card px-2.5 text-body capitalize outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
+  'h-8 rounded-lg border border-input bg-background px-2.5 text-body text-foreground capitalize outline-none transition-colors duration-(--duration-fast) focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/15';
 
 /**
  * Month navigator + "compare to" picker for the monthly stats view.
@@ -90,7 +92,7 @@ function NavLink({
   label: string;
   children: React.ReactNode;
 }) {
-  const cls = buttonVariants({ variant: 'ghost', size: 'icon-sm' });
+  const cls = buttonVariants({ variant: 'secondary', size: 'icon-sm' });
   if (!href) {
     return (
       <span aria-disabled className={cn(cls, 'opacity-40 pointer-events-none')} aria-label={label}>

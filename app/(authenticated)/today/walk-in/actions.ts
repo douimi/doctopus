@@ -1,15 +1,57 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireSession } from '@/lib/auth/session';
 import { walkIn } from '@/lib/appointments/mutations';
 import { walkInSchema } from '@/lib/appointments/schemas';
+import { getPatientById } from '@/lib/patients/queries';
+import { firstIssueFr } from '@/lib/zod-fr';
+import { frenchIssue } from '../../patients/form-errors';
+import type { WalkInState } from '../book/types';
+
+const WALK_IN_LABELS: Record<string, string> = {
+  patientId: 'Patient',
+  reason: 'Motif',
+  parentConsultationId: 'Consultation parente',
+};
 
 /**
- * One-click "Mettre en salle d'attente" — fired from a per-row Button on
- * /today/walk-in. No motif: the doctor can edit it later from the
- * consultation. Redirects back to /today on success.
+ * "Mettre en salle d'attente" from the walk-in dialog / page. Optional
+ * motif and optional parent consultation (follow-up). Returns a state
+ * instead of redirecting so the dialog over /today can close itself and
+ * toast; the fallback page navigates client-side on success.
+ */
+export async function walkInAction(_: WalkInState, formData: FormData): Promise<WalkInState> {
+  const session = await requireSession();
+  const parentRaw = formData.get('parentConsultationId');
+  const parsed = walkInSchema.safeParse({
+    patientId: formData.get('patientId'),
+    reason: formData.get('reason') ?? '',
+    parentConsultationId:
+      typeof parentRaw === 'string' && parentRaw.length > 0 ? parentRaw : null,
+  }, { error: frenchIssue });
+  if (!parsed.success) {
+    return { ok: false, error: firstIssueFr(parsed.error, WALK_IN_LABELS), at: Date.now() };
+  }
+  const patient = await getPatientById(session.tenantId, parsed.data.patientId);
+  if (!patient || patient.isArchived) {
+    return { ok: false, error: 'Patient introuvable ou archivé.', at: Date.now() };
+  }
+  await walkIn(session.tenantId, session.userId, parsed.data);
+  revalidatePath('/today');
+  return {
+    ok: true,
+    error: null,
+    at: Date.now(),
+    patientName: `${patient.lastName} ${patient.firstName}`,
+  };
+}
+
+/**
+ * Legacy one-click walk-in (no motif). Kept so old links/bookmarks and
+ * no-JS form posts still work; the UI now uses walkInAction.
  */
 export async function walkInDirectAction(formData: FormData): Promise<void> {
   const session = await requireSession();
@@ -22,14 +64,9 @@ export async function walkInDirectAction(formData: FormData): Promise<void> {
 }
 
 /**
- * Walk-in flagged as a follow-up. Takes both the patient id AND the
- * specific parent consultation id the doctor picked in /today/walk-in/suivi,
- * stores it on the appointment so that when the consultation starts it
- * inherits the parent and the clinical pre-fill (see startFromAppointment).
- *
- * If the parent id is missing or invalid, silently falls back to a
- * regular walk-in — better to put the patient in the waiting room than
- * to bounce a doctor with a form error mid-rush.
+ * Legacy walk-in flagged as a follow-up (patient + parent consultation).
+ * Kept for compatibility; the UI now uses walkInAction with
+ * `parentConsultationId`.
  */
 export async function walkInFollowUpAction(formData: FormData): Promise<void> {
   const session = await requireSession();

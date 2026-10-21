@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Plus, UserSearch } from 'lucide-react';
+import { ArrowRight, Plus } from 'lucide-react';
 import { requireDoctor } from '@/lib/auth/guards';
 import { listPatientConsultationsForPicker } from '@/lib/consultations/queries';
 import { getPatientById, searchPatientsPage } from '@/lib/patients/queries';
@@ -8,20 +8,14 @@ import { formatAge } from '@/lib/patients/age';
 import { Alert } from '@/components/ui/alert';
 import { Avatar } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
+import { Card, CardContent } from '@/components/ui/card';
 import { LiveSearchInput } from '@/components/ui/live-search-input';
+import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
 import { Pagination } from '@/components/ui/pagination';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableEmpty,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { createFollowUpAction } from '@/app/(authenticated)/consultations/[id]/actions';
+import { PatientPickerTable } from '@/app/(authenticated)/consultations/new/patient-picker-table';
 
 const PAGE_SIZE = 25;
 
@@ -50,95 +44,88 @@ export default async function NewFollowUpPage({ searchParams }: Props) {
     return (
       <>
         <PageHeader
-          eyebrow={
-            <Link
-              href="/suivis/new"
-              className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-              style={{ transitionDuration: 'var(--duration-fast)' }}
-            >
-              <ArrowLeft className="size-3" aria-hidden />
-              Choisir un autre patient
-            </Link>
-          }
+          width="narrow"
+          back={{ href: '/suivis/new', label: 'Choisir un autre patient' }}
           title="Nouveau suivi"
-          description="Choisissez la consultation à laquelle rattacher ce suivi."
+          description="Étape 2 sur 2 — choisissez la consultation à laquelle rattacher ce suivi."
         />
-        <div className="px-6 py-6 max-w-2xl space-y-4">
-          <div className="rounded-xl border border-border bg-card shadow-card p-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <Avatar name={fullName} size="md" />
-              <div className="min-w-0">
-                <div className="font-medium text-foreground">{fullName}</div>
-                <div className="text-small text-muted-foreground tabular-nums">
-                  {formatAge(patient.dateOfBirth)}
-                  {patient.phone ? ` · ${patient.phone}` : ''}
+        <PageBody width="narrow">
+          <Card>
+            <CardContent className="space-y-5">
+              <div className="flex items-center gap-3">
+                <Avatar name={fullName} size="lg" />
+                <div className="min-w-0">
+                  <div className="truncate text-title font-semibold text-foreground">
+                    {fullName}
+                  </div>
+                  <div className="text-small text-muted-foreground tabular-nums">
+                    {formatAge(patient.dateOfBirth)}
+                    {patient.phone ? ` · ${patient.phone}` : ''}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {candidates.length > 0 ? (
-              <>
-                <p className="text-small text-muted-foreground">
-                  Le motif, les antécédents, l&apos;examen et les constantes
-                  de la consultation choisie seront repris &mdash; vous
-                  pourrez tout modifier ensuite.
-                </p>
-                <ul className="divide-y divide-border rounded-lg border border-border overflow-hidden">
-                  {candidates.map((c) => (
-                    <li key={c.id}>
-                      <form action={createFollowUpAction} className="contents">
-                        <input type="hidden" name="parentId" value={c.id} />
-                        <button
-                          type="submit"
-                          className="w-full text-left flex items-start gap-3 px-3 py-3 hover:bg-muted/40 focus-visible:outline-none focus-visible:bg-muted/60 transition-colors"
-                          style={{ transitionDuration: 'var(--duration-fast)' }}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 text-small text-muted-foreground tabular-nums">
-                              {fmtDate(c.consultedAt)}
-                              {c.isFollowUp ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-foreground/70 text-[10px] uppercase tracking-wide font-medium">
-                                  Suivi
-                                </span>
-                              ) : null}
-                              {!c.isFinalized ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-warning-tint text-warning-foreground text-[10px] uppercase tracking-wide font-medium">
-                                  En cours
-                                </span>
-                              ) : null}
+              {candidates.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-small text-muted-foreground">
+                    Le motif, les antécédents, l&apos;examen et les constantes
+                    de la consultation choisie seront repris &mdash; vous
+                    pourrez tout modifier ensuite.
+                  </p>
+                  <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+                    {candidates.map((c) => (
+                      <li key={c.id}>
+                        <form action={createFollowUpAction} className="contents">
+                          <input type="hidden" name="parentId" value={c.id} />
+                          <button
+                            type="submit"
+                            className="group/row flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-(--duration-fast) hover:bg-muted/50 focus-visible:bg-muted/60 focus-visible:outline-none"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 text-small text-muted-foreground tabular-nums">
+                                {fmtDate(c.consultedAt)}
+                                {c.isFollowUp ? (
+                                  <StatusBadge variant="neutral">Suivi</StatusBadge>
+                                ) : null}
+                                {!c.isFinalized ? (
+                                  <StatusBadge variant="info" dot>
+                                    En cours
+                                  </StatusBadge>
+                                ) : null}
+                              </div>
+                              <div className="mt-0.5 line-clamp-1 text-body text-foreground">
+                                {c.motif ?? 'Aucun motif renseigné.'}
+                              </div>
                             </div>
-                            <div className="text-foreground line-clamp-1 mt-0.5">
-                              {c.motif ?? 'Aucun motif renseigné.'}
-                            </div>
-                          </div>
-                          <ArrowRight
-                            className="size-4 text-muted-foreground shrink-0 mt-1"
-                            aria-hidden
-                          />
-                        </button>
-                      </form>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <Alert variant="warning">
-                Ce patient n&apos;a pas encore de consultation enregistrée — un
-                suivi ne peut être créé que sur une consultation existante.
-                Commencez par créer une consultation, puis revenez ici.
-                <div className="mt-2">
-                  <Link
-                    href={`/consultations/new?patient=${patient.id}`}
-                    className={buttonVariants({ size: 'sm', variant: 'secondary' })}
-                  >
-                    Nouvelle consultation
-                    <ArrowRight aria-hidden />
-                  </Link>
+                            <ArrowRight
+                              className="size-4 shrink-0 text-subtle-foreground transition-colors duration-(--duration-fast) group-hover/row:text-primary"
+                              aria-hidden
+                            />
+                          </button>
+                        </form>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </Alert>
-            )}
-          </div>
-        </div>
+              ) : (
+                <Alert variant="warning" title="Aucune consultation à suivre">
+                  Un suivi se rattache toujours à une consultation existante.
+                  Enregistrez d&apos;abord une consultation pour ce patient, puis
+                  revenez ici.
+                  <div className="mt-2">
+                    <Link
+                      href={`/consultations/new?patient=${patient.id}`}
+                      className={buttonVariants({ size: 'sm', variant: 'secondary' })}
+                    >
+                      Saisir une consultation
+                      <ArrowRight aria-hidden />
+                    </Link>
+                  </div>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </PageBody>
       </>
     );
   }
@@ -163,109 +150,41 @@ export default async function NewFollowUpPage({ searchParams }: Props) {
   return (
     <>
       <PageHeader
-        eyebrow={
+        back={{ href: '/consultations?type=suivi', label: 'Suivis' }}
+        title="Nouveau suivi"
+        description="Étape 1 sur 2 — choisissez le patient, puis la consultation à suivre."
+        actions={
           <Link
-            href="/suivis"
-            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-            style={{ transitionDuration: 'var(--duration-fast)' }}
+            href="/patients/new?next=/suivis/new"
+            className={buttonVariants({ variant: 'secondary' })}
           >
-            <ArrowLeft className="size-3" aria-hidden />
-            Suivis
+            <Plus aria-hidden />
+            Nouveau patient
           </Link>
         }
-        title="Nouveau suivi"
-        description="Choisissez le patient à suivre — la consultation parente est récupérée automatiquement."
       />
 
-      <div className="px-6 py-6 space-y-4">
+      <PageBody>
         <div className="flex flex-wrap items-center gap-2">
           <LiveSearchInput
             defaultQuery={q}
             placeholder="Rechercher : nom, prénom, téléphone, CIN"
           />
-          <Link
-            href="/patients/new?next=/suivis/new"
-            className={buttonVariants()}
-          >
-            <Plus aria-hidden />
-            Nouveau patient
-          </Link>
-          <span className="text-small text-muted-foreground ml-auto tabular-nums">
+          <span className="ml-auto text-small text-muted-foreground tabular-nums">
             {total} patient{total === 1 ? '' : 's'}
-            {trimmed ? ' trouvés' : ''}
+            {trimmed ? ` trouvé${total === 1 ? '' : 's'}` : ''}
           </span>
         </div>
 
-        <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Patient</TableHead>
-                <TableHead>Âge</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>CIN</TableHead>
-                <TableHead className="text-right pr-3">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 ? (
-                <TableEmpty colSpan={5}>
-                  <EmptyState
-                    icon={UserSearch}
-                    title={trimmed ? 'Aucun résultat' : 'Aucun patient enregistré'}
-                    description={
-                      trimmed
-                        ? `Aucun patient ne correspond à « ${trimmed} ».`
-                        : 'Créez un patient pour commencer.'
-                    }
-                  />
-                </TableEmpty>
-              ) : (
-                rows.map((p) => {
-                  const fullName = `${p.lastName} ${p.firstName}`;
-                  return (
-                    <TableRow key={p.id} className="group/row">
-                      <TableCell className="py-2">
-                        <Link
-                          href={`/suivis/new?patient=${p.id}`}
-                          className="flex items-center gap-3 -mx-3 -my-2 px-3 py-2 focus-visible:outline-none focus-visible:bg-muted/60 hover:text-primary transition-colors"
-                          aria-label={`Créer un suivi pour ${fullName}`}
-                        >
-                          <Avatar name={fullName} size="md" />
-                          <span className="font-medium text-foreground group-hover/row:text-primary transition-colors">
-                            {fullName}
-                          </span>
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground tabular-nums">
-                        {formatAge(p.dateOfBirth)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground tabular-nums">
-                        {p.phone ?? '—'}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground tabular-nums">
-                        {p.cin ?? '—'}
-                      </TableCell>
-                      <TableCell className="text-right pr-3">
-                        <Link
-                          href={`/suivis/new?patient=${p.id}`}
-                          className={buttonVariants({ size: 'sm' })}
-                          aria-label={`Choisir ${fullName}`}
-                        >
-                          Choisir
-                          <ArrowRight aria-hidden />
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <PatientPickerTable
+          rows={rows}
+          query={trimmed}
+          hrefFor={(id) => `/suivis/new?patient=${id}`}
+          actionLabel="Créer un suivi pour"
+        />
 
         <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
-      </div>
+      </PageBody>
     </>
   );
 }

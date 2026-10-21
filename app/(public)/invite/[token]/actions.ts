@@ -11,26 +11,92 @@ import { lookupInvite } from '@/lib/invites/lookup';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { env } from '@/lib/env';
 import { recordAudit } from '@/lib/audit/record';
+import { firstIssueFr } from '@/lib/zod-fr';
+
+const fullName = z
+  .string()
+  .trim()
+  .min(2, 'au moins 2 caractères.')
+  .max(120, '120 caractères maximum.');
+const email = z.string().trim().email('adresse email invalide.');
+const password = z
+  .string()
+  .min(12, 'au moins 12 caractères.')
+  .max(200, '200 caractères maximum.');
+const token = z.string().regex(/^[0-9a-f]{64}$/, "lien d'invitation invalide.");
 
 const ownerSchema = z.object({
-  token: z.string().regex(/^[0-9a-f]{64}$/),
-  fullName: z.string().min(2).max(120),
-  cabinetName: z.string().min(2).max(160),
-  cabinetAddress: z.string().max(300).optional().or(z.literal('')),
-  cabinetPhone: z.string().max(40).optional().or(z.literal('')),
-  email: z.string().email(),
-  password: z.string().min(12).max(200),
+  token,
+  fullName,
+  cabinetName: z
+    .string()
+    .trim()
+    .min(2, 'au moins 2 caractères.')
+    .max(160, '160 caractères maximum.'),
+  cabinetAddress: z.string().trim().max(300, '300 caractères maximum.').optional().or(z.literal('')),
+  cabinetPhone: z.string().trim().max(40, '40 caractères maximum.').optional().or(z.literal('')),
+  email,
+  password,
 });
 
 const assistantSchema = z.object({
-  token: z.string().regex(/^[0-9a-f]{64}$/),
-  fullName: z.string().min(2).max(120),
-  email: z.string().email(),
-  password: z.string().min(12).max(200),
+  token,
+  fullName,
+  email,
+  password,
 });
 
-export type OwnerState = { error: string | null };
-export type AssistantState = { error: string | null };
+const FIELD_LABELS: Record<string, string> = {
+  token: 'Invitation',
+  fullName: 'Nom complet',
+  cabinetName: 'Nom du cabinet',
+  cabinetAddress: 'Adresse',
+  cabinetPhone: 'Téléphone',
+  email: 'Email',
+  password: 'Mot de passe',
+};
+
+type FieldErrors = Partial<Record<string, string>>;
+
+/** Values echoed back on error so the form isn't wiped (never the password). */
+type Values = Partial<Record<string, string>>;
+
+export type OwnerState = { error: string | null; fieldErrors?: FieldErrors; values?: Values };
+export type AssistantState = { error: string | null; fieldErrors?: FieldErrors; values?: Values };
+
+function echoValues(formData: FormData): Values {
+  const values: Values = {};
+  for (const [key, value] of formData.entries()) {
+    if (key === 'password' || key === 'token' || typeof value !== 'string') continue;
+    values[key] = value;
+  }
+  return values;
+}
+
+/** One French message per field ("au moins 12 caractères."), labelled for the summary. */
+function invalid(error: z.ZodError, formData: FormData) {
+  const fieldErrors: FieldErrors = {};
+  for (const issue of error.issues) {
+    const key = issue.path[0];
+    if (typeof key === 'string' && !fieldErrors[key]) {
+      const msg = issue.message;
+      fieldErrors[key] = msg.charAt(0).toUpperCase() + msg.slice(1);
+    }
+  }
+  if (fieldErrors.token) {
+    return { error: "Ce lien d'invitation est invalide.", fieldErrors, values: echoValues(formData) };
+  }
+  return {
+    error: firstIssueFr(error, FIELD_LABELS),
+    fieldErrors,
+    values: echoValues(formData),
+  };
+}
+
+const EMAIL_TAKEN =
+  'Un compte existe déjà avec cet email. Connectez-vous ou utilisez une autre adresse.';
+const SIGNED_UP_NO_SESSION =
+  'Compte créé, mais la connexion automatique a échoué. Connectez-vous depuis la page de connexion.';
 
 function adminAuth() {
   return createClient(env().NEXT_PUBLIC_SUPABASE_URL, env().SUPABASE_SERVICE_ROLE, {
@@ -40,7 +106,7 @@ function adminAuth() {
 
 export async function acceptOwnerInvite(_: OwnerState, formData: FormData): Promise<OwnerState> {
   const parsed = ownerSchema.safeParse(Object.fromEntries(formData.entries()));
-  if (!parsed.success) return { error: 'Champs invalides.' };
+  if (!parsed.success) return invalid(parsed.error, formData);
 
   const lookup = await lookupInvite(parsed.data.token);
   if (!lookup.ok) return { error: "Cette invitation n'est plus valide." };
@@ -53,11 +119,11 @@ export async function acceptOwnerInvite(_: OwnerState, formData: FormData): Prom
     email_confirm: true,
   });
   if (created.error || !created.data.user) {
+    const taken = created.error?.message === 'User already registered';
     return {
-      error:
-        created.error?.message === 'User already registered'
-          ? 'Email déjà utilisé.'
-          : 'Création du compte impossible.',
+      error: taken ? EMAIL_TAKEN : 'Création du compte impossible. Réessayez dans un instant.',
+      fieldErrors: taken ? { email: 'Email déjà utilisé.' } : undefined,
+      values: echoValues(formData),
     };
   }
 
@@ -99,7 +165,10 @@ export async function acceptOwnerInvite(_: OwnerState, formData: FormData): Prom
     if ((err as Error).message === 'invite_no_longer_valid') {
       return { error: "Cette invitation vient d'être utilisée." };
     }
-    return { error: 'Erreur lors de la création du cabinet.' };
+    return {
+      error: 'Erreur lors de la création du cabinet. Réessayez dans un instant.',
+      values: echoValues(formData),
+    };
   }
 
   if (createdTenantId) {
@@ -117,7 +186,7 @@ export async function acceptOwnerInvite(_: OwnerState, formData: FormData): Prom
     email: parsed.data.email,
     password: parsed.data.password,
   });
-  if (signIn.error) return { error: 'Compte créé, mais connexion impossible. Allez sur /sign-in.' };
+  if (signIn.error) return { error: SIGNED_UP_NO_SESSION };
 
   redirect('/today');
 }
@@ -127,7 +196,7 @@ export async function acceptAssistantInvite(
   formData: FormData,
 ): Promise<AssistantState> {
   const parsed = assistantSchema.safeParse(Object.fromEntries(formData.entries()));
-  if (!parsed.success) return { error: 'Champs invalides.' };
+  if (!parsed.success) return invalid(parsed.error, formData);
 
   const lookup = await lookupInvite(parsed.data.token);
   if (!lookup.ok) return { error: "Cette invitation n'est plus valide." };
@@ -142,11 +211,11 @@ export async function acceptAssistantInvite(
     email_confirm: true,
   });
   if (created.error || !created.data.user) {
+    const taken = created.error?.message === 'User already registered';
     return {
-      error:
-        created.error?.message === 'User already registered'
-          ? 'Email déjà utilisé.'
-          : 'Création du compte impossible.',
+      error: taken ? EMAIL_TAKEN : 'Création du compte impossible. Réessayez dans un instant.',
+      fieldErrors: taken ? { email: 'Email déjà utilisé.' } : undefined,
+      values: echoValues(formData),
     };
   }
   const userId = created.data.user.id;
@@ -178,7 +247,10 @@ export async function acceptAssistantInvite(
     if ((err as Error).message === 'invite_no_longer_valid') {
       return { error: "Cette invitation vient d'être utilisée." };
     }
-    return { error: 'Erreur lors de la création du compte.' };
+    return {
+      error: 'Erreur lors de la création du compte. Réessayez dans un instant.',
+      values: echoValues(formData),
+    };
   }
 
   await recordAudit({
@@ -194,7 +266,7 @@ export async function acceptAssistantInvite(
     email: parsed.data.email,
     password: parsed.data.password,
   });
-  if (signIn.error) return { error: 'Compte créé, mais connexion impossible. Allez sur /sign-in.' };
+  if (signIn.error) return { error: SIGNED_UP_NO_SESSION };
 
   redirect('/today');
 }

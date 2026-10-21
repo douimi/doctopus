@@ -5,10 +5,12 @@ import { usePathname } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { createTenantChannel } from '@/lib/supabase/realtime';
 import { showToast } from '@/components/ui/toast';
+import { getPatientForPickerAction } from '@/app/(authenticated)/patients/picker-actions';
 
 type AppointmentRow = {
   id?: string;
   status?: string | null;
+  patient_id?: string | null;
 };
 
 /**
@@ -46,16 +48,25 @@ export function WaitingArrivalsListener({ tenantId }: { tenantId: string }) {
           // transitions into waiting — both are "patient just arrived".
           if (payload.eventType === 'UPDATE' && oldRow?.status === 'waiting') return;
 
-          showToast({
-            // Dedup by appointment id so a quick INSERT-then-UPDATE
-            // sequence doesn't double-toast for the same patient.
-            id: `waiting:${newRow.id ?? Math.random()}`,
-            title: 'Nouveau patient en salle d’attente',
-            description: 'Un patient vient d’arriver au cabinet.',
-            href: '/today',
-            hrefLabel: "Voir l'aujourd'hui",
-            variant: 'info',
-          });
+          const toast = (name: string | null) =>
+            showToast({
+              // Dedup by appointment id so a quick INSERT-then-UPDATE
+              // sequence doesn't double-toast for the same patient.
+              id: `waiting:${newRow.id ?? Math.random()}`,
+              title: 'Nouveau patient en salle d’attente',
+              description: name
+                ? `${name} vient d’arriver au cabinet.`
+                : 'Un patient vient d’arriver au cabinet.',
+              href: '/today',
+              hrefLabel: "Voir l'aujourd'hui",
+              variant: 'info',
+            });
+          // The realtime payload only carries the id; resolve the name
+          // through a tenant-scoped action, falling back to a generic toast.
+          if (!newRow.patient_id) return toast(null);
+          getPatientForPickerAction(newRow.patient_id)
+            .then((p) => toast(p?.fullName ?? null))
+            .catch(() => toast(null));
         },
       )
       .subscribe();

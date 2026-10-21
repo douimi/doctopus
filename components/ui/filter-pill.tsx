@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Linked filter pill used in list filters across the app
- * (admin tenants, stats range, …). Active state inverts foreground
- * vs background; inactive lives on the muted card surface.
+ * Linked filter pill used in list filters across the app (admin tenants,
+ * consultation tabs, …). Active = soft primary tint. For mutually
+ * exclusive *views* (date ranges) prefer <SegmentedControl />.
  */
 export function FilterPill({
   href,
@@ -21,14 +21,14 @@ export function FilterPill({
   return (
     <Link
       href={href}
+      aria-current={active ? 'page' : undefined}
       className={cn(
-        'px-2.5 py-1 rounded-pill border text-small transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40',
+        'inline-flex h-7 items-center gap-1.5 rounded-pill border px-3 text-small font-medium transition-colors duration-(--duration-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         active
-          ? 'bg-foreground text-background border-foreground'
-          : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground',
+          ? 'border-primary/30 bg-primary-tint text-primary-ink'
+          : 'border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground',
         className,
       )}
-      style={{ transitionDuration: 'var(--duration-fast)' }}
     >
       {children}
     </Link>

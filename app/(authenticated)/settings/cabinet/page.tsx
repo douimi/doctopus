@@ -2,8 +2,9 @@ import { eq } from 'drizzle-orm';
 import { requireDoctor } from '@/lib/auth/guards';
 import { dbAdmin } from '@/db/client';
 import { tenants } from '@/db/schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
+import { SettingsTabs } from '../settings-tabs';
 import { CabinetForms } from './forms';
 
 export default async function CabinetSettingsPage() {
@@ -14,30 +15,27 @@ export default async function CabinetSettingsPage() {
   return (
     <>
       <PageHeader
+        width="narrow"
+        eyebrow="Paramètres"
         title="Cabinet"
         description="Identifiants professionnels, en-tête d'ordonnance et signature."
-      />
-      <div className="px-6 py-6 space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Paramètres du cabinet</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CabinetForms
-              initial={{
-                inpeNumber: tenant.inpeNumber ?? '',
-                prescriptionHeaderHtml: tenant.prescriptionHeaderHtml ?? '',
-                signatureUrl: tenant.signatureUrl ?? null,
-                stampUrl: tenant.stampUrl ?? null,
-                logoUrl: tenant.logoUrl ?? null,
-                chatbotEnabled: tenant.chatbotEnabled,
-                chatbotCreditsBalance: tenant.chatbotCreditsBalance,
-                defaultConsultationPriceMad: tenant.defaultConsultationPriceMad ?? '',
-              }}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      >
+        <SettingsTabs active="cabinet" />
+      </PageHeader>
+      <PageBody width="narrow">
+        <CabinetForms
+          initial={{
+            inpeNumber: tenant.inpeNumber ?? '',
+            prescriptionHeaderHtml: tenant.prescriptionHeaderHtml ?? '',
+            signatureUrl: tenant.signatureUrl ?? null,
+            stampUrl: tenant.stampUrl ?? null,
+            logoUrl: tenant.logoUrl ?? null,
+            chatbotEnabled: tenant.chatbotEnabled,
+            chatbotCreditsBalance: tenant.chatbotCreditsBalance,
+            defaultConsultationPriceMad: tenant.defaultConsultationPriceMad ?? '',
+          }}
+        />
+      </PageBody>
     </>
   );
 }

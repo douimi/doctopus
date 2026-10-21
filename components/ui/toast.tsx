@@ -39,10 +39,11 @@ const variantIcon = {
   warning: TriangleAlert,
 } as const;
 
-const variantClass = {
-  info: 'border-primary/30 bg-primary-tint text-foreground',
-  success: 'border-success/30 bg-success-tint text-foreground',
-  warning: 'border-warning/30 bg-warning-tint text-foreground',
+// Neutral popover surface; only the icon carries the tone.
+const variantIconClass = {
+  info: 'text-primary',
+  success: 'text-success',
+  warning: 'text-warning-ink',
 } as const;
 
 export function Toaster() {
@@ -89,7 +90,7 @@ export function Toaster() {
     <div
       role="region"
       aria-label="Notifications"
-      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-[calc(100vw-2rem)]"
+      className="pointer-events-none fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col gap-2 md:bottom-4"
     >
       {items.map((t) => {
         const Icon = variantIcon[t.variant];
@@ -97,15 +98,12 @@ export function Toaster() {
           <div
             key={t.id}
             role="status"
-            className={cn(
-              'pointer-events-auto rounded-xl border shadow-card px-3 py-2.5 flex items-start gap-3',
-              variantClass[t.variant],
-            )}
+            className="pointer-events-auto flex items-start gap-3 rounded-lg border border-border bg-popover px-3.5 py-3 text-popover-foreground shadow-popover"
             style={{ animation: 'doctopus-toast-in 180ms ease-out' }}
           >
-            <Icon className="size-4 mt-0.5 shrink-0" aria-hidden />
+            <Icon className={cn('mt-0.5 size-4 shrink-0', variantIconClass[t.variant])} aria-hidden />
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-body leading-tight">{t.title}</div>
+              <div className="text-body font-medium text-foreground">{t.title}</div>
               {t.description ? (
                 <div className="text-small text-muted-foreground mt-0.5">
                   {t.description}
@@ -115,7 +113,7 @@ export function Toaster() {
                 <Link
                   href={t.href}
                   onClick={() => dismiss(t.id)}
-                  className="inline-flex items-center text-small font-medium text-foreground hover:underline mt-1"
+                  className="mt-1 inline-flex items-center text-small font-medium text-primary hover:underline"
                 >
                   {t.hrefLabel ?? 'Voir'}
                 </Link>
@@ -125,8 +123,7 @@ export function Toaster() {
               type="button"
               onClick={() => dismiss(t.id)}
               aria-label="Fermer la notification"
-              className="text-muted-foreground hover:text-foreground transition-colors size-5 inline-flex items-center justify-center rounded shrink-0"
-              style={{ transitionDuration: 'var(--duration-fast)' }}
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-(--duration-fast) hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="size-3.5" aria-hidden />
             </button>

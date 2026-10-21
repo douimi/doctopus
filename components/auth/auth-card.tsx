@@ -1,43 +1,50 @@
 import type { ReactNode } from 'react';
-import { BrandLockup } from '@/components/ui/brand';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { PublicShell } from './public-shell';
 
+/**
+ * Centered card for sign-in and invitation flows, framed by the public
+ * shell (logo top-left, same light surface as the landing).
+ */
 export function AuthCard({
+  eyebrow,
   title,
   subtitle,
   children,
+  footer,
+  width = 'sm',
   className,
 }: {
+  eyebrow?: ReactNode;
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
+  /** Quiet line under the card (help, alternate path). */
+  footer?: ReactNode;
+  /** `md` for the longer owner sign-up form. */
+  width?: 'sm' | 'md';
   className?: string;
 }) {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4 bg-muted/40"
-      style={{
-        backgroundImage:
-          'radial-gradient(ellipse at top, var(--primary-tint) 0%, transparent 60%)',
-      }}
-    >
-      <div className="w-full max-w-sm space-y-5">
-        <div className="flex flex-col items-center text-center">
-          <BrandLockup size={220} />
+    <PublicShell>
+      <div className={cn('w-full space-y-4', width === 'md' ? 'max-w-lg' : 'max-w-sm')}>
+        <div
+          className={cn(
+            'panel px-5 py-6 shadow-[0_1px_2px_rgb(15_23_42/0.04),0_24px_48px_-28px_rgb(15_23_42/0.22)] sm:px-7 sm:py-7',
+            className,
+          )}
+        >
+          <div className="mb-6 space-y-1.5">
+            {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
+            <h1 className="text-title font-semibold text-foreground">{title}</h1>
+            {subtitle ? <div className="text-body text-muted-foreground">{subtitle}</div> : null}
+          </div>
+          {children}
         </div>
-        <Card className={cn('w-full', className)}>
-          <CardContent className="space-y-5 py-6">
-            <div className="space-y-1 text-center">
-              <h1 className="text-title font-semibold tracking-tight">{title}</h1>
-              {subtitle ? (
-                <p className="text-small text-muted-foreground">{subtitle}</p>
-              ) : null}
-            </div>
-            {children}
-          </CardContent>
-        </Card>
+        {footer ? (
+          <div className="px-1 text-center text-small text-muted-foreground">{footer}</div>
+        ) : null}
       </div>
-    </div>
+    </PublicShell>
   );
 }

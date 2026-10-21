@@ -20,7 +20,7 @@ function Delta({ cur, prev }: { cur: number; prev: number }) {
     <span
       className={cn(
         'tabular-nums',
-        pct > 0 ? 'text-success' : pct < 0 ? 'text-danger' : 'text-muted-foreground',
+        pct > 0 ? 'text-success-ink' : pct < 0 ? 'text-danger-ink' : 'text-muted-foreground',
       )}
     >
       {pct > 0 ? '+' : pct < 0 ? '−' : ''}
@@ -48,8 +48,8 @@ export function MonthlyTable({
 }) {
   const ordered = rows.map((r, i) => ({ r, prev: rows[i - 1] ?? null })).reverse();
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card overflow-x-auto">
-      <Table>
+    <div className="panel overflow-hidden">
+      <Table density="compact">
         <TableHeader>
           <TableRow>
             <TableHead>Mois</TableHead>
@@ -63,9 +63,13 @@ export function MonthlyTable({
         </TableHeader>
         <TableBody>
           {ordered.map(({ r, prev }) => (
-            <TableRow key={r.month} className={cn(r.month === selected && 'bg-primary-tint/50')}>
-              <TableCell className="font-medium">
-                <Link href={`/stats?month=${r.month}`} className="capitalize hover:underline">
+            <TableRow key={r.month} data-state={r.month === selected ? 'selected' : undefined}>
+              <TableCell className="whitespace-nowrap font-medium">
+                <Link
+                  href={`/stats?month=${r.month}`}
+                  aria-current={r.month === selected ? 'true' : undefined}
+                  className="rounded-sm capitalize hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
                   {labels[r.month] ?? r.month}
                 </Link>
                 {r.month === runningMonth ? (

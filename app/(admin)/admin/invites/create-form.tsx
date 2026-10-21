@@ -1,29 +1,20 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Check, Copy, Mail } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { adminCreateInviteAction, type CreateInviteState } from './actions';
 
 const initial: CreateInviteState = { error: null, url: null, expiresAt: null };
 
-function Submit() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" loading={pending}>
-      <Mail aria-hidden />
-      Créer
-    </Button>
-  );
-}
-
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <Button
       type="button"
@@ -32,56 +23,97 @@ function CopyButton({ value }: { value: string }) {
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(value);
+          setFailed(false);
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         } catch {
-          /* noop */
+          setFailed(true);
         }
       }}
-      aria-label="Copier le lien"
     >
       {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
-      {copied ? 'Copié' : 'Copier'}
+      {copied ? 'Copié' : failed ? 'Copie impossible, sélectionnez le lien' : 'Copier le lien'}
     </Button>
   );
 }
 
+function fmtExpiry(iso: string): string {
+  return new Date(iso).toLocaleString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function CreateInviteForm() {
   const [state, action] = useActionState(adminCreateInviteAction, initial);
+  const fe = state.fieldErrors ?? {};
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Créer une invitation médecin</CardTitle>
+        <CardTitle>Nouvelle invitation médecin</CardTitle>
+        <CardDescription>
+          Le médecin reçoit un lien pour créer son compte et son cabinet.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <form action={action} className="flex flex-wrap items-end gap-2">
-          <FormField label="Email" className="flex-1 min-w-[240px]">
+      <CardContent className="space-y-4">
+        <form
+          action={action}
+          className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_auto] sm:items-start"
+        >
+          <FormField label="Email" error={fe.email}>
             <Input
               id="email"
               name="email"
               type="email"
+              inputMode="email"
               required
-              autoComplete="email"
+              autoComplete="off"
               placeholder="dr@cabinet.ma"
+              defaultValue={state.values?.email ?? ''}
             />
           </FormField>
-          <FormField label="Validité (jours)" className="w-32">
-            <Input id="days" name="days" type="number" min="1" max="30" defaultValue="7" />
+          <FormField label="Validité (jours)" error={fe.days}>
+            <Input
+              id="days"
+              name="days"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max="30"
+              defaultValue={state.values?.days ?? '7'}
+            />
           </FormField>
-          <Submit />
+          {/* Aligns with the inputs (label height + gap). */}
+          <div className="sm:pt-[1.375rem]">
+            <SubmitButton className="w-full sm:w-auto" pendingLabel="Création…">
+              <Mail aria-hidden />
+              Créer l&apos;invitation
+            </SubmitButton>
+          </div>
         </form>
+
         {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
+
         {state.url ? (
           <Alert variant="success" title="Invitation créée">
-            <div className="space-y-2 mt-2">
-              <code className="block break-all text-small bg-card border border-border rounded-md px-2 py-1.5 text-foreground">
+            <div className="mt-1 space-y-2">
+              <p>
+                Envoyez ce lien à{' '}
+                <span className="font-medium text-foreground">{state.email}</span>. Il n&apos;est
+                affiché qu&apos;une fois.
+              </p>
+              <code className="block rounded-md border border-border bg-card px-2 py-1.5 text-small break-all text-foreground select-all">
                 {state.url}
               </code>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 <CopyButton value={state.url} />
-                <span className="text-small text-muted-foreground tabular-nums">
-                  Expire le {new Date(state.expiresAt!).toLocaleString('fr-FR')}
-                </span>
+                {state.expiresAt ? (
+                  <span className="text-small text-muted-foreground tabular-nums">
+                    Expire le {fmtExpiry(state.expiresAt)}
+                  </span>
+                ) : null}
               </div>
             </div>
           </Alert>

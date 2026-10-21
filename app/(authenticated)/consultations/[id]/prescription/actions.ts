@@ -1,12 +1,16 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 import { requireDoctor } from '@/lib/auth/guards';
 import {
   addItemSchema,
   itemIdSchema,
   reorderSchema,
   updateItemSchema,
+  type AddItemInput,
+  type ReorderInput,
+  type UpdateItemInput,
 } from '@/lib/prescriptions/schemas';
 import {
   addPrescriptionItem,
@@ -15,21 +19,40 @@ import {
   updatePrescriptionItem,
 } from '@/lib/prescriptions/mutations';
 import { recordAudit } from '@/lib/audit/record';
+import { firstIssueFr } from '@/lib/zod-fr';
 
-export async function addItemActionFromForm(formData: FormData): Promise<void> {
+/**
+ * Every prescription action reports failures to the editor instead of
+ * returning silently — the doctor must know when a line wasn't saved.
+ */
+export type PrescriptionActionResult = { ok: boolean; error?: string };
+
+const PRESCRIPTION_LABELS: Record<string, string> = {
+  label: 'Médicament',
+  posologie: 'Posologie',
+  duration: 'Durée',
+  quantity: 'Quantité',
+  instructions: 'Notes',
+  medicationMetadata: 'Médicament',
+  medicationEan13: 'Médicament',
+};
+
+const consultationIdSchema = z.string().uuid();
+
+function invalid(error: z.ZodError): PrescriptionActionResult {
+  return { ok: false, error: firstIssueFr(error, PRESCRIPTION_LABELS) };
+}
+
+export async function addItemAction(input: AddItemInput): Promise<PrescriptionActionResult> {
   const session = await requireDoctor();
-  const parsed = addItemSchema.safeParse({
-    consultationId: formData.get('consultationId'),
-    medicationEan13: formData.get('medicationEan13'),
-    medicationMetadata: formData.get('medicationMetadata'),
-    label: formData.get('label'),
-    posologie: formData.get('posologie'),
-    duration: formData.get('duration'),
-    quantity: formData.get('quantity'),
-    instructions: formData.get('instructions'),
-  });
-  if (!parsed.success) return;
-  await addPrescriptionItem(session.tenantId, session.userId, parsed.data);
+  const parsed = addItemSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  try {
+    await addPrescriptionItem(session.tenantId, session.userId, parsed.data);
+  } catch (e) {
+    console.error('[addItemAction] failed', e);
+    return { ok: false, error: "Impossible d'ajouter le médicament. Réessayez." };
+  }
   await recordAudit({
     tenantId: session.tenantId,
     actorUserId: session.userId,
@@ -39,40 +62,54 @@ export async function addItemActionFromForm(formData: FormData): Promise<void> {
     metadata: { medicationEan13: parsed.data.medicationEan13 || null },
   });
   revalidatePath(`/consultations/${parsed.data.consultationId}`);
+  return { ok: true };
 }
 
-export async function updateItemAction(formData: FormData): Promise<void> {
+export async function updateItemAction(
+  consultationId: string,
+  input: UpdateItemInput,
+): Promise<PrescriptionActionResult> {
   const session = await requireDoctor();
-  const parsed = updateItemSchema.safeParse({
-    itemId: formData.get('itemId'),
-    posologie: formData.get('posologie'),
-    duration: formData.get('duration'),
-    quantity: formData.get('quantity'),
-    instructions: formData.get('instructions'),
-  });
-  const consultationId = formData.get('consultationId');
-  if (!parsed.success || typeof consultationId !== 'string') return;
-  await updatePrescriptionItem(session.tenantId, parsed.data);
-  revalidatePath(`/consultations/${consultationId}`);
+  const cid = consultationIdSchema.safeParse(consultationId);
+  if (!cid.success) return { ok: false, error: 'Consultation invalide.' };
+  const parsed = updateItemSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const ok = await updatePrescriptionItem(session.tenantId, parsed.data);
+  if (!ok) return { ok: false, error: 'Médicament introuvable (déjà retiré ?).' };
+  revalidatePath(`/consultations/${cid.data}`);
+  return { ok: true };
 }
 
-export async function removeItemAction(formData: FormData): Promise<void> {
+export async function removeItemAction(
+  consultationId: string,
+  itemId: string,
+): Promise<PrescriptionActionResult> {
   const session = await requireDoctor();
-  const parsed = itemIdSchema.safeParse({ itemId: formData.get('itemId') });
-  const consultationId = formData.get('consultationId');
-  if (!parsed.success || typeof consultationId !== 'string') return;
-  await removePrescriptionItem(session.tenantId, parsed.data.itemId);
-  revalidatePath(`/consultations/${consultationId}`);
+  const cid = consultationIdSchema.safeParse(consultationId);
+  if (!cid.success) return { ok: false, error: 'Consultation invalide.' };
+  const parsed = itemIdSchema.safeParse({ itemId });
+  if (!parsed.success) return invalid(parsed.error);
+  const ok = await removePrescriptionItem(session.tenantId, parsed.data.itemId);
+  if (!ok) return { ok: false, error: 'Médicament introuvable (déjà retiré ?).' };
+  revalidatePath(`/consultations/${cid.data}`);
+  return { ok: true };
 }
 
-export async function reorderItemAction(formData: FormData): Promise<void> {
+export async function reorderItemAction(
+  consultationId: string,
+  input: ReorderInput,
+): Promise<PrescriptionActionResult> {
   const session = await requireDoctor();
-  const parsed = reorderSchema.safeParse({
-    itemId: formData.get('itemId'),
-    direction: formData.get('direction'),
-  });
-  const consultationId = formData.get('consultationId');
-  if (!parsed.success || typeof consultationId !== 'string') return;
-  await reorderPrescriptionItem(session.tenantId, parsed.data.itemId, parsed.data.direction);
-  revalidatePath(`/consultations/${consultationId}`);
+  const cid = consultationIdSchema.safeParse(consultationId);
+  if (!cid.success) return { ok: false, error: 'Consultation invalide.' };
+  const parsed = reorderSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const ok = await reorderPrescriptionItem(
+    session.tenantId,
+    parsed.data.itemId,
+    parsed.data.direction,
+  );
+  if (!ok) return { ok: false, error: 'Impossible de déplacer ce médicament.' };
+  revalidatePath(`/consultations/${cid.data}`);
+  return { ok: true };
 }

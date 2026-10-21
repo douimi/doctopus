@@ -43,6 +43,7 @@ export function PatientHistoryPanel({
   updatedAt,
   latestNote,
   canEdit,
+  hideAllergies = false,
   className,
 }: {
   patientId: string;
@@ -53,6 +54,8 @@ export function PatientHistoryPanel({
   /** Last per-consultation history note — offered as a one-click import when the record is empty. */
   latestNote?: { consultedAt: Date; text: string } | null;
   canEdit: boolean;
+  /** Set when allergies are shown (and edited) right next to this panel. */
+  hideAllergies?: boolean;
   className?: string;
 }) {
   const router = useRouter();
@@ -89,11 +92,11 @@ export function PatientHistoryPanel({
   return (
     <section
       aria-labelledby={`history-${patientId}`}
-      className={cn('rounded-xl border border-border bg-card shadow-card flex flex-col', className)}
+      className={cn('panel flex flex-col', className)}
     >
-      <header className="border-b border-border px-4 py-3 flex items-center justify-between gap-2 bg-muted/30">
+      <header className="border-b border-border px-4 py-2.5 flex items-center justify-between gap-2">
         <h2 id={`history-${patientId}`} className="flex items-center gap-2 text-heading font-semibold leading-none">
-          <ClipboardList className="size-4 text-primary" aria-hidden />
+          <ClipboardList className="size-4 text-subtle-foreground" aria-hidden />
           Antécédents
         </h2>
         {canEdit && !editing ? (
@@ -105,8 +108,9 @@ export function PatientHistoryPanel({
       </header>
 
       <div className="p-4 space-y-3 overflow-auto min-h-0">
+        {!hideAllergies || conditions.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
-          {allergies.length > 0 ? (
+          {hideAllergies ? null : allergies.length > 0 ? (
             allergies.map((a) => (
               <StatusBadge key={`a-${a}`} variant="danger" icon={AlertTriangle}>
                 Allergie : {a}
@@ -123,6 +127,7 @@ export function PatientHistoryPanel({
             </StatusBadge>
           ))}
         </div>
+        ) : null}
 
         {editing ? (
           <div className="space-y-3">
@@ -141,7 +146,7 @@ export function PatientHistoryPanel({
               </div>
             ))}
             {error ? (
-              <p role="alert" className="text-small text-danger">
+              <p role="alert" className="text-small text-danger-ink">
                 {error}
               </p>
             ) : null}
@@ -187,7 +192,7 @@ export function PatientHistoryPanel({
             ) : null}
             {showImport ? (
               <div className="rounded-lg border border-info/20 bg-info-tint p-3 space-y-2">
-                <p className="flex items-center gap-1.5 text-small font-medium text-info">
+                <p className="flex items-center gap-1.5 text-small font-medium text-info-ink">
                   <History className="size-3.5" aria-hidden />
                   Noté lors de la consultation du {fmtDate(latestNote.consultedAt)}
                 </p>

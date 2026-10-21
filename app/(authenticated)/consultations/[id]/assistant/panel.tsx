@@ -4,21 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { KeyRound, Search, Send, Sparkles } from 'lucide-react';
+import { Search, Send, Sparkles, X } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCockpit } from '@/components/consultations/cockpit-context';
 import { DisclaimerModal } from './disclaimer-modal';
-
-type State =
-  | { kind: 'disabled' }
-  | { kind: 'no_api_key' }
-  | { kind: 'no_credits'; balance: number }
-  | {
-      kind: 'ready';
-      balance: number;
-      disclaimerAcknowledged: boolean;
-    };
+import type { AssistantState } from './state';
 
 function ChatPanel({
   consultationId,
@@ -30,7 +22,10 @@ function ChatPanel({
   disclaimerAcknowledged: boolean;
 }) {
   const [input, setInput] = useState('');
+  const [acknowledged, setAcknowledged] = useState(disclaimerAcknowledged);
+  const [pendingText, setPendingText] = useState<string | null>(null);
   const router = useRouter();
+  const { setAiOpen } = useCockpit();
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -64,14 +59,37 @@ function ChatPanel({
     e.preventDefault();
     const text = input.trim();
     if (!text || isStreaming) return;
+    if (!acknowledged) {
+      // First use: show the data-sharing note, send once acknowledged.
+      setPendingText(text);
+      return;
+    }
     setInput('');
     void sendMessage({ text });
   }
 
+  function onAcknowledged() {
+    setAcknowledged(true);
+    const text = pendingText;
+    setPendingText(null);
+    if (text) {
+      setInput('');
+      void sendMessage({ text });
+    }
+  }
+
   return (
-    <aside className="rounded-xl border border-border bg-card shadow-card flex flex-col h-full max-h-[calc(100vh-8rem)] overflow-hidden">
-      <DisclaimerModal initiallyAcknowledged={disclaimerAcknowledged} />
-      <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2 bg-muted/30">
+    <section className="panel relative flex h-full flex-col overflow-hidden">
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
+      />
+      <DisclaimerModal
+        open={pendingText !== null}
+        onCancel={() => setPendingText(null)}
+        onAcknowledged={onAcknowledged}
+      />
+      <div className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span
             aria-hidden
@@ -81,8 +99,19 @@ function ChatPanel({
           </span>
           <span className="text-heading font-semibold leading-none">Assistant IA</span>
         </div>
-        <span className="text-small text-muted-foreground tabular-nums">
-          ~{balance} consultations restantes
+        <span className="flex items-center gap-1">
+          <span className="text-small text-muted-foreground tabular-nums">
+            ~{balance} consultations restantes
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Fermer l'assistant IA"
+            onClick={() => setAiOpen(false)}
+          >
+            <X aria-hidden />
+          </Button>
         </span>
       </div>
 
@@ -126,8 +155,8 @@ function ChatPanel({
                           key={i}
                           className={
                             isDone
-                              ? 'inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-pill bg-success-tint text-success border border-success/20'
-                              : 'inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-pill bg-primary-tint text-primary border border-primary/20'
+                              ? 'inline-flex items-center gap-1.5 text-micro px-2 py-0.5 rounded-pill bg-success-tint text-success-ink border border-success/20'
+                              : 'inline-flex items-center gap-1.5 text-micro px-2 py-0.5 rounded-pill bg-primary-tint text-primary-ink border border-primary/20'
                           }
                         >
                           <Search className="size-3" aria-hidden />
@@ -164,7 +193,7 @@ function ChatPanel({
 
       <form
         onSubmit={handleSubmit}
-        className="border-t border-border flex gap-2 p-3 bg-muted/30"
+        className="border-t border-border flex gap-2 p-3 bg-canvas"
       >
         <Input
           value={input}
@@ -184,73 +213,23 @@ function ChatPanel({
           Envoyer
         </Button>
       </form>
-    </aside>
+    </section>
   );
 }
 
+/**
+ * Renders the chat only when the assistant is ready. Other states are
+ * surfaced as a disabled header icon with a tooltip (see AiToggle), not
+ * as a card occupying a column.
+ */
 export function AssistantPanel({
   consultationId,
   state,
 }: {
   consultationId: string;
-  state: State;
+  state: AssistantState;
 }) {
-  if (state.kind === 'disabled') {
-    return (
-      <aside className="rounded-xl border border-border bg-card shadow-card p-4 space-y-2">
-        <div className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="inline-flex items-center justify-center size-6 rounded-md bg-muted text-muted-foreground"
-          >
-            <Sparkles className="size-3.5" aria-hidden />
-          </span>
-          <div className="text-heading font-semibold leading-none">Assistant IA</div>
-        </div>
-        <p className="text-body text-muted-foreground">
-          Assistant IA non activé pour ce cabinet. Contactez le support.
-        </p>
-      </aside>
-    );
-  }
-  if (state.kind === 'no_api_key') {
-    return (
-      <aside className="rounded-xl border border-border bg-card shadow-card p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="inline-flex items-center justify-center size-6 rounded-md bg-warning-tint text-warning"
-          >
-            <KeyRound className="size-3.5" aria-hidden />
-          </span>
-          <div className="text-heading font-semibold leading-none">Assistant IA</div>
-        </div>
-        <Alert variant="warning" title="Clé API non configurée">
-          Aucune clé API n&apos;est associée à votre cabinet. Contactez votre administrateur
-          pour activer l&apos;assistant IA.
-        </Alert>
-      </aside>
-    );
-  }
-  if (state.kind === 'no_credits') {
-    return (
-      <aside className="rounded-xl border border-border bg-card shadow-card p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="inline-flex items-center justify-center size-6 rounded-md bg-primary-tint text-primary"
-          >
-            <Sparkles className="size-3.5" aria-hidden />
-          </span>
-          <div className="text-heading font-semibold leading-none">Assistant IA</div>
-        </div>
-        <Alert variant="danger" title="Crédits IA épuisés">
-          Contactez votre administrateur pour recharger.
-        </Alert>
-      </aside>
-    );
-  }
-
+  if (state.kind !== 'ready') return null;
   return (
     <ChatPanel
       consultationId={consultationId}

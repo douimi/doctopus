@@ -3,11 +3,21 @@
 import Image from 'next/image';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Sparkles, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert } from '@/components/ui/alert';
 import { FormField } from '@/components/ui/form-field';
+import { StatusBadge } from '@/components/ui/status-badge';
 import {
   saveCabinetTextAction,
   uploadSignatureAction,
@@ -32,9 +42,66 @@ function TextSubmit() {
 function UploadSubmit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" loading={pending}>
+    <Button type="submit" size="sm" variant="secondary" loading={pending}>
+      {pending ? null : <Upload aria-hidden />}
       {label}
     </Button>
+  );
+}
+
+/** One image slot (signature / cachet / logo): preview + upload form. */
+function ImageUpload({
+  title,
+  url,
+  alt,
+  width,
+  height,
+  emptyLabel,
+  action,
+  state,
+  submitLabel,
+}: {
+  title: string;
+  url: string | null;
+  alt: string;
+  width: number;
+  height: number;
+  emptyLabel: string;
+  action: (formData: FormData) => void;
+  state: UploadState;
+  submitLabel: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      <div className="text-small font-medium text-foreground">{title}</div>
+      <div className="flex h-28 items-center justify-center rounded-lg border border-dashed border-border-strong bg-canvas p-2">
+        {url ? (
+          <Image
+            src={url}
+            alt={alt}
+            width={width}
+            height={height}
+            className="max-h-full w-auto object-contain"
+            unoptimized
+          />
+        ) : (
+          <span className="text-small text-subtle-foreground">{emptyLabel}</span>
+        )}
+      </div>
+      <form action={action} className="space-y-2">
+        <Input
+          type="file"
+          name="file"
+          accept="image/png,image/jpeg"
+          required
+          aria-label={`Fichier — ${title}`}
+          className="h-auto py-1.5"
+        />
+        {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
+        {state.uploaded ? <Alert variant="success">Mise à jour.</Alert> : null}
+        <UploadSubmit label={submitLabel} />
+      </form>
+    </div>
   );
 }
 
@@ -59,128 +126,136 @@ export function CabinetForms({
 
   return (
     <div className="space-y-6">
-      <form action={textAction} className="space-y-3">
-        <FormField
-          label="Code INPE"
-          description="Identifiant National des Professionnels de Santé. Apparaît sur les ordonnances."
-        >
-          <Input
-            id="inpeNumber"
-            name="inpeNumber"
-            defaultValue={initial.inpeNumber}
-            placeholder="ex. 12345678"
-            autoComplete="off"
-          />
-        </FormField>
-        <FormField label="En-tête personnalisé (texte ou HTML)">
-          <Textarea
-            id="prescriptionHeaderHtml"
-            name="prescriptionHeaderHtml"
-            rows={3}
-            defaultValue={initial.prescriptionHeaderHtml}
-          />
-        </FormField>
-        <FormField
-          label="Tarif par défaut (MAD)"
-          description="Prefille le champ Prix lors de la clôture des consultations."
-        >
-          <Input
-            id="defaultConsultationPriceMad"
-            name="defaultConsultationPriceMad"
-            type="number"
-            step="any"
-            min="0.01"
-            max="99999.99"
-            inputMode="decimal"
-            placeholder="300"
-            defaultValue={initial.defaultConsultationPriceMad}
-          />
-        </FormField>
-        {textState.error ? <Alert variant="danger">{textState.error}</Alert> : null}
-        {textState.saved ? <Alert variant="success">Enregistré.</Alert> : null}
-        <TextSubmit />
+      <form action={textAction}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Ordonnance et tarif</CardTitle>
+            <CardDescription>Ces informations apparaissent sur vos ordonnances.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                label="Code INPE"
+                description="Identifiant National des Professionnels de Santé."
+              >
+                <Input
+                  id="inpeNumber"
+                  name="inpeNumber"
+                  defaultValue={initial.inpeNumber}
+                  placeholder="ex. 12345678"
+                  autoComplete="off"
+                />
+              </FormField>
+              <FormField
+                label="Tarif par défaut (MAD)"
+                description="Pré-remplit le prix à la clôture des consultations."
+              >
+                <Input
+                  id="defaultConsultationPriceMad"
+                  name="defaultConsultationPriceMad"
+                  type="number"
+                  step="any"
+                  min="0.01"
+                  max="99999.99"
+                  inputMode="decimal"
+                  placeholder="300"
+                  defaultValue={initial.defaultConsultationPriceMad}
+                />
+              </FormField>
+            </div>
+            <FormField label="En-tête personnalisé" description="Texte ou HTML, affiché en haut de l'ordonnance.">
+              <Textarea
+                id="prescriptionHeaderHtml"
+                name="prescriptionHeaderHtml"
+                rows={3}
+                defaultValue={initial.prescriptionHeaderHtml}
+              />
+            </FormField>
+            {textState.error ? <Alert variant="danger">{textState.error}</Alert> : null}
+            {textState.saved ? <Alert variant="success">Enregistré.</Alert> : null}
+          </CardContent>
+          <CardFooter>
+            <TextSubmit />
+          </CardFooter>
+        </Card>
       </form>
 
-      <hr className="border-border" />
-
-      <div className="space-y-2">
-        <div className="font-medium">Assistant IA</div>
-        {initial.chatbotEnabled ? (
-          <p className="text-body">Crédits IA : ~{initial.chatbotCreditsBalance} consultations restantes.</p>
-        ) : (
-          <p className="text-body text-muted-foreground">
-            Non activé. Contactez l&apos;administrateur de la plateforme pour activer l&apos;assistant.
-          </p>
-        )}
-        <p className="text-small text-muted-foreground">
-          Doctopus utilise des fournisseurs d&apos;IA (Anthropic, OpenAI, Mistral) comme sous-traitants pour
-          l&apos;assistant. Le contexte clinique du patient (sans nom, CIN, téléphone ni adresse) leur est
-          transmis. Aucune donnée n&apos;est utilisée pour entraîner leurs modèles.
-        </p>
-      </div>
-
-      <hr className="border-border" />
-
-      <div className="grid grid-cols-3 gap-6">
-        <div className="space-y-2">
-          <div className="font-medium">Signature</div>
-          {initial.signatureUrl ? (
-            <Image
-              src={initial.signatureUrl}
-              alt="signature"
+      <Card>
+        <CardHeader>
+          <CardTitle>Signature, cachet et logo</CardTitle>
+          <CardDescription>Images PNG ou JPEG, apposées sur les ordonnances imprimées.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <ImageUpload
+              title="Signature"
+              url={initial.signatureUrl}
+              alt="Signature"
               width={160}
               height={80}
-              className="border border-border rounded"
-              unoptimized
+              emptyLabel="Aucune signature"
+              action={sigAction}
+              state={sigState}
+              submitLabel="Téléverser"
             />
-          ) : (
-            <p className="text-body text-muted-foreground">Aucune signature.</p>
-          )}
-          <form action={sigAction} className="space-y-2">
-            <Input type="file" name="file" accept="image/png,image/jpeg" required />
-            {sigState.error ? <Alert variant="danger">{sigState.error}</Alert> : null}
-            {sigState.uploaded ? <Alert variant="success">Mise à jour.</Alert> : null}
-            <UploadSubmit label="Téléverser la signature" />
-          </form>
-        </div>
-
-        <div className="space-y-2">
-          <div className="font-medium">Cachet</div>
-          {initial.stampUrl ? (
-            <Image
-              src={initial.stampUrl}
-              alt="cachet"
+            <ImageUpload
+              title="Cachet"
+              url={initial.stampUrl}
+              alt="Cachet"
               width={120}
               height={120}
-              className="border border-border rounded"
-              unoptimized
+              emptyLabel="Aucun cachet"
+              action={stampAction}
+              state={stampState}
+              submitLabel="Téléverser"
             />
-          ) : (
-            <p className="text-body text-muted-foreground">Aucun cachet.</p>
-          )}
-          <form action={stampAction} className="space-y-2">
-            <Input type="file" name="file" accept="image/png,image/jpeg" required />
-            {stampState.error ? <Alert variant="danger">{stampState.error}</Alert> : null}
-            {stampState.uploaded ? <Alert variant="success">Mise à jour.</Alert> : null}
-            <UploadSubmit label="Téléverser le cachet" />
-          </form>
-        </div>
+            <ImageUpload
+              title="Logo"
+              url={initial.logoUrl}
+              alt="Logo"
+              width={120}
+              height={80}
+              emptyLabel="Aucun logo"
+              action={logoAction}
+              state={logoState}
+              submitLabel="Téléverser"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="space-y-2">
-          <div className="font-medium">Logo</div>
-          {initial.logoUrl ? (
-            <Image src={initial.logoUrl} alt="logo" width={120} height={80} className="border border-border rounded" unoptimized />
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="size-4 text-subtle-foreground" aria-hidden />
+            Assistant IA
+            {initial.chatbotEnabled ? (
+              <StatusBadge variant="success" dot>
+                Activé
+              </StatusBadge>
+            ) : (
+              <StatusBadge variant="neutral">Non activé</StatusBadge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {initial.chatbotEnabled ? (
+            <p className="text-body text-foreground">
+              Crédits IA : <span className="tabular-nums">~{initial.chatbotCreditsBalance}</span>{' '}
+              consultations restantes.
+            </p>
           ) : (
-            <p className="text-body text-muted-foreground">Aucun logo.</p>
+            <p className="text-body text-muted-foreground">
+              Contactez l&apos;administrateur de la plateforme pour activer l&apos;assistant.
+            </p>
           )}
-          <form action={logoAction} className="space-y-2">
-            <Input type="file" name="file" accept="image/png,image/jpeg" required />
-            {logoState.error ? <Alert variant="danger">{logoState.error}</Alert> : null}
-            {logoState.uploaded ? <Alert variant="success">Mise à jour.</Alert> : null}
-            <UploadSubmit label="Téléverser le logo" />
-          </form>
-        </div>
-      </div>
+          <p className="text-small text-muted-foreground">
+            Doctopus utilise des fournisseurs d&apos;IA (Anthropic, OpenAI, Mistral) comme sous-traitants pour
+            l&apos;assistant. Le contexte clinique du patient (sans nom, CIN, téléphone ni adresse) leur est
+            transmis. Aucune donnée n&apos;est utilisée pour entraîner leurs modèles.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

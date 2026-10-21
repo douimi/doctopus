@@ -1,7 +1,7 @@
-import { Mail, Trash2 } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { listInvitesForAdmin } from '@/lib/admin/queries';
-import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Section } from '@/components/ui/section';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { StatusBadgeProps } from '@/components/ui/status-badge';
 import {
@@ -13,9 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
-import { adminRevokeInviteAction } from './actions';
 import { CreateInviteForm } from './create-form';
+import { RevokeInviteButton } from './revoke-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,92 +28,114 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_VARIANT: Record<string, StatusBadgeProps['variant']> = {
-  pending: 'info',
+  pending: 'warning',
   consumed: 'success',
   expired: 'neutral',
-  revoked: 'danger',
+  revoked: 'neutral',
 };
+
+const KIND_LABEL: Record<string, string> = {
+  tenant_owner: 'Médecin',
+  assistant: 'Assistant(e)',
+};
+
+function fmtDate(d: Date | string): string {
+  return new Date(d).toLocaleString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export default async function AdminInvitesPage() {
   const rows = await listInvitesForAdmin({ limit: 100 });
+  const pending = rows.filter((r) => r.status === 'pending').length;
   return (
     <>
       <PageHeader
         title="Invitations"
-        description="Créez et gérez les invitations médecin pour la plateforme."
+        description="Invitez un médecin à créer son cabinet, et suivez les invitations envoyées."
       />
-      <div className="px-6 py-6 space-y-4">
+      <PageBody>
         <CreateInviteForm />
 
-        <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Cabinet</TableHead>
-                <TableHead>Créée</TableHead>
-                <TableHead>Expire</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 ? (
-                <TableEmpty colSpan={7}>
-                  <EmptyState
-                    icon={Mail}
-                    title="Aucune invitation"
-                    description="Créez une invitation pour commencer."
-                  />
-                </TableEmpty>
-              ) : (
-                rows.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium tabular-nums">
-                      {r.emailHint ?? '—'}
-                    </TableCell>
-                    <TableCell className="text-small text-muted-foreground capitalize">
-                      {r.kind}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge variant={STATUS_VARIANT[r.status]}>
-                        {STATUS_LABEL[r.status]}
-                      </StatusBadge>
-                    </TableCell>
-                    <TableCell className="text-small text-muted-foreground">
-                      {r.tenantName ?? '—'}
-                    </TableCell>
-                    <TableCell className="text-small text-muted-foreground tabular-nums">
-                      {new Date(r.createdAt).toLocaleString('fr-FR')}
-                    </TableCell>
-                    <TableCell className="text-small text-muted-foreground tabular-nums">
-                      {new Date(r.expiresAt).toLocaleString('fr-FR')}
-                    </TableCell>
-                    <TableCell className="text-right pr-3">
-                      {r.status === 'pending' ? (
-                        <form action={adminRevokeInviteAction}>
-                          <input type="hidden" name="inviteId" value={r.id} />
-                          <Button
-                            type="submit"
-                            size="icon-sm"
-                            variant="ghost"
-                            aria-label={`Révoquer l'invitation ${r.emailHint ?? ''}`}
-                            title="Révoquer"
-                            className="text-muted-foreground hover:text-danger"
-                          >
-                            <Trash2 aria-hidden />
-                          </Button>
-                        </form>
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+        <Section
+          title="Invitations envoyées"
+          count={rows.length}
+          description={
+            rows.length > 0
+              ? `${pending} en attente · 100 plus récentes`
+              : undefined
+          }
+        >
+          <div className="panel overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="hidden sm:table-cell">Type</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="hidden md:table-cell">Cabinet</TableHead>
+                  <TableHead className="hidden lg:table-cell">Créée</TableHead>
+                  <TableHead className="hidden md:table-cell">Expire</TableHead>
+                  <TableHead className="w-12">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableEmpty colSpan={7}>
+                    <EmptyState
+                      icon={Mail}
+                      title="Aucune invitation"
+                      description="Créez une première invitation ci-dessus : le lien s'affichera ici pour être copié."
+                    />
+                  </TableEmpty>
+                ) : (
+                  rows.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="max-w-64">
+                        <div className="truncate font-medium text-foreground">
+                          {r.emailHint ?? '—'}
+                        </div>
+                        <div className="text-small text-muted-foreground sm:hidden">
+                          {KIND_LABEL[r.kind] ?? r.kind}
+                          {r.tenantName ? ` · ${r.tenantName}` : ''}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground sm:table-cell">
+                        {KIND_LABEL[r.kind] ?? r.kind}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge variant={STATUS_VARIANT[r.status]}>
+                          {STATUS_LABEL[r.status] ?? r.status}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground md:table-cell">
+                        {r.tenantName ?? '—'}
+                      </TableCell>
+                      <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums lg:table-cell">
+                        {fmtDate(r.createdAt)}
+                      </TableCell>
+                      <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums md:table-cell">
+                        {fmtDate(r.expiresAt)}
+                      </TableCell>
+                      <TableCell className="pr-3 text-right">
+                        {r.status === 'pending' ? (
+                          <RevokeInviteButton inviteId={r.id} email={r.emailHint ?? null} />
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Section>
+      </PageBody>
     </>
   );
 }

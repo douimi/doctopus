@@ -39,13 +39,14 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* Radii — explicit scale (was calc(var(--radius) * n)). Names unchanged. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.25rem;
+  --radius-4xl: 1.5rem;
   --color-primary-hover: var(--primary-hover);
   --color-primary-tint: var(--primary-tint);
   --color-primary-tint-strong: var(--primary-tint-strong);
@@ -73,133 +74,210 @@
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
   --shadow-popover: var(--shadow-popover);
+
+  /* === NEW (v2) === */
+  /* App canvas behind cards (main area). White stays white for cards/inputs. */
+  --color-canvas: var(--canvas);
+  /* Tertiary text: placeholders, disabled meta, separators "·". Not for body copy. */
+  --color-subtle-foreground: var(--subtle-foreground);
+  /* Stronger hairline for inputs-on-hover, table header rule. */
+  --color-border-strong: var(--border-strong);
+  /* "Ink" = AA-safe text colour to put ON a *-tint background (badges, alerts). */
+  --color-primary-ink: var(--primary-ink);
+  --color-success-ink: var(--success-ink);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger-ink: var(--danger-ink);
+  --color-info-ink: var(--info-ink);
+  --color-admin-ink: var(--admin-ink);
+  --shadow-dialog: var(--shadow-dialog);
+}
+
+/* Type scale — MUST live in @theme (not :root) or Tailwind v4 never emits
+   text-display / text-title / text-heading / text-body / text-small.
+   Before this move those 170+ classes compiled to nothing. */
+@theme {
+  --text-display: 1.5rem;
+  --text-display--line-height: 2rem;
+  --text-display--letter-spacing: -0.015em;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.5rem;
+  --text-title--letter-spacing: -0.01em;
+  --text-heading: 0.9375rem;
+  --text-heading--line-height: 1.375rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.375rem;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.125rem;
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1rem;
+  --text-micro--letter-spacing: 0.04em;
 }
 
 :root {
+  /* Neutrals: cool slate (hue ~255) to match the landing's slate-200 borders /
+     slate-900 ink, instead of the old chroma-0 greys. */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.208 0.042 265.755);
+  --canvas: oklch(0.984 0.003 247.858);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.208 0.042 265.755);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* === Phase A primary (sky-blue, replaces neutral primary) === */
-  --primary: oklch(0.588 0.158 241.966);
+  --popover-foreground: oklch(0.208 0.042 265.755);
+  /* Primary: sky-700 (was sky-600 = 4.0:1 with white, fails AA at 14px). Now 5.9:1. */
+  --primary: oklch(0.500 0.134 242.749);
   --primary-foreground: oklch(0.985 0 0);
-  --primary-hover: oklch(0.500 0.134 242.749);
-  --primary-tint: oklch(0.951 0.026 236.824);
-  --primary-tint-strong: oklch(0.901 0.058 230.902);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --primary-hover: oklch(0.443 0.110 240.790);
+  --primary-tint: oklch(0.977 0.013 236.620);
+  --primary-tint-strong: oklch(0.951 0.026 236.824);
+  --primary-ink: oklch(0.443 0.110 240.790);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.504 0.039 257);
+  --subtle-foreground: oklch(0.600 0.035 257);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --border: oklch(0.929 0.013 255.508);
+  --border-strong: oklch(0.869 0.022 252.894);
+  /* Input border at 3.1:1 on white (WCAG 1.4.11 non-text contrast). */
+  --input: oklch(0.660 0.030 257);
+  /* Focus ring is brand blue now (was neutral grey 0.708 — near invisible). */
+  --ring: oklch(0.588 0.158 241.966);
+  /* Categorical chart palette (was 5 greys, unused). */
+  --chart-1: oklch(0.588 0.158 241.966);
+  --chart-2: oklch(0.596 0.145 163.225);
+  --chart-3: oklch(0.769 0.188 70.080);
+  --chart-4: oklch(0.585 0.233 277.117);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --radius: 0.5rem;
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-primary: oklch(0.500 0.134 242.749);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.588 0.158 241.966);
 
-  /* === Phase A admin accent (orange, used by AdminShell only) === */
+  /* Admin accent (orange) — AdminShell only. Do not use in the doctor app. */
   --admin: oklch(0.646 0.222 41.116);
   --admin-foreground: oklch(0.985 0 0);
   --admin-hover: oklch(0.553 0.195 38.402);
   --admin-tint: oklch(0.954 0.038 75.164);
   --admin-tint-strong: oklch(0.901 0.076 70.697);
+  --admin-ink: oklch(0.470 0.157 37.304);
 
-  /* === Phase A status palette === */
-  --success: oklch(0.626 0.194 149.214);
+  /* Status palette. `*` = fill (dots, bars, solid buttons), `*-tint` = soft bg,
+     `*-ink` = text on tint (all >= 5.8:1). Never put `text-warning` on a tint. */
+  --success: oklch(0.596 0.145 163.225);
   --success-foreground: oklch(0.985 0 0);
-  --success-tint: oklch(0.962 0.045 156.743);
+  --success-tint: oklch(0.979 0.021 166.113);
+  --success-ink: oklch(0.432 0.095 166.913);
 
   --warning: oklch(0.769 0.188 70.080);
-  --warning-foreground: oklch(0.205 0 0);
+  --warning-foreground: oklch(0.208 0.042 265.755);
   --warning-tint: oklch(0.987 0.022 95.277);
+  --warning-ink: oklch(0.473 0.137 46.201);
 
   --danger: oklch(0.577 0.245 27.325);
   --danger-foreground: oklch(0.985 0 0);
   --danger-tint: oklch(0.971 0.013 17.380);
+  --danger-ink: oklch(0.505 0.213 27.518);
 
   --info: var(--primary);
   --info-foreground: var(--primary-foreground);
   --info-tint: var(--primary-tint);
+  --info-ink: var(--primary-ink);
 
-  /* === Brand yellow (from logo accent) — used sparingly for highlights === */
+  /* Brand yellow (logo accent) — highlights only. */
   --brand-yellow: oklch(0.831 0.176 84.429);
   --brand-yellow-tint: oklch(0.973 0.057 96.176);
 
-  /* === Phase A type scale (Tailwind v4 uses DOUBLE-hyphen for line-height modifier) === */
-  --text-display: 1.875rem;
-  --text-display--line-height: 2.25rem;
-  --text-title: 1.25rem;
-  --text-title--line-height: 1.75rem;
-  --text-heading: 1rem;
-  --text-heading--line-height: 1.5rem;
-  --text-body: 0.875rem;
-  --text-body--line-height: 1.25rem;
-  --text-small: 0.75rem;
-  --text-small--line-height: 1rem;
-
-  /* === Phase A radius === */
   --radius-tight: 0.25rem;
   --radius-pill: 9999px;
 
-  /* === Phase A shadows === */
-  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
-  --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 8px 16px -4px rgb(0 0 0 / 0.08), 0 0 0 1px rgb(0 0 0 / 0.04);
-  --shadow-popover: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  /* Elevation: borders do the work, shadows only whisper. Tinted with slate. */
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-card-hover: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 4px 12px -2px rgb(15 23 42 / 0.08);
+  --shadow-popover: 0 0 0 1px rgb(15 23 42 / 0.06), 0 8px 24px -6px rgb(15 23 42 / 0.16);
+  --shadow-dialog: 0 0 0 1px rgb(15 23 42 / 0.06), 0 24px 48px -12px rgb(15 23 42 / 0.25);
 
-  /* === Phase A motion === */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 120ms;
   --duration-base: 200ms;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.215 0.025 262);
+  --foreground: oklch(0.968 0.007 247.896);
+  --canvas: oklch(0.170 0.020 262);
+  --card: oklch(0.215 0.025 262);
+  --card-foreground: oklch(0.968 0.007 247.896);
+  --popover: oklch(0.235 0.027 262);
+  --popover-foreground: oklch(0.968 0.007 247.896);
+  /* Dark primary keeps the brand hue (was neutral grey 0.922). */
+  --primary: oklch(0.746 0.160 232.661);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --primary-hover: oklch(0.828 0.111 230.318);
+  --primary-tint: oklch(0.270 0.050 240);
+  --primary-tint-strong: oklch(0.320 0.070 240);
+  --primary-ink: oklch(0.828 0.111 230.318);
+  --secondary: oklch(0.260 0.025 262);
+  --secondary-foreground: oklch(0.968 0.007 247.896);
+  --muted: oklch(0.260 0.025 262);
+  --muted-foreground: oklch(0.711 0.035 256.788);
+  --subtle-foreground: oklch(0.600 0.030 257);
+  --accent: oklch(0.260 0.025 262);
+  --accent-foreground: oklch(0.968 0.007 247.896);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: oklch(0.300 0.025 262);
+  --border-strong: oklch(0.370 0.028 262);
+  --input: oklch(0.450 0.030 262);
+  --ring: oklch(0.746 0.160 232.661);
+  --chart-1: oklch(0.746 0.160 232.661);
+  --chart-2: oklch(0.765 0.177 163.223);
+  --chart-3: oklch(0.828 0.189 84.429);
+  --chart-4: oklch(0.673 0.182 276.935);
+  --chart-5: oklch(0.712 0.194 13.428);
+  --sidebar: oklch(0.195 0.022 262);
+  --sidebar-foreground: oklch(0.968 0.007 247.896);
+  --sidebar-primary: oklch(0.746 0.160 232.661);
+  --sidebar-primary-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-accent: oklch(0.260 0.025 262);
+  --sidebar-accent-foreground: oklch(0.968 0.007 247.896);
+  --sidebar-border: oklch(0.300 0.025 262);
+  --sidebar-ring: oklch(0.746 0.160 232.661);
+
+  --admin: oklch(0.750 0.183 55.934);
+  --admin-foreground: oklch(0.208 0.042 265.755);
+  --admin-hover: oklch(0.837 0.128 66.290);
+  --admin-tint: oklch(0.280 0.050 50);
+  --admin-tint-strong: oklch(0.330 0.070 50);
+  --admin-ink: oklch(0.837 0.128 66.290);
+
+  --success: oklch(0.765 0.177 163.223);
+  --success-foreground: oklch(0.208 0.042 265.755);
+  --success-tint: oklch(0.270 0.050 165);
+  --success-ink: oklch(0.845 0.143 164.978);
+
+  --warning: oklch(0.828 0.189 84.429);
+  --warning-foreground: oklch(0.208 0.042 265.755);
+  --warning-tint: oklch(0.280 0.050 70);
+  --warning-ink: oklch(0.879 0.169 91.605);
+
+  --danger: oklch(0.704 0.191 22.216);
+  --danger-foreground: oklch(0.208 0.042 265.755);
+  --danger-tint: oklch(0.270 0.060 25);
+  --danger-ink: oklch(0.808 0.114 19.571);
+
+  --brand-yellow: oklch(0.852 0.199 91.936);
+  --brand-yellow-tint: oklch(0.300 0.060 90);
+
+  --shadow-card: 0 0 0 1px rgb(0 0 0 / 0.2);
+  --shadow-card-hover: 0 0 0 1px rgb(0 0 0 / 0.2), 0 6px 16px -4px rgb(0 0 0 / 0.5);
+  --shadow-popover: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 28px -6px rgb(0 0 0 / 0.6);
+  --shadow-dialog: 0 0 0 1px rgb(255 255 255 / 0.06), 0 24px 48px -12px rgb(0 0 0 / 0.7);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -217,17 +295,43 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Inter: disambiguated digits (cv01 1, cv09 flat-top 3) + straight l (cv05)
+       help read doses, BP and phone numbers. */
+    font-feature-settings: "cv01", "cv05", "cv09";
   }
   html {
     @apply font-sans;
   }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  ::selection {
+    background-color: var(--primary-tint-strong);
+  }
+}
+
+/* Single source for the bordered white surface that is currently copy-pasted
+   ~45 times as "rounded-xl border border-border bg-card shadow-card ...". */
+@utility panel {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--shadow-card);
+}
+
+/* Section-label style for column headers, KPI labels, nav group labels. */
+@utility eyebrow {
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--muted-foreground);
 }
 
 @layer utilities {
-  /* Stripe-inspired light landing surface — soft pastel mesh of sky,
-     indigo and rose washes layered on a near-white base. Replaces the
-     dark theme; pairs with dark MockupFrames that now look like real
-     screen captures on a polished marketing page. */
+  /* Stripe-inspired light landing surface — unchanged. */
   .bg-landing-surface {
     background-color: oklch(0.985 0.005 240);
     background-image:
@@ -237,18 +341,12 @@
     background-attachment: fixed, fixed, fixed;
   }
 
-  /* Subtle dotted-grid texture for app surface — adds depth without noise */
+  /* App canvas. Dotted grid removed: it reads as noise after hours of use
+     and sat under a white header band, doubling the visual layers. */
   .bg-app-surface {
-    background-color: var(--muted);
-    background-image: radial-gradient(
-      circle at 1px 1px,
-      oklch(0 0 0 / 0.04) 1px,
-      transparent 0
-    );
-    background-size: 24px 24px;
+    background-color: var(--canvas);
   }
 
-  /* Mobile-nav drawer slide-in */
   @keyframes doctopus-drawer-in {
     from {
       transform: translateX(-100%);
@@ -258,7 +356,6 @@
     }
   }
 
-  /* Toast slide-in (used by <Toaster />) */
   @keyframes doctopus-toast-in {
     from {
       opacity: 0;
@@ -270,13 +367,13 @@
     }
   }
 
-  /* Card hover lift — subtle elevation transition */
+  /* Hover lift — ONLY for clickable cards (links). Not for static KPI tiles. */
   .card-hover-lift {
     transition: box-shadow var(--duration-base) var(--ease-out),
-      transform var(--duration-base) var(--ease-out);
+      border-color var(--duration-base) var(--ease-out);
   }
   .card-hover-lift:hover {
     box-shadow: var(--shadow-card-hover);
-    transform: translateY(-1px);
+    border-color: var(--border-strong);
   }
 }

@@ -43,8 +43,12 @@ test('doctor walks-in a patient, runs and finalizes a consultation', async ({ pa
   // 5. Wait for auto-save (1.5s + grace)
   await expect(page.getByText('Enregistré').first()).toBeVisible({ timeout: 8000 });
 
-  // 6. Finalize
+  // 6. Finalize: the header button opens the summary dialog (which
+  //    flushes the editor); price it and confirm with the dialog's submit.
   await page.getByRole('button', { name: /Terminer la consultation/ }).click();
+  await expect(page.getByRole('dialog').getByText('Céphalée de tension')).toBeVisible();
+  await page.getByLabel('Prix (MAD)').fill('200');
+  await page.getByRole('button', { name: 'Terminer la consultation' }).last().click();
   await expect(page).toHaveURL(/\/today/);
 
   // 7. Patient gone from waiting room

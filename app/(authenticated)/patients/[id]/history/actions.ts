@@ -30,5 +30,7 @@ export async function savePatientHistoryAction(
     entityId: parsed.data.patientId,
   });
   revalidatePath(`/patients/${parsed.data.patientId}`);
+  // The antécédents panel is also edited from the consultation cockpit.
+  revalidatePath('/consultations/[id]', 'page');
   return { ok: true };
 }

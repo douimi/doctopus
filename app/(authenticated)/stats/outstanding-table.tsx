@@ -19,14 +19,16 @@ function fmtDate(d: Date): string {
 
 export function OutstandingTable({ rows }: { rows: OutstandingRow[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-      <Table>
+    <div className="panel overflow-hidden">
+      <Table density="compact">
         <TableHeader>
           <TableRow>
             <TableHead>Date</TableHead>
             <TableHead>Patient</TableHead>
             <TableHead className="text-right">Prix</TableHead>
-            <TableHead className="w-12" />
+            <TableHead className="w-12">
+              <span className="sr-only">Ouvrir</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -41,14 +43,14 @@ export function OutstandingTable({ rows }: { rows: OutstandingRow[] }) {
           ) : (
             rows.map((r) => (
               <TableRow key={r.consultationId}>
-                <TableCell className="text-small text-muted-foreground tabular-nums">{fmtDate(r.finalizedAt)}</TableCell>
-                <TableCell className="font-medium">{r.patientFullName}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatMad(r.priceMad)}</TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">{fmtDate(r.finalizedAt)}</TableCell>
+                <TableCell className="font-medium text-foreground">{r.patientFullName}</TableCell>
+                <TableCell className="text-right font-medium tabular-nums text-warning-ink">{formatMad(r.priceMad)}</TableCell>
                 <TableCell className="text-right pr-3">
                   <Link
                     href={`/consultations/${r.consultationId}`}
-                    className="inline-flex items-center justify-center size-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    aria-label="Ouvrir la consultation"
+                    className="inline-flex size-8 items-center justify-center rounded-md text-subtle-foreground transition-colors duration-(--duration-fast) hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={`Ouvrir la consultation de ${r.patientFullName}`}
                   >
                     <ArrowRight className="size-4" aria-hidden />
                   </Link>

@@ -4,7 +4,7 @@ import type { ComponentType } from 'react';
 import { cn } from '@/lib/utils';
 
 const alertVariants = cva(
-  'relative w-full rounded-md border p-3 flex gap-3 items-start',
+  'relative flex w-full items-start gap-2.5 rounded-lg border p-3',
   {
     variants: {
       variant: {
@@ -26,10 +26,10 @@ const ICON: Record<string, ComponentType<{ className?: string }>> = {
 };
 
 const ICON_COLOR: Record<string, string> = {
-  info: 'text-info',
-  success: 'text-success',
-  warning: 'text-warning-foreground',
-  danger: 'text-danger',
+  info: 'text-info-ink',
+  success: 'text-success-ink',
+  warning: 'text-warning-ink',
+  danger: 'text-danger-ink',
 };
 
 const ROLE: Record<string, 'alert' | 'status'> = {
@@ -64,12 +64,12 @@ export function Alert({
         className={cn('size-4 mt-0.5 shrink-0', ICON_COLOR[variant!])}
         aria-hidden
       />
-      <div className="flex-1 space-y-0.5">
+      <div className="min-w-0 flex-1 space-y-0.5">
         {title ? (
-          <p className="text-body font-medium leading-none">{title}</p>
+          <p className="text-body font-medium text-foreground">{title}</p>
         ) : null}
         {children ? (
-          <div className="text-small text-muted-foreground">{children}</div>
+          <div className="text-small text-foreground/80">{children}</div>
         ) : null}
       </div>
     </div>

@@ -37,13 +37,14 @@ export function Pagination({
             href={buildHref(Math.max(1, page - 1))}
             disabled={page <= 1}
             ariaLabel="Page précédente"
+            nav
           >
             <ChevronLeft className="size-4" aria-hidden />
           </PaginationButton>
         </li>
         {pages.map((p, i) =>
           p === 'ellipsis' ? (
-            <li key={`ellipsis-${i}`} aria-hidden className="px-2 text-muted-foreground">
+            <li key={`ellipsis-${i}`} aria-hidden className="px-1.5 text-subtle-foreground">
               …
             </li>
           ) : (
@@ -63,6 +64,7 @@ export function Pagination({
             href={buildHref(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
             ariaLabel="Page suivante"
+            nav
           >
             <ChevronRight className="size-4" aria-hidden />
           </PaginationButton>
@@ -77,11 +79,14 @@ function PaginationButton({
   active,
   disabled,
   ariaLabel,
+  nav,
   children,
 }: {
   href: string;
   active?: boolean;
   disabled?: boolean;
+  /** Prev/next arrows keep a bordered surface; page numbers don't. */
+  nav?: boolean;
   ariaLabel: string;
   children: React.ReactNode;
 }) {
@@ -90,7 +95,7 @@ function PaginationButton({
       <span
         aria-disabled
         aria-label={ariaLabel}
-        className="inline-flex items-center justify-center min-w-9 h-9 px-2.5 rounded-md text-small border border-border bg-card text-muted-foreground/50 cursor-not-allowed"
+        className="inline-flex h-8 min-w-8 cursor-not-allowed items-center justify-center rounded-md border border-border bg-card px-2 text-small text-subtle-foreground opacity-60"
       >
         {children}
       </span>
@@ -102,12 +107,13 @@ function PaginationButton({
       aria-label={ariaLabel}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'inline-flex items-center justify-center min-w-9 h-9 px-2.5 rounded-md border text-small transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40',
+        'inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-small transition-colors duration-(--duration-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         active
-          ? 'bg-foreground text-background border-foreground'
-          : 'bg-card text-foreground border-border hover:bg-muted',
+          ? 'border-primary/30 bg-primary-tint font-semibold text-primary-ink'
+          : nav
+            ? 'border-border bg-card text-foreground hover:bg-muted'
+            : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
-      style={{ transitionDuration: 'var(--duration-fast)' }}
     >
       {children}
     </Link>

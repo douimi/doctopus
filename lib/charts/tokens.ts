@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 const TOKEN_NAMES = [
   '--primary',
@@ -17,6 +17,11 @@ const TOKEN_NAMES = [
   '--muted',
   '--muted-foreground',
   '--border',
+  '--chart-1',
+  '--chart-2',
+  '--chart-3',
+  '--chart-4',
+  '--chart-5',
 ] as const;
 
 export type ChartToken = (typeof TOKEN_NAMES)[number];
@@ -37,6 +42,11 @@ const FALLBACK: ChartTokens = {
   '--muted': '#f4f4f5',
   '--muted-foreground': '#71717a',
   '--border': '#e4e4e7',
+  '--chart-1': '#0284c7',
+  '--chart-2': '#059669',
+  '--chart-3': '#f59e0b',
+  '--chart-4': '#6366f1',
+  '--chart-5': '#f43f5e',
 };
 
 function readTokens(): ChartTokens {
@@ -53,13 +63,17 @@ function readTokens(): ChartTokens {
 /**
  * Resolves design tokens to runtime color strings for Recharts.
  * Recharts can't consume CSS vars directly inside its `fill` / `stroke`
- * props, so we read them from the document root once on mount and feed
+ * props, so we read them from the document root once and feed
  * the literal values in. Returns the fallback palette during SSR.
  */
+let cached: ChartTokens | null = null;
+
+// Tokens don't change after load, so the "store" never notifies; the
+// snapshot is read once and cached so React sees a stable reference.
+const subscribe = () => () => {};
+const getSnapshot = () => (cached ??= readTokens());
+const getServerSnapshot = () => FALLBACK;
+
 export function useChartTokens(): ChartTokens {
-  const [tokens, setTokens] = useState<ChartTokens>(FALLBACK);
-  useEffect(() => {
-    setTokens(readTokens());
-  }, []);
-  return tokens;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

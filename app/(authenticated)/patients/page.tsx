@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Plus, Users } from 'lucide-react';
+import { ChevronRight, Plus, Users } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import {
   searchPatientsPage,
@@ -10,7 +10,11 @@ import { formatAge } from '@/lib/patients/age';
 import { Avatar } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { LiveSearchInput } from '@/components/ui/live-search-input';
+import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
+import { FilterPill } from '@/components/ui/filter-pill';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { cn } from '@/lib/utils';
 import { Pagination } from '@/components/ui/pagination';
 import { SortableHeader } from '@/components/ui/sortable-header';
 import {
@@ -74,13 +78,13 @@ export default async function PatientsPage({ searchParams }: Props) {
         }
       />
 
-      <div className="px-6 py-6 space-y-4">
+      <PageBody>
         <div className="flex flex-wrap items-center gap-2">
           <LiveSearchInput
             defaultQuery={q}
             placeholder="Recherche : nom, prénom, téléphone, CIN"
           />
-          <Link
+          <FilterPill
             href={buildPatientsHref({
               q: trimmed,
               includeArchived: !includeArchived,
@@ -88,33 +92,31 @@ export default async function PatientsPage({ searchParams }: Props) {
               sort,
               dir,
             })}
-            className={buttonVariants({ variant: 'ghost', size: 'default' })}
+            active={includeArchived}
           >
-            {includeArchived ? 'Masquer archivés' : 'Voir archivés'}
-          </Link>
-          <span className="text-small text-muted-foreground ml-auto tabular-nums">
+            Inclure les archivés
+          </FilterPill>
+          <span className="ml-auto text-small text-muted-foreground tabular-nums">
             {total} patient{total === 1 ? '' : 's'}
-            {trimmed ? ' trouvés' : ''}
+            {trimmed ? ` trouvé${total === 1 ? '' : 's'}` : ''}
           </span>
         </div>
 
-        <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+        <div className="panel overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 <TableHead>
-                  <SortableHeader
-                    href={toggleNameSortHref}
-                    active={sort === 'name'}
-                    dir={dir}
-                  >
+                  <SortableHeader href={toggleNameSortHref} active={sort === 'name'} dir={dir}>
                     Patient
                   </SortableHeader>
                 </TableHead>
-                <TableHead>Âge</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>CIN</TableHead>
-                <TableHead className="w-12" />
+                <TableHead className="hidden sm:table-cell">Âge</TableHead>
+                <TableHead className="hidden md:table-cell">Téléphone</TableHead>
+                <TableHead className="hidden md:table-cell">CIN</TableHead>
+                <TableHead className="w-12">
+                  <span className="sr-only">Ouvrir</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -122,56 +124,80 @@ export default async function PatientsPage({ searchParams }: Props) {
                 <TableEmpty colSpan={5}>
                   <EmptyState
                     icon={Users}
-                    title="Aucun patient"
+                    title={trimmed ? 'Aucun résultat' : 'Aucun patient'}
                     description={
                       trimmed
-                        ? `Aucun résultat pour « ${trimmed} ».`
+                        ? `Aucun patient ne correspond à « ${trimmed} ».`
                         : 'Créez votre premier patient pour commencer.'
+                    }
+                    action={
+                      trimmed ? undefined : (
+                        <Link href="/patients/new" className={buttonVariants({ variant: 'secondary' })}>
+                          <Plus aria-hidden />
+                          Nouveau patient
+                        </Link>
+                      )
                     }
                   />
                 </TableEmpty>
               ) : (
                 rows.map((p) => {
                   const fullName = `${p.lastName} ${p.firstName}`;
+                  const age = formatAge(p.dateOfBirth);
+                  const contact = [p.phone, p.cin].filter(Boolean).join(' · ');
                   return (
-                    <TableRow
-                      key={p.id}
-                      className={
-                        p.isArchived
-                          ? 'opacity-60 group/row'
-                          : 'group/row cursor-pointer'
-                      }
-                    >
-                      <TableCell className="py-2">
-                        <Link
-                          href={`/patients/${p.id}`}
-                          className="flex items-center gap-3 -mx-3 -my-2 px-3 py-2 focus-visible:outline-none focus-visible:bg-muted/60"
-                          aria-label={`Ouvrir le dossier de ${fullName}`}
-                        >
-                          <Avatar name={fullName} size="md" />
-                          <span className="font-medium text-foreground">
-                            {fullName}
-                          </span>
-                        </Link>
+                    // Whole-row click: the name link stretches over the row
+                    // (after:inset-0) so there is one tab stop per patient.
+                    <TableRow key={p.id} className="group/row relative cursor-pointer">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            name={fullName}
+                            size="sm"
+                            tone={p.isArchived ? 'muted' : 'primary'}
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/patients/${p.id}`}
+                                aria-label={`Ouvrir le dossier de ${fullName}`}
+                                className={cn(
+                                  'truncate font-medium after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring',
+                                  p.isArchived
+                                    ? 'text-muted-foreground'
+                                    : 'text-foreground group-hover/row:text-primary',
+                                )}
+                              >
+                                {fullName}
+                              </Link>
+                              {p.isArchived ? (
+                                <StatusBadge variant="neutral">Archivé</StatusBadge>
+                              ) : null}
+                            </div>
+                            {/* Phones/tablets: secondary columns collapse under the name. */}
+                            <div className="truncate text-small text-muted-foreground tabular-nums md:hidden">
+                              <span className="sm:hidden">
+                                {[age, contact].filter(Boolean).join(' · ')}
+                              </span>
+                              <span className="hidden sm:inline">{contact}</span>
+                            </div>
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground tabular-nums">
-                        {formatAge(p.dateOfBirth)}
+                      <TableCell className="hidden text-muted-foreground tabular-nums sm:table-cell">
+                        {age}
                       </TableCell>
-                      <TableCell className="text-muted-foreground tabular-nums">
+                      <TableCell className="hidden text-muted-foreground tabular-nums md:table-cell">
                         {p.phone ?? '—'}
                       </TableCell>
-                      <TableCell className="text-muted-foreground tabular-nums">
+                      <TableCell className="hidden text-muted-foreground tabular-nums md:table-cell">
                         {p.cin ?? '—'}
                       </TableCell>
-                      <TableCell className="text-right pr-3">
-                        <Link
-                          href={`/patients/${p.id}`}
-                          className="inline-flex items-center justify-center size-7 rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                          style={{ transitionDuration: 'var(--duration-fast)' }}
-                          aria-label={`Ouvrir ${fullName}`}
-                        >
-                          <ArrowRight className="size-4" aria-hidden />
-                        </Link>
+                      <TableCell className="w-12 text-right">
+                        <ChevronRight
+                          className="ml-auto size-4 text-subtle-foreground group-hover/row:text-primary"
+                          aria-hidden
+                        />
                       </TableCell>
                     </TableRow>
                   );
@@ -182,10 +208,11 @@ export default async function PatientsPage({ searchParams }: Props) {
         </div>
 
         <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
-      </div>
+      </PageBody>
     </>
   );
 }
+
 
 function buildPatientsHref({
   q,

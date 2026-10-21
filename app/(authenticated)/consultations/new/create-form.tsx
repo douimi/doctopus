@@ -5,8 +5,8 @@ import { useFormStatus } from 'react-dom';
 import { CalendarPlus } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   createManualConsultationAction,
   type CreateManualConsultationState,
@@ -18,7 +18,7 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" loading={pending}>
-      <CalendarPlus aria-hidden />
+      {pending ? null : <CalendarPlus aria-hidden />}
       Créer la consultation
     </Button>
   );
@@ -33,12 +33,13 @@ export function CreateConsultationForm({
 }) {
   const [state, action] = useActionState(createManualConsultationAction, initial);
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} className="space-y-4">
       <input type="hidden" name="patientId" value={patientId} />
-      <div className="space-y-1 max-w-xs">
-        <Label htmlFor="consultedAt" className="text-small font-medium">
-          Date de la consultation
-        </Label>
+      <FormField
+        label="Date de la consultation"
+        description="Antédatez pour enregistrer une consultation déjà effectuée."
+        className="max-w-xs"
+      >
         <Input
           id="consultedAt"
           name="consultedAt"
@@ -47,12 +48,11 @@ export function CreateConsultationForm({
           max={defaultDate}
           required
         />
-        <p className="text-small text-muted-foreground">
-          Antédatez pour enregistrer une consultation déjà effectuée.
-        </p>
-      </div>
+      </FormField>
       {state.error ? <Alert variant="danger">{state.error}</Alert> : null}
-      <Submit />
+      <div className="flex justify-end border-t border-border pt-4">
+        <Submit />
+      </div>
     </form>
   );
 }

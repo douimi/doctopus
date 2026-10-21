@@ -18,28 +18,21 @@ test('doctor can create, search, edit, archive a patient', async ({ page }) => {
   await page.getByLabel('Téléphone').fill('+212600000001');
   await page.getByRole('button', { name: /Créer le patient/ }).click();
   await expect(page).toHaveURL(/\/patients\/[0-9a-f-]{36}/);
-  await expect(page.getByText('Bennani Ahmed')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Bennani Ahmed' })).toBeVisible();
 
   // Add an allergy
-  await page.locator('input[placeholder*="Pénicilline"]').fill('Pénicilline');
-  await page
-    .locator('form')
-    .filter({ has: page.locator('input[placeholder*="Pénicilline"]') })
-    .getByRole('button', { name: '+' })
-    .click();
-  await expect(page.getByText('⚠ Allergie : Pénicilline')).toBeVisible();
+  await page.getByRole('textbox', { name: 'Ajouter une allergie' }).fill('Pénicilline');
+  await page.getByRole('button', { name: 'Ajouter une allergie' }).click();
+  await expect(page.getByText('Allergie : Pénicilline')).toBeVisible();
 
   // Add a chronic condition
-  await page.locator('input[placeholder*="HTA"]').fill('Diabète type 2');
-  await page
-    .locator('form')
-    .filter({ has: page.locator('input[placeholder*="HTA"]') })
-    .getByRole('button', { name: '+' })
-    .click();
+  await page.getByRole('textbox', { name: 'Ajouter une maladie chronique' }).fill('Diabète type 2');
+  await page.getByRole('button', { name: 'Ajouter une maladie chronique' }).click();
   await expect(page.getByText('Diabète type 2').first()).toBeVisible();
 
   // Edit
-  await page.getByRole('link', { name: /Modifier/ }).click();
+  await page.getByRole('button', { name: "Plus d'actions sur le dossier" }).click();
+  await page.getByRole('menuitem', { name: /Modifier le dossier/ }).click();
   await page.getByLabel('Téléphone').fill('+212611111111');
   await page.getByRole('button', { name: /Enregistrer/ }).click();
   await expect(page.getByText('+212611111111')).toBeVisible();
@@ -47,11 +40,12 @@ test('doctor can create, search, edit, archive a patient', async ({ page }) => {
   // Search
   await page.goto('/patients');
   await page.getByPlaceholder(/Recherche/).fill('Bennani');
-  await page.getByRole('button', { name: 'Rechercher' }).click();
-  await expect(page.getByText('Bennani')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Bennani Ahmed/ })).toBeVisible();
 
-  // Archive
-  await page.getByRole('link', { name: 'Ouvrir' }).click();
-  await page.getByRole('button', { name: 'Archiver' }).click();
+  // Archive (overflow menu + confirmation)
+  await page.getByRole('link', { name: /Bennani Ahmed/ }).click();
+  await page.getByRole('button', { name: "Plus d'actions sur le dossier" }).click();
+  await page.getByRole('menuitem', { name: /Archiver le patient/ }).click();
+  await page.getByRole('button', { name: 'Archiver', exact: true }).click();
   await expect(page).toHaveURL(/\/patients(\?|$)/);
 });

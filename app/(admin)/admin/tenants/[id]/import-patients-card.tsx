@@ -3,8 +3,9 @@
 import { useRef, useState } from 'react';
 import { Download, FileSpreadsheet, FileWarning, Upload } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { showToast } from '@/components/ui/toast';
 
 type FailedRow = {
   row: number;
@@ -125,6 +126,10 @@ export function ImportPatientsCard({ tenantId }: { tenantId: string }) {
           skipped: res.skipped ?? 0,
           failed: res.failed ?? [],
         });
+        showToast({
+          title: `${res.inserted} patient${res.inserted === 1 ? '' : 's'} importé${res.inserted === 1 ? '' : 's'}.`,
+          variant: (res.failed ?? []).length > 0 ? 'warning' : 'success',
+        });
       } else {
         setStatus({ kind: 'error', message: res.error, failed: res.failed });
       }
@@ -151,29 +156,27 @@ export function ImportPatientsCard({ tenantId }: { tenantId: string }) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <FileSpreadsheet className="size-4 text-muted-foreground" aria-hidden />
+          <FileSpreadsheet className="size-4 text-subtle-foreground" aria-hidden />
           Importer les patients
         </CardTitle>
+        <CardDescription>
+          Reprise depuis l&apos;ancien système du cabinet (CSV ou Excel). Les patients déjà
+          présents sont ignorés.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-small text-muted-foreground">
-          Importez en masse les patients depuis l&apos;ancien système du cabinet
-          (CSV ou Excel). Téléchargez d&apos;abord le modèle pour connaître les
-          colonnes attendues.
-        </p>
-
+      <CardContent className="space-y-4">
         <a
           href="/api/admin/patient-import-template"
           download
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-card text-small font-medium hover:bg-muted transition-colors"
+          className={buttonVariants({ variant: 'secondary', size: 'sm' })}
         >
-          <Download className="size-3.5" aria-hidden />
+          <Download aria-hidden />
           Télécharger le modèle CSV
         </a>
 
-        <form onSubmit={handleSubmit} className="space-y-2 pt-2 border-t border-border">
-          <label className="block space-y-1">
-            <span className="text-small font-medium">Fichier (.csv ou .xlsx, ≤ 5 Mo)</span>
+        <form onSubmit={handleSubmit} className="space-y-3 border-t border-border pt-4">
+          <label className="grid gap-1.5">
+            <span className="text-small font-medium text-foreground">Fichier</span>
             <input
               ref={inputRef}
               type="file"
@@ -181,8 +184,9 @@ export function ImportPatientsCard({ tenantId }: { tenantId: string }) {
               accept=".csv,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
               required
               disabled={isWorking}
-              className="block w-full text-small file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-foreground file:text-background hover:file:bg-foreground/90 file:cursor-pointer file:text-small file:font-medium disabled:opacity-50"
+              className="block w-full min-w-0 text-small text-muted-foreground file:mr-3 file:h-8 file:cursor-pointer file:rounded-lg file:border file:border-border-strong file:bg-card file:px-3 file:text-small file:font-medium file:text-foreground hover:file:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
             />
+            <span className="text-small text-muted-foreground">.csv ou .xlsx, 5 Mo maximum.</span>
           </label>
 
           {isWorking ? (
@@ -216,7 +220,7 @@ export function ImportPatientsCard({ tenantId }: { tenantId: string }) {
 
           <Button type="submit" size="sm" loading={isWorking} disabled={isWorking}>
             <Upload aria-hidden />
-            Importer
+            {isWorking ? 'Import en cours…' : 'Importer'}
           </Button>
         </form>
 
@@ -240,10 +244,10 @@ export function ImportPatientsCard({ tenantId }: { tenantId: string }) {
         ) : null}
 
         {failedRows ? (
-          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+          <div className="space-y-2 rounded-lg border border-border bg-canvas p-3">
             <div className="flex items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 text-small font-medium">
-                <FileWarning className="size-3.5 text-warning" aria-hidden />
+                <FileWarning className="size-3.5 text-warning-ink" aria-hidden />
                 {failedRows.length} ligne{failedRows.length === 1 ? '' : 's'} en erreur
               </span>
               <Button

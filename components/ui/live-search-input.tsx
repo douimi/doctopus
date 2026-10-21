@@ -51,16 +51,16 @@ export function LiveSearchInput({
   }, [value]);
 
   return (
-    <div className={cn('relative flex-1 min-w-[240px] max-w-md', className)}>
+    <div className={cn('relative w-full sm:w-auto sm:min-w-64 sm:max-w-sm sm:flex-1', className)}>
       <Search
-        className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"
+        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground"
         aria-hidden
       />
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="pl-8"
+        className="pl-9"
         aria-label={placeholder}
       />
     </div>

@@ -1,239 +1,145 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import {
-  AlertTriangle,
-  Archive,
-  ArrowLeft,
-  HeartPulse,
-  Pencil,
-  Plus,
-  Stethoscope,
-  X,
-} from 'lucide-react';
+import { IdCard, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import { requireSession } from '@/lib/auth/session';
 import { getPatientDetail } from '@/lib/patients/queries';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { PatientCard } from '@/components/patients/patient-card';
-import { PatientHistoryPanel } from '@/components/patients/patient-history-panel';
+import { formatAge } from '@/lib/patients/age';
+import { coverageLabel } from '@/lib/patients/coverage';
 import { getLatestHistoryNote, listConsultationsForPatient } from '@/lib/consultations/queries';
-import { PastConsultationsList } from '@/components/consultations/past-consultations-list';
+import { PatientHistoryPanel } from '@/components/patients/patient-history-panel';
+import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
-import { archivePatientAction } from './actions';
-import { addAllergyAction, removeAllergyAction } from './allergies/actions';
-import { addConditionAction, removeConditionAction } from './conditions/actions';
+import { Section } from '@/components/ui/section';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { ClinicalLists } from './clinical-lists';
+import { ConsultationTimeline } from './consultation-timeline';
+import { FlashToast } from './flash-toast';
+import { PatientFileActions } from './patient-file-actions';
 
-export default async function PatientDetailPage({
-  params,
-}: {
+type Props = {
   params: Promise<{ id: string }>;
-}) {
+  searchParams: Promise<{ created?: string; saved?: string }>;
+};
+
+/**
+ * Patient file = hub (UX brief §3.3). Name as the title, identity in the
+ * meta line, RDV / salle d'attente up front. Left: the structured
+ * antécédents panel (the main clinical block) and, for the doctor, the
+ * allergy / chronic-condition editor. Right: consultations with their
+ * follow-ups nested.
+ */
+export default async function PatientDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const flags = await searchParams;
   const session = await requireSession();
-  const data = await getPatientDetail(session.tenantId, id);
+  const isDoctor = session.role === 'doctor';
+  const [data, consultations, latestHistoryNote] = await Promise.all([
+    getPatientDetail(session.tenantId, id),
+    listConsultationsForPatient(session.tenantId, id),
+    getLatestHistoryNote(session.tenantId, id),
+  ]);
   if (!data) notFound();
-  const consultations = await listConsultationsForPatient(session.tenantId, id);
-  const latestHistoryNote = await getLatestHistoryNote(session.tenantId, id);
   const p = data.patient;
+  const fullName = `${p.lastName} ${p.firstName}`;
+  const ageLabel = formatAge(p.dateOfBirth);
+
+  const meta = (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted-foreground">
+      <span className="tabular-nums">
+        {ageLabel} · {p.gender === 'm' ? 'Homme' : 'Femme'}
+      </span>
+      {p.phone ? (
+        <a
+          href={`tel:${p.phone.replace(/\s+/g, '')}`}
+          className="inline-flex items-center gap-1 rounded-sm tabular-nums hover:text-foreground"
+        >
+          <Phone className="size-3.5" aria-hidden />
+          {p.phone}
+        </a>
+      ) : null}
+      {p.cin ? (
+        <span className="inline-flex items-center gap-1 tabular-nums">
+          <IdCard className="size-3.5" aria-hidden />
+          <span className="sr-only">CIN </span>
+          {p.cin}
+        </span>
+      ) : null}
+      {p.coverageType ? (
+        <StatusBadge variant="info" icon={ShieldCheck}>
+          {coverageLabel(p.coverageType)}
+          {p.coverageId ? ` · ${p.coverageId}` : ''}
+        </StatusBadge>
+      ) : null}
+      {p.isArchived ? <StatusBadge variant="neutral">Archivé</StatusBadge> : null}
+    </div>
+  );
 
   return (
     <>
+      {flags.created === '1' ? <FlashToast title="Patient créé" description={fullName} /> : null}
+      {flags.saved === '1' ? (
+        <FlashToast title="Dossier enregistré" description={fullName} />
+      ) : null}
       <PageHeader
-        eyebrow={
-          <Link
-            href="/patients"
-            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-            style={{ transitionDuration: 'var(--duration-fast)' }}
-          >
-            <ArrowLeft className="size-3" aria-hidden />
-            Patients
-          </Link>
-        }
-        title="Fiche patient"
+        back={{ href: '/patients', label: 'Patients' }}
+        title={fullName}
+        description={meta}
         actions={
-          <>
-            <Link
-              href={`/patients/${id}/edit`}
-              className={buttonVariants({ variant: 'secondary' })}
-            >
-              <Pencil aria-hidden />
-              Modifier
-            </Link>
-            {!data.patient.isArchived ? (
-              <form action={archivePatientAction}>
-                <input type="hidden" name="id" value={id} />
-                <Button type="submit" variant="destructive">
-                  <Archive aria-hidden />
-                  Archiver
-                </Button>
-              </form>
-            ) : null}
-          </>
+          <PatientFileActions
+            patient={{ id: p.id, fullName, ageLabel, phone: p.phone }}
+            isDoctor={isDoctor}
+            isArchived={p.isArchived}
+          />
         }
       />
 
-      <div className="px-6 py-6 space-y-4 max-w-6xl">
-        <PatientCard
-          patient={data.patient}
-          allergies={data.allergies}
-          conditions={data.conditions}
-          hideClinical
-        />
-
-        <PatientHistoryPanel
-          patientId={id}
-          initial={{
-            historyMedical: p.historyMedical ?? '',
-            historySurgical: p.historySurgical ?? '',
-            historyFamily: p.historyFamily ?? '',
-            historyTreatments: p.historyTreatments ?? '',
-            historyLifestyle: p.historyLifestyle ?? '',
-          }}
-          allergies={data.allergies.map((a) => a.label)}
-          conditions={data.conditions.map((c) => c.label)}
-          updatedAt={p.historyUpdatedAt}
-          latestNote={latestHistoryNote}
-          canEdit={session.role === 'doctor'}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card size="sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="size-4 text-danger" aria-hidden />
-                Allergies
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <ul className="space-y-1">
-                {data.allergies.map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-center justify-between gap-2 text-body py-1"
-                  >
-                    <span className="truncate">{a.label}</span>
-                    <form action={removeAllergyAction}>
-                      <input type="hidden" name="id" value={a.id} />
-                      <input type="hidden" name="patientId" value={id} />
-                      <Button
-                        type="submit"
-                        size="icon-xs"
-                        variant="ghost"
-                        aria-label={`Retirer ${a.label}`}
-                        title="Retirer"
-                        className="text-muted-foreground hover:text-danger"
-                      >
-                        <X aria-hidden />
-                      </Button>
-                    </form>
-                  </li>
-                ))}
-                {data.allergies.length === 0 ? (
-                  <li className="text-small text-muted-foreground italic">
-                    Aucune allergie connue.
-                  </li>
+      <PageBody>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
+          <div className="space-y-6">
+            <PatientHistoryPanel
+              patientId={id}
+              initial={{
+                historyMedical: p.historyMedical ?? '',
+                historySurgical: p.historySurgical ?? '',
+                historyFamily: p.historyFamily ?? '',
+                historyTreatments: p.historyTreatments ?? '',
+                historyLifestyle: p.historyLifestyle ?? '',
+              }}
+              allergies={data.allergies.map((a) => a.label)}
+              conditions={data.conditions.map((c) => c.label)}
+              updatedAt={p.historyUpdatedAt}
+              latestNote={latestHistoryNote}
+              canEdit={isDoctor}
+            />
+            {isDoctor ? (
+              <ClinicalLists
+                patientId={id}
+                allergies={data.allergies.map((a) => ({ id: a.id, label: a.label }))}
+                conditions={data.conditions.map((c) => ({ id: c.id, label: c.label }))}
+              />
+            ) : null}
+            {p.notes || p.address ? (
+              <section aria-labelledby="patient-notes" className="panel space-y-3 p-4">
+                <h2 id="patient-notes" className="text-heading font-semibold">
+                  Informations pratiques
+                </h2>
+                {p.address ? (
+                  <p className="flex items-start gap-1.5 text-body">
+                    <MapPin className="mt-0.5 size-4 shrink-0 text-subtle-foreground" aria-hidden />
+                    {p.address}
+                  </p>
                 ) : null}
-              </ul>
-              <form
-                action={addAllergyAction}
-                className="flex items-end gap-2 pt-2 border-t border-border"
-              >
-                <input type="hidden" name="patientId" value={id} />
-                <div className="flex-1 space-y-1">
-                  <Label htmlFor="allergy-label" className="text-small">
-                    Ajouter
-                  </Label>
-                  <Input
-                    id="allergy-label"
-                    name="label"
-                    placeholder="ex. Pénicilline"
-                    required
-                  />
-                </div>
-                <Button type="submit" size="default" aria-label="Ajouter une allergie">
-                  <Plus aria-hidden />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card size="sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <HeartPulse className="size-4 text-warning" aria-hidden />
-                Maladies chroniques
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <ul className="space-y-1">
-                {data.conditions.map((c) => (
-                  <li
-                    key={c.id}
-                    className="flex items-center justify-between gap-2 text-body py-1"
-                  >
-                    <span className="truncate">{c.label}</span>
-                    <form action={removeConditionAction}>
-                      <input type="hidden" name="id" value={c.id} />
-                      <input type="hidden" name="patientId" value={id} />
-                      <Button
-                        type="submit"
-                        size="icon-xs"
-                        variant="ghost"
-                        aria-label={`Retirer ${c.label}`}
-                        title="Retirer"
-                        className="text-muted-foreground hover:text-danger"
-                      >
-                        <X aria-hidden />
-                      </Button>
-                    </form>
-                  </li>
-                ))}
-                {data.conditions.length === 0 ? (
-                  <li className="text-small text-muted-foreground italic">
-                    Aucune maladie chronique.
-                  </li>
+                {p.notes ? (
+                  <p className="whitespace-pre-wrap text-body text-muted-foreground">{p.notes}</p>
                 ) : null}
-              </ul>
-              <form
-                action={addConditionAction}
-                className="flex items-end gap-2 pt-2 border-t border-border"
-              >
-                <input type="hidden" name="patientId" value={id} />
-                <div className="flex-1 space-y-1">
-                  <Label htmlFor="condition-label" className="text-small">
-                    Ajouter
-                  </Label>
-                  <Input
-                    id="condition-label"
-                    name="label"
-                    placeholder="ex. HTA, diabète…"
-                    required
-                  />
-                </div>
-                <Button type="submit" size="default" aria-label="Ajouter une maladie chronique">
-                  <Plus aria-hidden />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-heading font-semibold">Consultations antérieures</h2>
-            <Link
-              href={`/consultations/new?patient=${id}`}
-              className={buttonVariants({ size: 'sm', variant: 'secondary' })}
-            >
-              <Stethoscope aria-hidden />
-              Nouvelle consultation
-            </Link>
+              </section>
+            ) : null}
           </div>
-          <PastConsultationsList items={consultations} />
-        </section>
-      </div>
+
+          <Section title="Consultations et suivis" count={consultations.length}>
+            <ConsultationTimeline items={consultations} canOpen={isDoctor} />
+          </Section>
+        </div>
+      </PageBody>
     </>
   );
 }

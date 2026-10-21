@@ -52,9 +52,11 @@ test('admin grants credits, doctor sees panel in ready state, disclaimer can be 
   await page.getByRole('button', { name: 'Commencer' }).first().click();
   await expect(page).toHaveURL(/\/consultations\/[0-9a-f-]{36}/);
 
-  // Disclaimer modal appears; acknowledge.
-  await page.getByRole('button', { name: /J'ai compris/ }).click();
+  // The disclaimer no longer interrupts page load — it shows on first send.
   await expect(page.getByRole('heading', { name: /Assistant IA — note importante/ })).toHaveCount(0);
+
+  // The assistant is an on-demand drawer toggled from the header.
+  await page.getByRole('button', { name: "Afficher l'assistant IA" }).click();
 
   // Panel shows "~5 consultations restantes".
   await expect(page.getByText(/~5 consultations restantes/)).toBeVisible();

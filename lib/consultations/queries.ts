@@ -1,10 +1,12 @@
 import 'server-only';
-import { and, asc, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { withTenantTx } from '@/db/with-tenant';
 import {
   consultations,
   consultationVitals,
   patients,
+  prescriptionItems,
+  prescriptions,
   type Consultation,
   type ConsultationVitals,
 } from '@/db/schema';
@@ -457,5 +459,94 @@ export async function getLatestPrimaryConsultationForPatient(
       .orderBy(desc(consultations.consultedAt))
       .limit(1);
     return row ?? null;
+  });
+}
+
+export type PatientTimelineRx = {
+  label: string;
+  posologie: string | null;
+  duration: string | null;
+};
+
+export type PatientTimelineEntry = {
+  id: string;
+  consultedAt: Date;
+  motif: string | null;
+  diagnosis: string | null;
+  isFinalized: boolean;
+  parentConsultationId: string | null;
+  vitals: ConsultationVitals | null;
+  rx: PatientTimelineRx[];
+};
+
+/**
+ * The patient's other consultations (most recent first), each with its
+ * vitals and prescription lines — the consultation page's "Historique"
+ * and the previous-visit vitals hint. Read-only; `total` counts every
+ * other consultation so the UI can link to the full file.
+ */
+export async function listPatientTimeline(
+  tenantId: string,
+  patientId: string,
+  opts: { excludeConsultationId?: string; limit?: number } = {},
+): Promise<{ entries: PatientTimelineEntry[]; total: number }> {
+  const limit = Math.min(opts.limit ?? 5, 25);
+  return withTenantTx(tenantId, async (tx) => {
+    const conds: SQL[] = [eq(consultations.patientId, patientId)];
+    if (opts.excludeConsultationId) {
+      conds.push(sql`${consultations.id} <> ${opts.excludeConsultationId}`);
+    }
+    const where = and(...conds);
+    const [{ count }] = await tx
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(consultations)
+      .where(where);
+    const rows = await tx
+      .select({
+        id: consultations.id,
+        consultedAt: consultations.consultedAt,
+        motif: consultations.motif,
+        diagnosis: consultations.diagnosis,
+        isFinalized: consultations.isFinalized,
+        parentConsultationId: consultations.parentConsultationId,
+      })
+      .from(consultations)
+      .where(where)
+      .orderBy(desc(consultations.consultedAt))
+      .limit(limit);
+    if (rows.length === 0) return { entries: [], total: Number(count) || 0 };
+
+    const ids = rows.map((r) => r.id);
+    const vitals = await tx
+      .select()
+      .from(consultationVitals)
+      .where(inArray(consultationVitals.consultationId, ids));
+    const rxRows = await tx
+      .select({
+        consultationId: prescriptions.consultationId,
+        label: prescriptionItems.medicationLabelSnapshot,
+        posologie: prescriptionItems.posologie,
+        duration: prescriptionItems.duration,
+      })
+      .from(prescriptionItems)
+      .innerJoin(prescriptions, eq(prescriptions.id, prescriptionItems.prescriptionId))
+      .where(inArray(prescriptions.consultationId, ids))
+      .orderBy(asc(prescriptionItems.position));
+
+    const vitalsById = new Map(vitals.map((v) => [v.consultationId, v]));
+    const rxById = new Map<string, PatientTimelineRx[]>();
+    for (const r of rxRows) {
+      const list = rxById.get(r.consultationId) ?? [];
+      list.push({ label: r.label, posologie: r.posologie, duration: r.duration });
+      rxById.set(r.consultationId, list);
+    }
+    return {
+      entries: rows.map((r) => ({
+        ...r,
+        vitals: vitalsById.get(r.id) ?? null,
+        rx: rxById.get(r.id) ?? [],
+      })),
+      total: Number(count) || 0,
+    };
   });
 }

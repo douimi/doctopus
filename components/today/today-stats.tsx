@@ -1,122 +1,99 @@
-import type { ComponentType } from 'react';
-import { CalendarDays, CheckCircle2, Clock, Stethoscope, Wallet } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { formatMad } from '@/lib/medications/format';
+import { LongestWait } from './wait-time';
 
-type Tone = 'primary' | 'warning' | 'success' | 'admin';
-
-const TONE: Record<Tone, { wrap: string; icon: string }> = {
-  primary: { wrap: 'bg-primary-tint text-primary', icon: 'text-primary' },
-  warning: { wrap: 'bg-warning-tint text-warning', icon: 'text-warning' },
-  success: { wrap: 'bg-success-tint text-success', icon: 'text-success' },
-  admin: { wrap: 'bg-admin-tint text-admin', icon: 'text-admin' },
-};
-
-function StatTile({
+function Kpi({
   label,
   value,
   hint,
-  icon: Icon,
-  tone,
+  attention = false,
+  className,
 }: {
   label: string;
-  value: number;
-  hint?: string;
-  icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
-  tone: Tone;
+  value: ReactNode;
+  hint?: ReactNode;
+  /** Warning colour + leading bar: only when the number needs action. */
+  attention?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card p-4 flex items-start gap-3 card-hover-lift">
-      <div
-        aria-hidden
-        className={cn(
-          'flex items-center justify-center size-10 rounded-lg shrink-0',
-          TONE[tone].wrap,
-        )}
-      >
-        <Icon className={cn('size-5', TONE[tone].icon)} aria-hidden />
-      </div>
-      <div className="space-y-0.5 min-w-0">
-        <div className="text-small text-muted-foreground uppercase tracking-wide font-medium">
-          {label}
-        </div>
-        <div className="text-display font-semibold leading-none tabular-nums">
+    <div
+      className={cn(
+        'relative flex min-w-0 flex-col justify-center bg-card px-4 py-2.5',
+        attention && 'before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-warning',
+        className,
+      )}
+    >
+      <dt className="eyebrow truncate">{label}</dt>
+      <dd className="flex items-baseline gap-2">
+        <span
+          className={cn(
+            'text-title font-semibold tabular-nums',
+            attention ? 'text-warning-ink' : 'text-foreground',
+          )}
+        >
           {value}
-        </div>
+        </span>
         {hint ? (
-          <div className="text-small text-muted-foreground">{hint}</div>
+          <span className="truncate text-small text-muted-foreground tabular-nums">{hint}</span>
         ) : null}
-      </div>
+      </dd>
     </div>
   );
 }
 
+/**
+ * One slim KPI strip for the /today board (UX brief §3.2). Neutral by
+ * default; only "En attente" and unpaid money turn warning when > 0.
+ */
 export function TodayStats({
   scheduled,
-  waiting,
+  waitingSince,
   inConsultation,
   done,
   todayRevenueMad,
-  paidCount,
   awaitingCount,
+  awaitingMad,
 }: {
   scheduled: number;
-  waiting: number;
+  /** arrivedAt of everyone in the waiting room (drives count + longest wait). */
+  waitingSince: Date[];
   inConsultation: number;
   done: number;
   todayRevenueMad: string;
-  paidCount: number;
   awaitingCount: number;
+  awaitingMad: string;
 }) {
+  const waiting = waitingSince.length;
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-      <StatTile
-        icon={CalendarDays}
-        tone="primary"
-        label="Programmés"
-        value={scheduled}
-        hint={scheduled === 0 ? 'aucun rdv' : scheduled === 1 ? 'rendez-vous' : 'rendez-vous'}
-      />
-      <StatTile
-        icon={Clock}
-        tone="warning"
+    <dl
+      aria-label="Résumé de la journée"
+      className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border shadow-card sm:grid-cols-3 lg:grid-cols-5"
+    >
+      <Kpi label="Prévus" value={scheduled} hint={scheduled === 0 ? 'aucun RDV' : 'à venir'} />
+      <Kpi
         label="En attente"
         value={waiting}
-        hint={waiting === 0 ? 'salle vide' : waiting === 1 ? 'patient' : 'patients'}
+        attention={waiting > 0}
+        hint={waiting > 0 ? <LongestWait since={waitingSince} /> : 'salle vide'}
       />
-      <StatTile
-        icon={Stethoscope}
-        tone="admin"
-        label="En consultation"
-        value={inConsultation}
-        hint={inConsultation === 1 ? 'en cours' : 'en cours'}
+      <Kpi label="En consult." value={inConsultation} />
+      <Kpi label="Terminés" value={done} />
+      <Kpi
+        label="Recettes"
+        value={formatMad(todayRevenueMad)}
+        className="col-span-2 sm:col-span-2 lg:col-span-1"
+        hint={
+          awaitingCount > 0 ? (
+            <span className="text-warning-ink">
+              {formatMad(awaitingMad)} à encaisser
+            </span>
+          ) : (
+            'tout est encaissé'
+          )
+        }
       />
-      <StatTile
-        icon={CheckCircle2}
-        tone="success"
-        label="Terminés"
-        value={done}
-        hint="aujourd'hui"
-      />
-      <div className="rounded-xl border border-border bg-card shadow-card p-4 flex items-start gap-3 card-hover-lift">
-        <div
-          aria-hidden
-          className="flex items-center justify-center size-10 rounded-lg shrink-0 bg-success-tint text-success"
-        >
-          <Wallet className="size-5" aria-hidden />
-        </div>
-        <div className="space-y-0.5 min-w-0">
-          <div className="text-small text-muted-foreground uppercase tracking-wide font-medium">
-            Recettes du jour
-          </div>
-          <div className="text-display font-semibold leading-none tabular-nums">
-            {formatMad(todayRevenueMad)}
-          </div>
-          <div className="text-small text-muted-foreground">
-            {paidCount} encaissés · {awaitingCount} en attente
-          </div>
-        </div>
-      </div>
-    </div>
+    </dl>
   );
 }

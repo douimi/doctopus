@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, BarChart3, History, ShieldCheck } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { getTenantDetail } from '@/lib/admin/queries';
-import { Avatar } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Section } from '@/components/ui/section';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -16,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
 import { cn } from '@/lib/utils';
 import { ApiKeyCard } from './api-key-card';
@@ -30,7 +29,43 @@ export const dynamic = 'force-dynamic';
 function fmtDate(d: Date | string | null | undefined): string {
   if (!d) return '—';
   const dt = typeof d === 'string' ? new Date(d) : d;
-  return dt.toLocaleString('fr-FR');
+  return dt.toLocaleString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+const LEDGER_REASON: Record<string, string> = {
+  debit: 'Consultation IA',
+  grant: 'Pack accordé',
+  admin_adjustment: 'Correction du solde',
+  refund: 'Remboursement',
+};
+
+/** "admin.tenant.set_credits" → readable French label; unknown actions pass through. */
+const AUDIT_LABEL: Record<string, string> = {
+  'admin.tenant.grant_credits': 'Crédits accordés',
+  'admin.tenant.set_credits': 'Solde corrigé',
+  'admin.tenant.set_model': 'Modèle IA modifié',
+  'admin.tenant.enable_chatbot': 'Assistant IA activé',
+  'admin.tenant.disable_chatbot': 'Assistant IA désactivé',
+  'admin.tenant.suspend': 'Cabinet suspendu',
+  'admin.tenant.reactivate': 'Cabinet réactivé',
+  'admin.tenant.api_key_set': 'Clé API enregistrée',
+  'admin.tenant.api_key_cleared': 'Clé API supprimée',
+  'admin.invite.revoke': 'Invitation révoquée',
+};
+
+function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-0.5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
+      <dt className="text-small text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-body text-foreground">{children}</dd>
+    </div>
+  );
 }
 
 export default async function AdminTenantDetailPage({
@@ -42,240 +77,110 @@ export default async function AdminTenantDetailPage({
   const detail = await getTenantDetail(id);
   if (!detail) notFound();
   const { tenant, doctor, assistants, ledger, recentUsage, adminAudit } = detail;
+  const isActive = tenant.status === 'active';
+  const hasApiKey = Boolean(tenant.chatbotApiKeyLast4);
+
+  const meta = [
+    tenant.address,
+    tenant.phone ? `Tél. ${tenant.phone}` : null,
+    tenant.inpeNumber ? `INPE ${tenant.inpeNumber}` : null,
+  ].filter(Boolean);
 
   return (
     <>
       <PageHeader
-        eyebrow={
-          <Link
-            href="/admin/tenants"
-            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-            style={{ transitionDuration: 'var(--duration-fast)' }}
-          >
-            <ArrowLeft className="size-3" aria-hidden />
-            Cabinets
-          </Link>
-        }
+        back={{ href: '/admin/tenants', label: 'Cabinets' }}
         title={
-          <span className="inline-flex items-center gap-3">
+          <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>{tenant.name}</span>
-            <StatusBadge variant={tenant.status === 'active' ? 'success' : 'danger'}>
-              {tenant.status === 'active' ? 'Actif' : 'Suspendu'}
+            <StatusBadge variant={isActive ? 'success' : 'danger'}>
+              {isActive ? 'Actif' : 'Suspendu'}
             </StatusBadge>
           </span>
         }
+        description={
+          meta.length > 0 ? (
+            <span className="flex flex-wrap gap-x-3 gap-y-1 tabular-nums">
+              {meta.map((m, i) => (
+                <span key={i}>{m}</span>
+              ))}
+            </span>
+          ) : undefined
+        }
       />
-      <div className="px-6 py-6">
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4">
-          <div className="space-y-4 min-w-0">
-            <Card>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Avatar name={tenant.name} size="lg" tone="admin" />
-                  <div className="min-w-0 space-y-1">
-                    <div className="text-title font-semibold leading-tight">{tenant.name}</div>
-                    {tenant.address ? (
-                      <p className="text-small text-muted-foreground">{tenant.address}</p>
-                    ) : null}
-                    {tenant.phone || tenant.inpeNumber ? (
-                      <p className="text-small text-muted-foreground tabular-nums">
-                        {tenant.phone ? `Tél: ${tenant.phone}` : ''}
-                        {tenant.inpeNumber ? ` · INPE: ${tenant.inpeNumber}` : ''}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="border-t border-border pt-3 space-y-2 text-body">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-small text-muted-foreground min-w-24">
-                      Médecin
-                    </span>
-                    {doctor ? (
-                      <span>
-                        <span className="font-medium">{doctor.fullName}</span>{' '}
-                        <code className="text-small text-muted-foreground">
-                          {doctor.email}
-                        </code>
+      <PageBody>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+          {/* 1 — overview (left column, first row). */}
+          <Card className="min-w-0">
+            <CardHeader>
+              <CardTitle>Aperçu</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="space-y-3">
+                <Fact label="Médecin">
+                  {doctor ? (
+                    <span className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="font-medium">{doctor.fullName}</span>
+                      <span className="break-all text-small text-muted-foreground">
+                        {doctor.email}
                       </span>
-                    ) : (
-                      <span className="text-muted-foreground italic">Aucun</span>
-                    )}
-                  </div>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Aucun médecin rattaché</span>
+                  )}
+                </Fact>
+                <Fact label="Assistant(e)s">
                   {assistants.length > 0 ? (
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-small text-muted-foreground min-w-24">
-                        Assistant(e)s
-                      </span>
-                      <span className="text-small">
-                        {assistants.map((a) => a.email).join(', ')}
-                      </span>
-                    </div>
-                  ) : null}
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-small text-muted-foreground min-w-24">
-                      Crédits IA
-                    </span>
-                    <span className="font-medium tabular-nums">
-                      ~{tenant.chatbotCreditsBalance}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-small text-muted-foreground min-w-24">Modèle</span>
-                    <span className="text-small tabular-nums">
-                      {tenant.chatbotProvider ?? '—'} / {tenant.chatbotModel ?? '—'}
-                    </span>
-                    <StatusBadge
-                      variant={tenant.chatbotEnabled ? 'success' : 'neutral'}
-                      icon={tenant.chatbotEnabled ? ShieldCheck : undefined}
-                    >
+                    <ul className="space-y-0.5">
+                      {assistants.map((a) => (
+                        <li key={a.email} className="break-all text-small">
+                          {a.email}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground">Aucun(e)</span>
+                  )}
+                </Fact>
+                <Fact label="Crédits IA">
+                  <span
+                    className={cn(
+                      'font-medium tabular-nums',
+                      tenant.chatbotCreditsBalance <= 0 && 'text-warning-ink',
+                    )}
+                  >
+                    {tenant.chatbotCreditsBalance}
+                  </span>
+                  <span className="text-small text-muted-foreground"> consultations restantes</span>
+                </Fact>
+                <Fact label="Assistant IA">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <StatusBadge variant={tenant.chatbotEnabled ? 'success' : 'neutral'}>
                       {tenant.chatbotEnabled ? 'Activé' : 'Désactivé'}
                     </StatusBadge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                    <span className="text-small text-muted-foreground">
+                      {tenant.chatbotProvider && tenant.chatbotModel
+                        ? `${tenant.chatbotProvider} · ${tenant.chatbotModel}`
+                        : 'Aucun modèle choisi'}
+                    </span>
+                  </span>
+                </Fact>
+              </dl>
+            </CardContent>
+          </Card>
 
-            <Section icon={History} title="Historique crédits" count={ledger.length}>
-              <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-44">Date</TableHead>
-                      <TableHead>Δ</TableHead>
-                      <TableHead>Raison</TableHead>
-                      <TableHead>Par</TableHead>
-                      <TableHead>Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ledger.length === 0 ? (
-                      <TableEmpty colSpan={5}>
-                        <EmptyState
-                          icon={History}
-                          title="Aucun crédit"
-                          description="Aucun crédit IA n'a encore été accordé à ce cabinet."
-                        />
-                      </TableEmpty>
-                    ) : (
-                      ledger.map((l) => (
-                        <TableRow key={l.id}>
-                          <TableCell className="font-mono text-small text-muted-foreground tabular-nums">
-                            {fmtDate(l.createdAt)}
-                          </TableCell>
-                          <TableCell
-                            className={cn(
-                              'font-medium tabular-nums',
-                              l.change > 0 ? 'text-success' : 'text-danger',
-                            )}
-                          >
-                            {l.change > 0 ? '+' : ''}
-                            {l.change}
-                          </TableCell>
-                          <TableCell className="text-small">{l.reason}</TableCell>
-                          <TableCell className="text-small text-muted-foreground tabular-nums">
-                            {l.grantedBy ?? '—'}
-                          </TableCell>
-                          <TableCell className="text-small text-muted-foreground">
-                            {l.notes ?? ''}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </Section>
-
-            <Section icon={BarChart3} title="Usage IA récent" count={recentUsage.length}>
-              <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-44">Date</TableHead>
-                      <TableHead>Consultation</TableHead>
-                      <TableHead>Modèle</TableHead>
-                      <TableHead>Tokens (in/out)</TableHead>
-                      <TableHead>Coût µ$</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentUsage.length === 0 ? (
-                      <TableEmpty colSpan={5}>
-                        <EmptyState
-                          icon={BarChart3}
-                          title="Aucun usage"
-                          description="Ce cabinet n'a appelé l'assistant IA pour aucune consultation."
-                        />
-                      </TableEmpty>
-                    ) : (
-                      recentUsage.map((u) => (
-                        <TableRow key={u.id}>
-                          <TableCell className="font-mono text-small text-muted-foreground tabular-nums">
-                            {fmtDate(u.createdAt)}
-                          </TableCell>
-                          <TableCell className="text-small font-mono">
-                            #{u.consultationId.slice(0, 8)}
-                          </TableCell>
-                          <TableCell className="text-small text-muted-foreground tabular-nums">
-                            {u.provider}/{u.model}
-                          </TableCell>
-                          <TableCell className="text-small tabular-nums">
-                            {u.inputTokens} / {u.outputTokens}
-                          </TableCell>
-                          <TableCell className="text-small tabular-nums">
-                            {u.estimatedCostMicrousd ?? '—'}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </Section>
-
-            <Section icon={History} title="Actions admin (audit)" count={adminAudit.length}>
-              <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-44">Date</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Détails</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {adminAudit.length === 0 ? (
-                      <TableEmpty colSpan={3}>
-                        <EmptyState
-                          icon={History}
-                          title="Aucune action admin"
-                          description="Aucune action super-admin enregistrée pour ce cabinet."
-                        />
-                      </TableEmpty>
-                    ) : (
-                      adminAudit.map((a) => (
-                        <TableRow key={a.id}>
-                          <TableCell className="font-mono text-small text-muted-foreground tabular-nums">
-                            {fmtDate(a.at)}
-                          </TableCell>
-                          <TableCell className="text-small font-medium">{a.action}</TableCell>
-                          <TableCell className="text-small text-muted-foreground">
-                            <code className="break-all">
-                              {a.metadata ? JSON.stringify(a.metadata) : ''}
-                            </code>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </Section>
-          </div>
-
-          <aside className="space-y-4">
-            <ImportPatientsCard tenantId={tenant.id} />
+          {/* 2 — management rail. Spans both rows on lg; sits between overview and history on mobile. */}
+          <aside
+            className="space-y-4 lg:col-start-2 lg:row-span-2 lg:row-start-1"
+            aria-label="Gestion du cabinet"
+          >
+            <GrantCreditsCard tenantId={tenant.id} currentBalance={tenant.chatbotCreditsBalance} />
+            <ToggleChatbotCard
+              tenantId={tenant.id}
+              enabled={tenant.chatbotEnabled}
+              hasApiKey={hasApiKey}
+              credits={tenant.chatbotCreditsBalance}
+            />
             <SetModelCard
               tenantId={tenant.id}
               initialProvider={tenant.chatbotProvider}
@@ -286,18 +191,158 @@ export default async function AdminTenantDetailPage({
               provider={tenant.chatbotProvider}
               last4={tenant.chatbotApiKeyLast4 ?? null}
             />
-            <GrantCreditsCard
-              tenantId={tenant.id}
-              currentBalance={tenant.chatbotCreditsBalance}
-            />
-            <ToggleChatbotCard tenantId={tenant.id} enabled={tenant.chatbotEnabled} />
+            <ImportPatientsCard tenantId={tenant.id} />
             <ToggleSuspensionCard
               tenantId={tenant.id}
+              tenantName={tenant.name}
               status={tenant.status as 'active' | 'suspended'}
             />
           </aside>
+
+          {/* 3 — history (left column, second row). */}
+          <div className="min-w-0 space-y-6">
+            <Section title="Historique des crédits" count={ledger.length}>
+              <div className="panel overflow-hidden">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-44">Date</TableHead>
+                      <TableHead className="text-right">Variation</TableHead>
+                      <TableHead>Motif</TableHead>
+                      <TableHead className="hidden md:table-cell">Par</TableHead>
+                      <TableHead className="hidden sm:table-cell">Note</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ledger.length === 0 ? (
+                      <TableEmpty colSpan={5}>
+                        <EmptyState
+                          size="sm"
+                          title="Aucun mouvement de crédits"
+                          description="Accordez un premier pack depuis le panneau « Crédits IA »."
+                        />
+                      </TableEmpty>
+                    ) : (
+                      ledger.map((l) => (
+                        <TableRow key={l.id}>
+                          <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
+                            {fmtDate(l.createdAt)}
+                          </TableCell>
+                          <TableCell
+                            className={cn(
+                              'text-right font-medium tabular-nums',
+                              l.change > 0 ? 'text-success-ink' : 'text-foreground',
+                            )}
+                          >
+                            {l.change > 0 ? '+' : l.change < 0 ? '−' : ''}
+                            {Math.abs(l.change)}
+                          </TableCell>
+                          <TableCell>{LEDGER_REASON[l.reason] ?? l.reason}</TableCell>
+                          <TableCell className="hidden max-w-48 truncate text-small text-muted-foreground md:table-cell">
+                            {l.grantedBy?.replace(/^admin:/, '') ?? '—'}
+                          </TableCell>
+                          <TableCell className="hidden text-small text-muted-foreground sm:table-cell">
+                            {l.notes ?? ''}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Section>
+
+            <Section title="Usage IA récent" count={recentUsage.length}>
+              <div className="panel overflow-hidden">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-44">Date</TableHead>
+                      <TableHead>Consultation</TableHead>
+                      <TableHead className="hidden md:table-cell">Modèle</TableHead>
+                      <TableHead className="text-right">Tokens (in / out)</TableHead>
+                      <TableHead className="hidden text-right sm:table-cell">Coût (µ$)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentUsage.length === 0 ? (
+                      <TableEmpty colSpan={5}>
+                        <EmptyState
+                          size="sm"
+                          title="Aucun usage"
+                          description="Ce cabinet n'a encore utilisé l'assistant IA dans aucune consultation."
+                        />
+                      </TableEmpty>
+                    ) : (
+                      recentUsage.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
+                            {fmtDate(u.createdAt)}
+                          </TableCell>
+                          <TableCell className="font-mono text-small">
+                            #{u.consultationId.slice(0, 8)}
+                          </TableCell>
+                          <TableCell className="hidden text-small text-muted-foreground md:table-cell">
+                            {u.provider} · {u.model}
+                          </TableCell>
+                          <TableCell className="text-right text-small tabular-nums">
+                            {u.inputTokens.toLocaleString('fr-FR')} /{' '}
+                            {u.outputTokens.toLocaleString('fr-FR')}
+                          </TableCell>
+                          <TableCell className="hidden text-right text-small tabular-nums sm:table-cell">
+                            {u.estimatedCostMicrousd?.toLocaleString('fr-FR') ?? '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Section>
+
+            <Section title="Journal des actions admin" count={adminAudit.length}>
+              <div className="panel overflow-hidden">
+                <Table density="compact">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-44">Date</TableHead>
+                      <TableHead>Action</TableHead>
+                      <TableHead className="hidden sm:table-cell">Détails</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {adminAudit.length === 0 ? (
+                      <TableEmpty colSpan={3}>
+                        <EmptyState
+                          size="sm"
+                          title="Aucune action admin"
+                          description="Les actions super-admin sur ce cabinet apparaîtront ici."
+                        />
+                      </TableEmpty>
+                    ) : (
+                      adminAudit.map((a) => (
+                        <TableRow key={a.id}>
+                          <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
+                            {fmtDate(a.at)}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {AUDIT_LABEL[a.action] ?? a.action}
+                          </TableCell>
+                          <TableCell className="hidden text-small text-muted-foreground sm:table-cell">
+                            {a.metadata ? (
+                              <code className="break-all">{JSON.stringify(a.metadata)}</code>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Section>
+          </div>
         </div>
-      </div>
+      </PageBody>
     </>
   );
 }

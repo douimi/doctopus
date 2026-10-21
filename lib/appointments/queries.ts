@@ -113,3 +113,37 @@ export async function getAppointmentById(tenantId: string, id: string) {
     return row ?? null;
   });
 }
+
+export type InConsultationRow = AppointmentWithPatient & { consultationId: string };
+
+/**
+ * Same rows as listInConsultation, plus the open consultation's id so the
+ * /today board can link the doctor straight back into it.
+ */
+export async function listInConsultationWithIds(tenantId: string): Promise<InConsultationRow[]> {
+  return withTenantTx(tenantId, async (tx) => {
+    const rows = await tx
+      .select({
+        appt: appointments,
+        consultationId: consultations.id,
+        patient: {
+          id: patients.id,
+          firstName: patients.firstName,
+          lastName: patients.lastName,
+          phone: patients.phone,
+          dateOfBirth: patients.dateOfBirth,
+        },
+      })
+      .from(appointments)
+      .innerJoin(patients, eq(patients.id, appointments.patientId))
+      .innerJoin(consultations, eq(consultations.appointmentId, appointments.id))
+      .where(
+        and(
+          eq(appointments.status, 'in_consultation'),
+          eq(consultations.isFinalized, false),
+        ),
+      )
+      .orderBy(asc(appointments.startedAt));
+    return rows.map((r) => ({ ...r.appt, patient: r.patient, consultationId: r.consultationId }));
+  });
+}

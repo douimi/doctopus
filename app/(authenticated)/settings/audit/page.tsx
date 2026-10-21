@@ -1,7 +1,9 @@
 import { History } from 'lucide-react';
 import { requireDoctor } from '@/lib/auth/guards';
 import { listAuditLog } from '@/lib/audit/queries';
+import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
+import { SettingsTabs } from '../settings-tabs';
 import { Section } from '@/components/ui/section';
 import {
   Table,
@@ -59,13 +61,16 @@ export default async function AuditPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Paramètres"
         title="Journal d'audit"
         description="Trace de toutes les actions effectuées sur votre cabinet."
-      />
-      <div className="px-6 py-6 space-y-4">
-        <Section icon={History} title="Événements récents" count={page.rows.length}>
-          <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-            <Table>
+      >
+        <SettingsTabs active="audit" />
+      </PageHeader>
+      <PageBody>
+        <Section title="Événements récents" count={page.rows.length}>
+          <div className="panel overflow-hidden">
+            <Table density="compact">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-44">Date</TableHead>
@@ -86,21 +91,21 @@ export default async function AuditPage() {
                 ) : (
                   page.rows.map((r) => (
                     <TableRow key={r.id}>
-                      <TableCell className="font-mono text-small text-muted-foreground tabular-nums">
+                      <TableCell className="whitespace-nowrap text-small text-muted-foreground tabular-nums">
                         {fmt(r.at)}
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-foreground">
                         {ACTION_LABEL[r.action] ?? r.action}
                       </TableCell>
                       <TableCell className="text-small text-muted-foreground tabular-nums">
                         {r.entityType ?? '—'}{' '}
                         {r.entityId ? (
-                          <code className="text-small">#{r.entityId.slice(0, 8)}</code>
+                          <code className="font-mono text-small text-subtle-foreground">#{r.entityId.slice(0, 8)}</code>
                         ) : null}
                       </TableCell>
                       <TableCell className="text-small text-muted-foreground tabular-nums">
                         {r.actorUserId ? (
-                          <code className="text-small">#{r.actorUserId.slice(0, 8)}</code>
+                          <code className="font-mono text-small text-subtle-foreground">#{r.actorUserId.slice(0, 8)}</code>
                         ) : (
                           '—'
                         )}
@@ -117,7 +122,7 @@ export default async function AuditPage() {
             </p>
           ) : null}
         </Section>
-      </div>
+      </PageBody>
     </>
   );
 }

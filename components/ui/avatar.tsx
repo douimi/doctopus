@@ -15,15 +15,15 @@ export type AvatarProps = {
 };
 
 const SIZE: Record<NonNullable<AvatarProps['size']>, string> = {
-  sm: 'size-7 text-[0.7rem]',
-  md: 'size-9 text-small',
-  lg: 'size-12 text-body',
+  sm: 'size-7 text-micro font-semibold',
+  md: 'size-8 text-small font-semibold',
+  lg: 'size-11 text-body font-semibold',
 };
 
 const TONE: Record<NonNullable<AvatarProps['tone']>, string> = {
-  primary: 'bg-primary-tint text-primary',
-  admin: 'bg-admin-tint text-admin',
-  muted: 'bg-muted text-muted-foreground',
+  primary: 'bg-primary-tint text-primary-ink',
+  admin: 'bg-admin-tint text-admin-ink',
+  muted: 'bg-muted text-muted-foreground ring-1 ring-inset ring-border',
 };
 
 export function Avatar({
@@ -37,7 +37,7 @@ export function Avatar({
       aria-hidden
       data-slot="avatar"
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-pill font-medium tabular-nums select-none',
+        'inline-flex shrink-0 items-center justify-center rounded-pill tabular-nums tracking-normal select-none',
         SIZE[size],
         TONE[tone],
         className,
