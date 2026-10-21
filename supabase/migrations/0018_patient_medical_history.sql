@@ -5,11 +5,13 @@
 -- consultations to find them. These columns live on the patient and are
 -- shown (and editable) on every consultation. All nullable, additive —
 -- existing rows and RLS policies (row-level, on patients) are unaffected.
+-- IF NOT EXISTS: it was first applied by hand in production, so a later
+-- `supabase db push` must be able to replay it without failing.
 
 ALTER TABLE public.patients
-  ADD COLUMN history_medical text,
-  ADD COLUMN history_surgical text,
-  ADD COLUMN history_family text,
-  ADD COLUMN history_treatments text,
-  ADD COLUMN history_lifestyle text,
-  ADD COLUMN history_updated_at timestamptz;
+  ADD COLUMN IF NOT EXISTS history_medical text,
+  ADD COLUMN IF NOT EXISTS history_surgical text,
+  ADD COLUMN IF NOT EXISTS history_family text,
+  ADD COLUMN IF NOT EXISTS history_treatments text,
+  ADD COLUMN IF NOT EXISTS history_lifestyle text,
+  ADD COLUMN IF NOT EXISTS history_updated_at timestamptz;
