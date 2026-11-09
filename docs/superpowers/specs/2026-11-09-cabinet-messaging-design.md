@@ -1,5 +1,7 @@
 # Cabinet messaging — real-time doctor ↔ assistant chat
 
+> **Status (2026-11-09)**: Phase 0 and Phase 1 shipped (migrations 0019, 0020). Phases 2–3 pending. Where this spec and the code disagree, the "Implementation notes" section at the end wins.
+
 > **Why now**: doctors and assistants coordinate the day over WhatsApp ("faites entrer le suivant", "Mme X a appelé", photos of external lab results). That leaks patient data to a consumer app, splits context away from Doctopus, and forces the doctor to pick up a phone mid-consultation. This spec moves that channel inside the app, where messages can point at real patients and appointments.
 
 **Goal**: every member of a cabinet can chat in real time with the rest of the team — one cabinet-wide thread plus private 1:1 threads — from a side panel available on every screen and from a full `/messages` page. Messages can reference a patient / today's appointment, be sent as one-click quick replies, carry photos/PDFs, or be voice notes. Unread state, typing, presence, sound, and browser notifications make it a credible WhatsApp replacement for intra-cabinet traffic.
@@ -289,3 +291,16 @@ docs/runbooks/deploy.md                  # private-channel toggle + bucket
 - Message retention: **keep forever** vs auto-purge after N months.
 - Should assistants be able to DM each other? **Yes** (every teammate appears in the list).
 - Doctor "Ne pas déranger" toggle that silences sound/notifications during consultations? **Defer to after Phase 3.**
+
+---
+
+## Implementation notes (Phases 0–1, as built)
+
+- **Phase 0 did not add JWT-aware SELECT policies.** That would have opened `appointments`/`consultations` to PostgREST reads with a user JWT (assistants could read clinical notes) and streamed full rows over the socket. Instead, migration 0019 adds a trigger that publishes a *minimal* ping (ids + status fields) to the private topic `tenant:<id>` via `realtime.send`. Content-only consultation autosaves don't ping (the editor is never refreshed mid-typing). The tables left the `supabase_realtime` publication. `TenantRealtimeProvider` owns that one channel (activity + Presence) and fans out through context.
+- **Direct threads use `user_a < user_b` columns**, not a `direct_key` string, and visibility is `app_user_id() IN (user_a, user_b)`. `app_user_id()` maps `''` to NULL: custom GUCs revert to `''` (not NULL) after a `SET LOCAL` on a pooled connection, and `position('' in x)` would have matched everything.
+- **Cabinet fan-out** goes to every active `user_profiles` row of the tenant (`conversation_participants()`), so `conversation_members` only stores read state + mute and is created lazily. The cabinet conversation itself is created on first bootstrap.
+- **Typing** rides on Presence (`typingIn`), so clients never need broadcast INSERT rights (they can't forge activity events).
+- **Sound** is synthesized with WebAudio (no `public/sounds` asset).
+- `sendMessageAction` never rethrows driver errors (they embed the message text as SQL params); `body` / `attachmentName` were added to the Sentry scrubber.
+- Mobile: messaging is reachable from the top-bar icon and the drawer, not a bottom tab (the tab bar stays at 3 + "Plus").
+- Tests: `tests/rls/messaging.rls.test.ts`, `tests/rls/realtime-messaging.test.ts`, `tests/rls/realtime-tenant-activity.test.ts` (real GoTrue users + private channels), `tests/unit/messaging/store.test.ts`, `tests/e2e/messaging.spec.ts` (two browser contexts).

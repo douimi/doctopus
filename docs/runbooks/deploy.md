@@ -52,7 +52,34 @@ pnpm exec supabase db push
 (`https://app.supabase.com/project/<project-ref>`).
 
 This applies every migration in `supabase/migrations/` in order
-(0000 → 0018, plus the timestamp-prefixed RLS files).
+(0000 → 0020, plus the timestamp-prefixed RLS files).
+
+> **Existing project (incremental deploys).** Numbered migrations sort
+> *before* the `2026…` RLS files, so the CLI refuses them without
+> `--include-all`. Always dry-run first and check the list is only what
+> you expect:
+>
+> ```bash
+> pnpm exec supabase db push --linked --include-all --dry-run
+> pnpm exec supabase db push --linked --include-all
+> ```
+>
+> On `doctopus-prod`, 0013–0015 and 0018 were applied by hand in the SQL
+> editor; on 2026-11-09 the history was repaired with
+> `supabase migration repair --status applied 0013 0014 0015 0016 0017 0018 --linked`
+> (metadata only). **Never replay 0017 on a live database**: despite its
+> "idempotent" comment it cancels every `waiting` appointment that has no
+> consultation yet — i.e. the whole waiting room.
+
+### Realtime
+
+/today live refresh, the notification bell, the waiting-room toast
+(migration 0019) and cabinet messaging (0020) use **private Broadcast
+channels** authorized by RLS on `realtime.messages` — nothing to toggle in
+the dashboard. Smoke test after deploy: open /today as the doctor in one
+browser and add a walk-in as the assistant in another; the doctor's
+board must update without a reload. Then send a message from the
+assistant's /messages page; the doctor's message icon gets a badge.
 
 **Verify**:
 

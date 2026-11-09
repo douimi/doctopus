@@ -30,6 +30,10 @@ const SENSITIVE_KEYS = new Set([
   'chatbotApiKey',
   'provider_api_key',
   'messages',
+  // Cabinet messaging: message text and attachment names.
+  'body',
+  'attachmentName',
+  'attachment_name',
 ]);
 
 const CIN_RE = /\b[A-Z]{1,2}\d{2,8}\b/g;

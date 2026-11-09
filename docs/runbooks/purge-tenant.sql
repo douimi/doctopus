@@ -51,6 +51,18 @@ BEGIN
   DELETE FROM chatbot_credit_ledger      WHERE tenant_id = v_tenant_id;
   GET DIAGNOSTICS v_n = ROW_COUNT;  RAISE NOTICE '  chatbot_credit_ledger: %', v_n;
 
+  -- 1b. Cabinet messaging (migration 0020). Conversations cascade to
+  --     conversation_members + messages; delete messages first anyway so
+  --     the counts are reported.
+  DELETE FROM messages                   WHERE tenant_id = v_tenant_id;
+  GET DIAGNOSTICS v_n = ROW_COUNT;  RAISE NOTICE '  messages: %', v_n;
+
+  DELETE FROM conversation_members       WHERE tenant_id = v_tenant_id;
+  GET DIAGNOSTICS v_n = ROW_COUNT;  RAISE NOTICE '  conversation_members: %', v_n;
+
+  DELETE FROM conversations              WHERE tenant_id = v_tenant_id;
+  GET DIAGNOSTICS v_n = ROW_COUNT;  RAISE NOTICE '  conversations: %', v_n;
+
   -- 2. Prescriptions
   DELETE FROM prescription_items         WHERE tenant_id = v_tenant_id;
   GET DIAGNOSTICS v_n = ROW_COUNT;  RAISE NOTICE '  prescription_items: %', v_n;

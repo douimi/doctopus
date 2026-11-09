@@ -43,6 +43,7 @@ export function SidebarNavItem({
   match,
   exclude,
   exact,
+  trailing,
   children,
 }: {
   href: string;
@@ -53,6 +54,8 @@ export function SidebarNavItem({
   exclude?: readonly string[];
   /** Only active on `href` itself, not its sub-routes (dashboard roots). */
   exact?: boolean;
+  /** Right-aligned extra (e.g. an unread badge). */
+  trailing?: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -80,6 +83,7 @@ export function SidebarNavItem({
         {icon}
       </span>
       <span className="truncate">{children}</span>
+      {trailing}
     </Link>
   );
 }

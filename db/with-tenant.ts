@@ -28,3 +28,22 @@ export async function withTenantTx<T>(
     return fn(tx);
   });
 }
+
+/**
+ * Like withTenantTx, but also pins `app.user_id` so per-user RLS (cabinet
+ * messaging: direct threads, own read state, own messages) applies.
+ * `userId` MUST come from the server-resolved Session.
+ */
+export async function withTenantUserTx<T>(
+  tenantId: string,
+  userId: string,
+  fn: (tx: Tx) => Promise<T>,
+): Promise<T> {
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) {
+    throw new Error(`Invalid userId: ${userId}`);
+  }
+  return withTenantTx(tenantId, async (tx) => {
+    await tx.execute(sql.raw(`SET LOCAL "app.user_id" = '${userId}'`));
+    return fn(tx);
+  });
+}

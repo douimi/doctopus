@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarDays,
+  MessageSquare,
   Settings,
   Stethoscope,
   Users,
@@ -9,6 +10,9 @@ import {
 import type { ReactNode } from 'react';
 import type { Session } from '@/lib/auth/session';
 import { BrandLockup } from '@/components/ui/brand';
+import { ChatDock } from '@/components/messaging/chat-dock';
+import { ChatLauncher, MessagesNavBadge } from '@/components/messaging/chat-launcher';
+import { MessagingProvider } from '@/components/messaging/messaging-provider';
 import { Toaster } from '@/components/ui/toast';
 import { MobileShell, type MobileTab } from './mobile-shell';
 import { NotificationBell } from './notification-bell';
@@ -37,7 +41,8 @@ export function DoctorShell({
   const desktopBrand = (
     <>
       <BrandLockup size={96} className="-my-4 -ml-2" />
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center">
+        <ChatLauncher />
         <NotificationBell />
       </div>
     </>
@@ -66,6 +71,13 @@ export function DoctorShell({
         </SidebarNavItem>
         <SidebarNavItem href="/patients" icon={<Users className="size-4" aria-hidden />}>
           Patients
+        </SidebarNavItem>
+        <SidebarNavItem
+          href="/messages"
+          icon={<MessageSquare className="size-4" aria-hidden />}
+          trailing={<MessagesNavBadge />}
+        >
+          Messagerie
         </SidebarNavItem>
         {!isDoctor ? (
           <SidebarNavItem href={PAYMENTS} icon={<Wallet className="size-4" aria-hidden />}>
@@ -135,6 +147,7 @@ export function DoctorShell({
 
   return (
     <TenantRealtimeProvider tenantId={session.tenantId} userId={session.userId}>
+    <MessagingProvider userId={session.userId}>
     <div className="min-h-dvh bg-app-surface md:flex">
       <Sidebar theme="sky" brand={desktopBrand} footer={footerNode}>
         {navItems}
@@ -144,7 +157,12 @@ export function DoctorShell({
         drawerBrand={<BrandLockup size={72} className="-my-3" />}
         nav={navItems}
         footer={footerNode}
-        topBarRight={<NotificationBell />}
+        topBarRight={
+          <div className="flex items-center">
+            <ChatLauncher />
+            <NotificationBell />
+          </div>
+        }
         tabs={mobileTabs}
       />
       {/* Bottom padding clears the mobile tab bar (h-14 + safe area). */}
@@ -152,8 +170,10 @@ export function DoctorShell({
         {children}
       </main>
       <WaitingArrivalsListener />
+      <ChatDock />
       <Toaster />
     </div>
+    </MessagingProvider>
     </TenantRealtimeProvider>
   );
 }

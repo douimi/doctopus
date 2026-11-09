@@ -8,3 +8,4 @@ export * from './medications';
 export * from './prescriptions';
 export * from './audit';
 export * from './chatbot';
+export * from './messaging';
