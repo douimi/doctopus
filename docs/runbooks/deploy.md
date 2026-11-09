@@ -52,7 +52,7 @@ pnpm exec supabase db push
 (`https://app.supabase.com/project/<project-ref>`).
 
 This applies every migration in `supabase/migrations/` in order
-(0000 → 0020, plus the timestamp-prefixed RLS files).
+(0000 → 0021, plus the timestamp-prefixed RLS files).
 
 > **Existing project (incremental deploys).** Numbered migrations sort
 > *before* the `2026…` RLS files, so the CLI refuses them without
@@ -74,8 +74,8 @@ This applies every migration in `supabase/migrations/` in order
 ### Realtime
 
 /today live refresh, the notification bell, the waiting-room toast
-(migration 0019) and cabinet messaging (0020) use **private Broadcast
-channels** authorized by RLS on `realtime.messages` — nothing to toggle in
+(migration 0019) and cabinet messaging (0020, 0021 — incl. the
+`typing:<tenant>` topic) use **private Broadcast channels** authorized by RLS on `realtime.messages` — nothing to toggle in
 the dashboard. Smoke test after deploy: open /today as the doctor in one
 browser and add a walk-in as the assistant in another; the doctor's
 board must update without a reload. Then send a message from the

@@ -22,7 +22,9 @@ function msg(id: string, at: string, over: Partial<ChatMessage> = {}): ChatMessa
     kind: 'text',
     body: `m${id}`,
     patientId: null,
+    patientName: null,
     appointmentId: null,
+    appointmentStatus: null,
     attachmentName: null,
     attachmentMime: null,
     attachmentBytes: null,
@@ -53,6 +55,7 @@ function booted(over: Partial<ConversationSummary> = {}): MessagingState {
       { id: PEER, fullName: 'Peer', role: 'assistant', active: true },
     ],
     conversations: [{ ...cabinet, ...over }],
+    quickReplies: [{ id: 'q1', label: 'Suivant', body: 'Patient suivant', sortOrder: 0 }],
   };
   return messagingReducer(initialMessagingState, { type: 'bootstrap', data });
 }

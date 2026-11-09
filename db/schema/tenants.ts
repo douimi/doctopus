@@ -21,6 +21,8 @@ export const tenants = pgTable('tenants', {
   chatbotApiKeyLast4: text('chatbot_api_key_last4'),
   defaultConsultationPriceMad: numeric('default_consultation_price_mad', { precision: 10, scale: 2 }),
   logoUrl: text('logo_url'),
+  // Cabinet messaging: default quick replies are seeded once (migration 0021).
+  quickRepliesSeeded: boolean('quick_replies_seeded').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

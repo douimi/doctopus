@@ -64,7 +64,7 @@ test('doctor and assistant chat in real time; arrivals reach the doctor live', a
   const box = assistant.getByLabel('Votre message');
   await box.fill('Docteur, Mme Alaoui est arrivée');
   await box.press('Enter');
-  await expect(assistant.getByText('Docteur, Mme Alaoui est arrivée')).toBeVisible();
+  await expect(assistant.getByRole('region', { name: 'Conversation', exact: true }).getByText('Docteur, Mme Alaoui est arrivée')).toBeVisible();
 
   // Doctor: unread badge + toast, then opens the dock on the thread.
   await expect(doctor.getByRole('button', { name: /Messagerie — 1 message non lu/ }).first()).toBeVisible({
@@ -80,9 +80,12 @@ test('doctor and assistant chat in real time; arrivals reach the doctor live', a
   // Typing indicator reaches the assistant, then the reply.
   const reply = dock.getByLabel('Votre message');
   await reply.pressSequentially('Faites-la entrer', { delay: 30 });
-  await expect(assistant.getByText('doctor écrit…', { exact: true })).toBeVisible({ timeout: 10_000 });
+  const typingLine = assistant.getByTestId('typing-line');
+  await expect(typingLine).toHaveText(/^Dr e2e-msg-\d+ écrit…$/, { timeout: 10_000 });
   await reply.press('Enter');
-  await expect(assistant.getByText('Faites-la entrer')).toBeVisible({ timeout: 10_000 });
+  await expect(assistant.getByRole('region', { name: 'Conversation', exact: true }).getByText('Faites-la entrer')).toBeVisible({ timeout: 10_000 });
+  // Regression: the indicator must clear once the message is sent.
+  await expect(typingLine).toHaveText('', { timeout: 8_000 });
 
   // Assistant had the thread open → doctor sees "Lu par".
   await expect(dock.getByText(/Lu par/)).toBeVisible({ timeout: 10_000 });
@@ -95,7 +98,7 @@ test('doctor and assistant chat in real time; arrivals reach the doctor live', a
   await dm.press('Enter');
   await assistant.goto('/messages');
   await assistant.getByRole('button', { name: /doctor e2e-msg/ }).click();
-  await expect(assistant.getByRole('region', { name: 'Conversation' }).getByText('Message privé pour vous')).toBeVisible({ timeout: 10_000 });
+  await expect(assistant.getByRole('region', { name: 'Conversation', exact: true }).getByText('Message privé pour vous')).toBeVisible({ timeout: 10_000 });
   // Read tick on the doctor's side once the assistant opened it.
   await expect(dock.getByLabel('Lu').last()).toBeVisible({ timeout: 10_000 });
 
@@ -111,7 +114,7 @@ test('doctor and assistant chat in real time; arrivals reach the doctor live', a
     timeout: 10_000,
   });
   await doctor.goto(`/messages${dmUrl.search}`);
-  await expect(doctor.getByRole('region', { name: 'Conversation' }).getByText('Bien reçu')).toBeVisible();
+  await expect(doctor.getByRole('region', { name: 'Conversation', exact: true }).getByText('Bien reçu')).toBeVisible();
   await expect(doctor.getByRole('button', { name: 'Messagerie', exact: true }).first()).toBeVisible({
     timeout: 10_000,
   });

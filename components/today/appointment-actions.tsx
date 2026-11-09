@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, FolderOpen, UserMinus, XCircle } from 'lucide-react';
+import { CheckCircle2, FolderOpen, MessageSquare, UserMinus, XCircle } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { showToast } from '@/components/ui/toast';
@@ -11,6 +11,7 @@ import {
   markNoShowAction,
   type RowActionResult,
 } from '@/app/(authenticated)/today/actions';
+import { useMessaging } from '@/components/messaging/messaging-provider';
 import { OverflowMenu, type OverflowItem } from './overflow-menu';
 
 function idForm(id: string): FormData {
@@ -66,10 +67,17 @@ export function AppointmentMenu({
   timeLabel?: string;
 }) {
   const [confirm, setConfirm] = useState<'cancel' | 'noShow' | null>(null);
+  const { composeAbout } = useMessaging();
   const isWaiting = status === 'waiting';
 
   const items: OverflowItem[] = [
     { kind: 'link', label: 'Ouvrir le dossier', href: `/patients/${patientId}`, icon: FolderOpen },
+    {
+      kind: 'action',
+      label: 'Envoyer un message à propos…',
+      icon: MessageSquare,
+      onSelect: () => void composeAbout({ id: patientId, name: fullName }),
+    },
     { kind: 'separator' },
   ];
   if (!isWaiting) {

@@ -8,7 +8,7 @@ import { usePresence } from '@/components/shell/tenant-realtime';
 import { peerOf } from '@/lib/messaging/types';
 import { cn } from '@/lib/utils';
 import { Composer } from './composer';
-import { conversationTitle, daySeparator, memberName, roleLabel, sameDay } from './format';
+import { conversationTitle, daySeparator, memberName, memberShortName, roleLabel, sameDay } from './format';
 import { MessageBubble, type ReadState } from './message-bubble';
 import { useMessaging, useMessagingState } from './messaging-provider';
 
@@ -122,7 +122,7 @@ export function Thread({
   const online = peerId ? presence.online.has(peerId) : false;
   const typers = [...presence.typing.entries()]
     .filter(([uid, cid]) => uid !== me && cid === conversationId)
-    .map(([uid]) => memberName(state.team, uid).split(' ')[0]);
+    .map(([uid]) => memberShortName(state.team, uid));
   const activeTeam = state.team.filter((m) => m.active);
   const onlineCount = activeTeam.filter((m) => presence.online.has(m.id)).length;
   const subtitle =
@@ -143,7 +143,7 @@ export function Thread({
   function readersOf(createdAt: string): string[] {
     return Object.entries(conv.reads)
       .filter(([uid, at]) => uid !== me && Date.parse(at) >= Date.parse(createdAt))
-      .map(([uid]) => memberName(state.team, uid).split(' ')[0]);
+      .map(([uid]) => memberShortName(state.team, uid));
   }
 
   return (
@@ -152,7 +152,7 @@ export function Thread({
         {leading}
         <span className="relative shrink-0">
           {peer ? (
-            <Avatar name={title} size="md" tone={peer.active ? 'primary' : 'muted'} />
+            <Avatar name={peer.fullName} size="md" tone={peer.active ? 'primary' : 'muted'} />
           ) : (
             <span className="inline-flex size-8 items-center justify-center rounded-pill bg-primary text-primary-foreground">
               <Users className="size-4" aria-hidden />
@@ -233,7 +233,7 @@ export function Thread({
                       <MessageBubble
                         message={m}
                         mine={mine}
-                        showSender={!mine && runBreak && conv.kind === 'cabinet'}
+                        senderLabel={!mine && runBreak && conv.kind === 'cabinet' ? memberName(state.team, m.senderId) : null}
                         readState={mine ? readStateFor(m.createdAt) : 'none'}
                         now={now}
                         readBy={
@@ -251,7 +251,7 @@ export function Thread({
         )}
       </div>
 
-      <div className="h-5 shrink-0 px-3.5 text-micro text-primary" aria-live="polite">
+      <div className="h-5 shrink-0 px-3.5 text-micro text-primary" aria-live="polite" data-testid="typing-line">
         {typers.length > 0
           ? `${typers.join(', ')} ${typers.length > 1 ? 'écrivent' : 'écrit'}…`
           : null}

@@ -5,9 +5,9 @@ import { BellOff, Loader2, Users } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { usePresence } from '@/components/shell/tenant-realtime';
 import { directConversationWith } from '@/lib/messaging/store';
-import type { ConversationSummary, TeamMember } from '@/lib/messaging/types';
+import { displayName, type ConversationSummary, type TeamMember } from '@/lib/messaging/types';
 import { cn } from '@/lib/utils';
-import { CABINET_TITLE, listTime, messagePreview, roleLabel } from './format';
+import { CABINET_TITLE, listTime, memberShortName, messagePreview, roleLabel } from './format';
 import { useMessaging, useMessagingState } from './messaging-provider';
 
 type Row = {
@@ -65,7 +65,7 @@ export function ConversationList({
     .filter((m) => m.id !== me)
     .map((m) => ({
       key: m.id,
-      title: m.fullName,
+      title: displayName(m),
       subtitle: roleLabel(m.role),
       conversation: directConversationWith(state, m.id),
       peer: m,
@@ -110,7 +110,7 @@ export function ConversationList({
         const unread = conv?.unread ?? 0;
         let preview = row.subtitle;
         if (last) {
-          const who = last.senderId === me ? 'Vous : ' : conv?.kind === 'cabinet' ? `${last.senderName.split(' ')[0]} : ` : '';
+          const who = last.senderId === me ? 'Vous : ' : conv?.kind === 'cabinet' ? `${memberShortName(state.team, last.senderId)} : ` : '';
           preview = `${who}${messagePreview(last)}`;
         }
         return (
@@ -128,7 +128,7 @@ export function ConversationList({
             >
               <span className="relative shrink-0">
                 {row.peer ? (
-                  <Avatar name={row.title} tone={inactive ? 'muted' : 'primary'} />
+                  <Avatar name={row.peer.fullName} tone={inactive ? 'muted' : 'primary'} />
                 ) : (
                   <span className="inline-flex size-8 items-center justify-center rounded-pill bg-primary text-primary-foreground">
                     <Users className="size-4" aria-hidden />

@@ -1,6 +1,6 @@
 # Cabinet messaging — real-time doctor ↔ assistant chat
 
-> **Status (2026-11-09)**: Phase 0 and Phase 1 shipped (migrations 0019, 0020). Phases 2–3 pending. Where this spec and the code disagree, the "Implementation notes" section at the end wins.
+> **Status (2026-11-10)**: Phases 0–3 shipped (migrations 0019, 0020, 0021). Where this spec and the code disagree, the "Implementation notes" section at the end wins.
 
 > **Why now**: doctors and assistants coordinate the day over WhatsApp ("faites entrer le suivant", "Mme X a appelé", photos of external lab results). That leaks patient data to a consumer app, splits context away from Doctopus, and forces the doctor to pick up a phone mid-consultation. This spec moves that channel inside the app, where messages can point at real patients and appointments.
 
@@ -304,3 +304,13 @@ docs/runbooks/deploy.md                  # private-channel toggle + bucket
 - `sendMessageAction` never rethrows driver errors (they embed the message text as SQL params); `body` / `attachmentName` were added to the Sentry scrubber.
 - Mobile: messaging is reachable from the top-bar icon and the drawer, not a bottom tab (the tab bar stays at 3 + "Plus").
 - Tests: `tests/rls/messaging.rls.test.ts`, `tests/rls/realtime-messaging.test.ts`, `tests/rls/realtime-tenant-activity.test.ts` (real GoTrue users + private channels), `tests/unit/messaging/store.test.ts`, `tests/e2e/messaging.spec.ts` (two browser contexts).
+
+## Implementation notes (Phases 2–3 + typing fix, as built — migration 0021)
+
+- **Typing indicator moved off Presence.** realtime-js 2.105 mutates superseded presence metas in place (drops `phx_ref`), so after a `track()` update the old "typing" meta was never removed and "X écrit…" stuck forever. Typing now uses a dedicated private broadcast topic `typing:<tenant>` (clients may write there, never on `tenant:<id>`), heartbeats every 2.5s while typing, and receivers expire an entry after 6s without a heartbeat. Presence is keyed per tab and tracked once (online dots only).
+- **Names:** doctors display as "Dr <nom complet>" and "Dr <nom>" in short form (typing line, read receipts, previews); assistants by full / first name.
+- **Quick replies** are shared by the whole cabinet (`quick_replies`), seeded once per tenant (`tenants.quick_replies_seeded`), edited by the doctor in Paramètres → Cabinet. A tap sends immediately (with the attached patient, if any).
+- **Patient link:** `@` (or the @ button) opens a search; the server attaches today's most relevant appointment (Casablanca day, waiting/in consultation first). The card shows the appointment status live (tenant activity pings). /today's ⋯ menu has "Envoyer un message à propos…".
+- **Attachments:** private bucket `chat-attachments` (10 Mo, photo/PDF/audio mime allow-list), path `<tenant>/<conversation>/<uuid>.<ext>`. Upload = server-minted signed upload URL → browser upload → `sendMessageAction` re-checks the path prefix and the stored size. Download = membership check (RLS) → 5-min signed URL. Photos > 1.5 Mo are downscaled to 2000px JPEG in the browser. Deleting a message deletes the file.
+- **Voice notes:** MediaRecorder (webm/opus, mp4 on Safari), 2-min cap, sent as `kind = voice`.
+- **Not done (deviation):** attachment views are not written to the audit log (thumbnails load on every thread open — too noisy); HEIC isn't converted (iOS file pickers already hand over JPEG).

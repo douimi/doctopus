@@ -1,12 +1,30 @@
 import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { peerOf, type ChatMessage, type ConversationRef, type TeamMember } from '@/lib/messaging/types';
+import {
+  displayName,
+  isImageMime,
+  peerOf,
+  shortName,
+  type ChatMessage,
+  type ConversationRef,
+  type TeamMember,
+} from '@/lib/messaging/types';
 
 export const CABINET_TITLE = 'Cabinet';
 
+function member(team: TeamMember[], id: string | null): TeamMember | null {
+  if (!id) return null;
+  return team.find((m) => m.id === id) ?? null;
+}
+
+/** "Dr Karim Alaoui" / "Salma Tazi". */
 export function memberName(team: TeamMember[], id: string | null): string {
-  if (!id) return 'Membre';
-  return team.find((m) => m.id === id)?.fullName ?? 'Ancien membre';
+  return displayName(member(team, id));
+}
+
+/** "Dr Alaoui" / "Salma" — typing line, read receipts, previews. */
+export function memberShortName(team: TeamMember[], id: string | null): string {
+  return shortName(member(team, id));
 }
 
 export function conversationTitle(conv: ConversationRef, me: string, team: TeamMember[]): string {
@@ -18,15 +36,33 @@ export function roleLabel(role: TeamMember['role']): string {
   return role === 'doctor' ? 'Médecin' : 'Assistant(e)';
 }
 
+export function formatBytes(bytes: number | null): string {
+  if (!bytes) return '';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} Mo`;
+}
+
+export function formatDuration(ms: number | null): string {
+  const total = Math.max(0, Math.round((ms ?? 0) / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
 export function messagePreview(m: ChatMessage): string {
   if (m.deletedAt) return 'Message supprimé';
+  const about = m.patientName ? ` · ${m.patientName}` : '';
   switch (m.kind) {
     case 'voice':
-      return 'Note vocale';
-    case 'attachment':
-      return m.attachmentName ? `Pièce jointe · ${m.attachmentName}` : 'Pièce jointe';
-    default:
-      return (m.body ?? '').replace(/\s+/g, ' ').trim();
+      return `Note vocale (${formatDuration(m.voiceDurationMs)})${about}`;
+    case 'attachment': {
+      const what = isImageMime(m.attachmentMime) ? 'Photo' : (m.attachmentName ?? 'Fichier');
+      const caption = m.body ? ` · ${m.body.replace(/\s+/g, ' ').trim()}` : '';
+      return `📎 ${what}${caption}${about}`;
+    }
+    default: {
+      const text = (m.body ?? '').replace(/\s+/g, ' ').trim();
+      if (!text && m.patientName) return `Patient : ${m.patientName}`;
+      return `${text}${about}`;
+    }
   }
 }
 
@@ -53,4 +89,17 @@ export function daySeparator(isoString: string): string {
 
 export function sameDay(a: string, b: string): boolean {
   return isSameDay(new Date(a), new Date(b));
+}
+
+const APPOINTMENT_STATUS_LABEL: Record<string, string> = {
+  scheduled: 'RDV prévu',
+  waiting: 'En salle d’attente',
+  in_consultation: 'En consultation',
+  done: 'Consultation terminée',
+  cancelled: 'RDV annulé',
+  no_show: 'Absent',
+};
+
+export function appointmentStatusLabel(status: string | null): string | null {
+  return status ? (APPOINTMENT_STATUS_LABEL[status] ?? null) : null;
 }

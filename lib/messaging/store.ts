@@ -4,6 +4,7 @@ import type {
   ConversationSummary,
   MessagePage,
   MessagingBootstrap,
+  QuickReply,
   TeamMember,
 } from './types';
 
@@ -24,6 +25,9 @@ export type MessagingState = {
   team: TeamMember[];
   conversations: Record<string, ConversationSummary>;
   threads: Record<string, ThreadState>;
+  quickReplies: QuickReply[];
+  /** Live appointment statuses (from tenant activity pings), by appointment id. */
+  appointmentStatuses: Record<string, string>;
 };
 
 export const initialMessagingState: MessagingState = {
@@ -32,6 +36,8 @@ export const initialMessagingState: MessagingState = {
   team: [],
   conversations: {},
   threads: {},
+  quickReplies: [],
+  appointmentStatuses: {},
 };
 
 export type MessagingAction =
@@ -51,7 +57,8 @@ export type MessagingAction =
   | { type: 'sendFailed'; conversationId: string; id: string }
   | { type: 'readReceived'; conversationId: string; userId: string; lastReadAt: string }
   | { type: 'markedRead'; conversationId: string }
-  | { type: 'mutedChanged'; conversationId: string; muted: boolean };
+  | { type: 'mutedChanged'; conversationId: string; muted: boolean }
+  | { type: 'appointmentStatus'; appointmentId: string; status: string | null };
 
 function byTime(a: ChatMessage, b: ChatMessage): number {
   const d = Date.parse(a.createdAt) - Date.parse(b.createdAt);
@@ -137,6 +144,7 @@ export function messagingReducer(state: MessagingState, action: MessagingAction)
         ready: true,
         me: action.data.me,
         team: action.data.team,
+        quickReplies: action.data.quickReplies,
         conversations,
       };
     }
@@ -219,6 +227,19 @@ export function messagingReducer(state: MessagingState, action: MessagingAction)
       return {
         ...state,
         conversations: { ...state.conversations, [conv.id]: { ...conv, unread: 0 } },
+      };
+    }
+    case 'appointmentStatus': {
+      if (!action.status) {
+        if (!(action.appointmentId in state.appointmentStatuses)) return state;
+        const next = { ...state.appointmentStatuses };
+        delete next[action.appointmentId];
+        return { ...state, appointmentStatuses: next };
+      }
+      if (state.appointmentStatuses[action.appointmentId] === action.status) return state;
+      return {
+        ...state,
+        appointmentStatuses: { ...state.appointmentStatuses, [action.appointmentId]: action.status },
       };
     }
     case 'mutedChanged': {

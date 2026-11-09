@@ -93,6 +93,19 @@ export const messages = pgTable(
   ],
 );
 
+export const quickReplies = pgTable(
+  'quick_replies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'restrict' }),
+    label: text('label').notNull(),
+    body: text('body').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('quick_replies_tenant_idx').on(t.tenantId, t.sortOrder)],
+);
+
 export type Conversation = typeof conversations.$inferSelect;
 export type ConversationMember = typeof conversationMembers.$inferSelect;
 export type Message = typeof messages.$inferSelect;

@@ -18,6 +18,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { createTenantChannel, ensureRealtimeAuth } from '@/lib/supabase/realtime';
 import { showToast } from '@/components/ui/toast';
 import {
+  createAttachmentUploadAction,
   deleteMessageAction,
   getMessagingBootstrapAction,
   listMessagesAction,
@@ -34,7 +35,15 @@ import {
   totalUnread,
   type MessagingState,
 } from '@/lib/messaging/store';
-import type { ChatMessage, ConversationRef } from '@/lib/messaging/types';
+import {
+  baseMime,
+  type ChatMessage,
+  type ConversationRef,
+  type MessageKind,
+  type PatientRef,
+} from '@/lib/messaging/types';
+import { useTenantActivity } from '@/components/shell/tenant-realtime';
+import { ATTACHMENT_BUCKET, QUICK_REPLIES_CHANGED_EVENT } from './constants';
 import {
   notificationPermission,
   playChime,
@@ -45,6 +54,18 @@ import {
   type NotificationPermissionState,
 } from '@/lib/messaging/alerts';
 import { conversationTitle, messagePreview } from './format';
+import { displayName } from '@/lib/messaging/types';
+
+/** What the composer hands to `send`. */
+export type Draft =
+  | { kind: 'text' | 'quick'; body: string; patient: PatientRef | null }
+  | { kind: 'attachment'; file: File; body: string; patient: PatientRef | null }
+  | { kind: 'voice'; blob: Blob; mime: string; durationMs: number; patient: PatientRef | null };
+
+/** "Write about this patient" request (e.g. from /today), consumed by the composer. */
+export type ComposeRequest = { conversationId: string; patient: PatientRef; nonce: number };
+
+type PendingUpload = { blob: Blob; name: string; mime: string; path: string | null };
 
 type MessagingApi = {
   /** Open the side panel, optionally on a conversation. */
@@ -58,7 +79,9 @@ type MessagingApi = {
   markRead: (conversationId: string) => void;
   loadLatest: (conversationId: string) => Promise<void>;
   loadOlder: (conversationId: string) => Promise<void>;
-  send: (conversationId: string, body: string) => Promise<boolean>;
+  send: (conversationId: string, draft: Draft) => Promise<boolean>;
+  /** Open the cabinet thread in the dock with this patient attached. */
+  composeAbout: (patient: PatientRef) => Promise<void>;
   retry: (message: ChatMessage) => Promise<boolean>;
   deleteMessage: (messageId: string) => Promise<void>;
   openDirect: (peerId: string) => Promise<string | null>;
@@ -72,6 +95,7 @@ const StateContext = createContext<MessagingState>(initialMessagingState);
 const DockContext = createContext<DockState>({ open: false, conversationId: null });
 const ApiContext = createContext<MessagingApi | null>(null);
 const PermissionContext = createContext<NotificationPermissionState>('default');
+const ComposeContext = createContext<ComposeRequest | null>(null);
 
 type NewPayload = { conversation: ConversationRef; message: ChatMessage };
 type ReadPayload = { conversationId: string; userId: string; lastReadAt: string };
@@ -93,6 +117,8 @@ export function MessagingProvider({
   const pathname = usePathname();
   const [state, dispatch] = useReducer(messagingReducer, initialMessagingState);
   const [dock, setDock] = useState<DockState>({ open: false, conversationId: null });
+  const [compose, setCompose] = useState<ComposeRequest | null>(null);
+  const uploadsRef = useRef(new Map<string, PendingUpload>());
   const permission = useSyncExternalStore<NotificationPermissionState>(
     subscribeNotificationPermission,
     notificationPermission,
@@ -120,8 +146,10 @@ export function MessagingProvider({
     try {
       const data = await getMessagingBootstrapAction();
       dispatch({ type: 'bootstrap', data });
+      return data;
     } catch {
       /* transient; next visibility/reconnect retries */
+      return null;
     }
   }, []);
 
@@ -144,7 +172,20 @@ export function MessagingProvider({
 
   useEffect(() => {
     void bootstrap();
+    const onChanged = () => void bootstrap();
+    window.addEventListener(QUICK_REPLIES_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(QUICK_REPLIES_CHANGED_EVENT, onChanged);
   }, [bootstrap]);
+
+  // Patient cards show the linked appointment's live status.
+  useTenantActivity((event) => {
+    if (event.table !== 'appointments') return;
+    dispatch({
+      type: 'appointmentStatus',
+      appointmentId: event.id,
+      status: event.op === 'DELETE' ? null : event.status,
+    });
+  });
 
   // ── alerts for incoming messages ─────────────────────────────────────
   const alertFor = useCallback((message: ChatMessage, conversation: ConversationRef) => {
@@ -153,8 +194,8 @@ export function MessagingProvider({
     if (conv?.muted) return;
     const title = conversationTitle(conversation, s.me?.id ?? userId, s.team);
     const preview = messagePreview(message);
-    const heading =
-      conversation.kind === 'cabinet' ? `${message.senderName} · ${title}` : message.senderName;
+    const sender = displayName(s.team.find((m) => m.id === message.senderId) ?? null);
+    const heading = conversation.kind === 'cabinet' ? `${sender} · ${title}` : sender;
     playChime();
     if (document.visibilityState === 'hidden') {
       showSystemNotification({
@@ -303,52 +344,89 @@ export function MessagingProvider({
     dispatch({ type: 'threadLoaded', conversationId, page, mode: 'older' });
   }, []);
 
+  /** Uploads the file (once) then records the message. Safe to call again on retry. */
   const deliver = useCallback(async (message: ChatMessage): Promise<boolean> => {
+    const fail = (description: string) => {
+      dispatch({ type: 'sendFailed', conversationId: message.conversationId, id: message.id });
+      showToast({ title: 'Message non envoyé', description, variant: 'warning' });
+      return false;
+    };
     try {
+      let attachment: { path: string; name: string; mime: string; bytes: number } | null = null;
+      const upload = uploadsRef.current.get(message.id);
+      if (upload) {
+        if (!upload.path) {
+          const target = await createAttachmentUploadAction({
+            conversationId: message.conversationId,
+            mime: upload.mime,
+            bytes: upload.blob.size,
+          });
+          if (!target.ok) return fail(target.error);
+          const { error } = await getSupabaseBrowserClient()
+            .storage.from(ATTACHMENT_BUCKET)
+            .uploadToSignedUrl(target.path, target.token, upload.blob, { contentType: upload.mime });
+          if (error) return fail('Le fichier n’a pas pu être envoyé. Réessayez.');
+          upload.path = target.path;
+        }
+        attachment = { path: upload.path, name: upload.name, mime: upload.mime, bytes: upload.blob.size };
+      }
       const res = await sendMessageAction({
         id: message.id,
         conversationId: message.conversationId,
-        body: message.body ?? '',
+        kind: message.kind,
+        body: message.body,
+        patientId: message.patientId,
+        attachment,
+        voiceDurationMs: message.voiceDurationMs,
       });
-      if (res.ok) {
-        dispatch({ type: 'sendSucceeded', message: res.message });
-        return true;
-      }
-      dispatch({ type: 'sendFailed', conversationId: message.conversationId, id: message.id });
-      showToast({ title: 'Message non envoyé', description: res.error, variant: 'warning' });
-      return false;
+      if (!res.ok) return fail(res.error);
+      uploadsRef.current.delete(message.id);
+      if (message.localUrl) setTimeout(() => URL.revokeObjectURL(message.localUrl!), 60_000);
+      dispatch({ type: 'sendSucceeded', message: res.message });
+      return true;
     } catch {
-      dispatch({ type: 'sendFailed', conversationId: message.conversationId, id: message.id });
-      showToast({
-        title: 'Message non envoyé',
-        description: 'Connexion perdue. Touchez le message pour réessayer.',
-        variant: 'warning',
-      });
-      return false;
+      return fail('Connexion perdue. Touchez le message pour réessayer.');
     }
   }, []);
 
   const send = useCallback(
-    async (conversationId: string, body: string) => {
+    async (conversationId: string, draft: Draft) => {
       const me = stateRef.current.me;
-      const text = body.trim();
-      if (!me || !text) return false;
+      if (!me) return false;
+      const body = 'body' in draft ? draft.body.trim() : '';
+      let kind: MessageKind = draft.kind;
+      let file: { blob: Blob; name: string; mime: string } | null = null;
+      if (draft.kind === 'attachment') {
+        file = { blob: draft.file, name: draft.file.name || 'fichier', mime: baseMime(draft.file.type) };
+      } else if (draft.kind === 'voice') {
+        const mime = baseMime(draft.mime);
+        file = { blob: draft.blob, name: `note-vocale.${mime.split('/')[1] ?? 'webm'}`, mime };
+      } else if (!body && !draft.patient) {
+        return false;
+      }
+      if (draft.kind === 'quick' && !body) kind = 'text';
+      const id = crypto.randomUUID();
+      const localUrl = file ? URL.createObjectURL(file.blob) : undefined;
+      if (file) uploadsRef.current.set(id, { ...file, path: null });
       const message: ChatMessage = {
-        id: crypto.randomUUID(),
+        id,
         conversationId,
         senderId: me.id,
         senderName: me.fullName,
-        kind: 'text',
-        body: text,
-        patientId: null,
+        kind,
+        body: body || null,
+        patientId: draft.patient?.id ?? null,
+        patientName: draft.patient?.name ?? null,
         appointmentId: null,
-        attachmentName: null,
-        attachmentMime: null,
-        attachmentBytes: null,
-        voiceDurationMs: null,
+        appointmentStatus: null,
+        attachmentName: file?.name ?? null,
+        attachmentMime: file?.mime ?? null,
+        attachmentBytes: file?.blob.size ?? null,
+        voiceDurationMs: draft.kind === 'voice' ? Math.round(draft.durationMs) : null,
         createdAt: new Date().toISOString(),
         deletedAt: null,
         pending: 'sending',
+        localUrl,
       };
       dispatch({ type: 'optimisticAdded', message });
       return deliver(message);
@@ -363,6 +441,21 @@ export function MessagingProvider({
       return deliver(again);
     },
     [deliver],
+  );
+
+  const composeAbout = useCallback(
+    async (patient: PatientRef) => {
+      let cabinetId = Object.values(stateRef.current.conversations).find((c) => c.kind === 'cabinet')?.id;
+      // Right after a page load the inbox may still be loading: wait for it.
+      if (!cabinetId) cabinetId = (await bootstrap())?.conversations.find((c) => c.kind === 'cabinet')?.id;
+      if (!cabinetId) {
+        showToast({ title: 'Messagerie indisponible', description: 'Réessayez dans un instant.', variant: 'warning' });
+        return;
+      }
+      setCompose({ conversationId: cabinetId, patient, nonce: Date.now() });
+      openDockRef.current(cabinetId);
+    },
+    [bootstrap],
   );
 
   const deleteMessage = useCallback(async (messageId: string) => {
@@ -407,6 +500,7 @@ export function MessagingProvider({
       loadLatest,
       loadOlder,
       send,
+      composeAbout,
       retry,
       deleteMessage,
       openDirect,
@@ -423,6 +517,7 @@ export function MessagingProvider({
       loadLatest,
       loadOlder,
       send,
+      composeAbout,
       retry,
       deleteMessage,
       openDirect,
@@ -435,11 +530,17 @@ export function MessagingProvider({
     <ApiContext.Provider value={api}>
       <PermissionContext.Provider value={permission}>
         <DockContext.Provider value={dock}>
-          <StateContext.Provider value={state}>{children}</StateContext.Provider>
+          <ComposeContext.Provider value={compose}>
+            <StateContext.Provider value={state}>{children}</StateContext.Provider>
+          </ComposeContext.Provider>
         </DockContext.Provider>
       </PermissionContext.Provider>
     </ApiContext.Provider>
   );
+}
+
+export function useComposeRequest(): ComposeRequest | null {
+  return useContext(ComposeContext);
 }
 
 export function useMessagingState(): MessagingState {

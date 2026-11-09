@@ -3,22 +3,32 @@
 import { z } from 'zod';
 import { requireSession } from '@/lib/auth/session';
 import {
+  canPostIn,
   deleteOwnMessage,
+  getAttachmentInfo,
   getMessagingBootstrap,
   listMessages,
   markConversationRead,
   messagesSince,
   openDirectConversation,
-  sendTextMessage,
+  sendMessage,
   setConversationMuted,
   type Scope,
   type SendResult,
 } from '@/lib/messaging/queries';
 import {
+  attachmentPrefix,
+  createUploadTarget,
+  signedDownloadUrl,
+  uploadedSize,
+} from '@/lib/messaging/attachments';
+import {
   listMessagesSchema,
   sendMessageSchema,
   sinceSchema,
+  uploadRequestSchema,
   uuidSchema,
+  type SendMessageInput,
 } from '@/lib/messaging/schemas';
 import type {
   ChatMessage,
@@ -36,6 +46,11 @@ import type {
 async function scope(): Promise<Scope> {
   const session = await requireSession();
   return { tenantId: session.tenantId, userId: session.userId };
+}
+
+function errorCode(err: unknown): string | undefined {
+  const e = err as { cause?: { code?: string }; code?: string };
+  return e?.cause?.code ?? e?.code;
 }
 
 export async function getMessagingBootstrapAction(): Promise<MessagingBootstrap> {
@@ -59,26 +74,69 @@ export async function listMessagesAction(input: {
   return listMessages(await scope(), parsed.data.conversationId, parsed.data.before ?? null);
 }
 
-export async function sendMessageAction(input: {
-  id: string;
-  conversationId: string;
-  body: string;
-}): Promise<SendResult> {
+export async function sendMessageAction(input: SendMessageInput): Promise<SendResult> {
   const parsed = sendMessageSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Message invalide.' };
   }
   const s = await scope();
+  const msg = parsed.data;
   try {
-    return await sendTextMessage(s, parsed.data);
+    let attachment = msg.attachment;
+    if (attachment) {
+      // The file must have been uploaded by this flow into this
+      // conversation's folder, and be as large as announced.
+      if (!attachment.path.startsWith(attachmentPrefix(s.tenantId, msg.conversationId))) {
+        return { ok: false, error: 'Pièce jointe invalide.' };
+      }
+      const size = await uploadedSize(attachment.path);
+      if (size === null) return { ok: false, error: 'Le fichier n’a pas été reçu. Réessayez.' };
+      if (size > 0) attachment = { ...attachment, bytes: size };
+    }
+    return await sendMessage(s, { ...msg, attachment });
   } catch (err) {
     // Never rethrow: driver errors embed the SQL params (the message text,
     // i.e. patient data) and would reach Sentry. Log the code only.
-    const code = (err as { cause?: { code?: string }; code?: string }).cause?.code ??
-      (err as { code?: string }).code;
-    console.error('sendMessageAction failed', { code });
+    console.error('sendMessageAction failed', { code: errorCode(err) });
     return { ok: false, error: 'Envoi impossible. Réessayez.' };
   }
+}
+
+export type UploadTarget = { ok: true; path: string; token: string } | { ok: false; error: string };
+
+/** Signed, single-use upload slot in the conversation's private folder. */
+export async function createAttachmentUploadAction(input: {
+  conversationId: string;
+  mime: string;
+  bytes: number;
+}): Promise<UploadTarget> {
+  const parsed = uploadRequestSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Fichier invalide.' };
+  }
+  const s = await scope();
+  if (!(await canPostIn(s, parsed.data.conversationId))) {
+    return { ok: false, error: 'Conversation introuvable.' };
+  }
+  try {
+    const target = await createUploadTarget(s.tenantId, parsed.data.conversationId, parsed.data.mime);
+    return { ok: true, ...target };
+  } catch (err) {
+    console.error('createAttachmentUploadAction failed', { code: errorCode(err) });
+    return { ok: false, error: 'Envoi du fichier impossible.' };
+  }
+}
+
+/** Short-lived (5 min) URL for a message's file, after an RLS membership check. */
+export async function getAttachmentUrlAction(
+  messageId: string,
+  opts?: { download?: boolean },
+): Promise<string | null> {
+  const parsed = uuidSchema.safeParse(messageId);
+  if (!parsed.success) return null;
+  const info = await getAttachmentInfo(await scope(), parsed.data);
+  if (!info) return null;
+  return signedDownloadUrl(info.path, opts?.download ? (info.name ?? 'fichier') : undefined);
 }
 
 export async function markConversationReadAction(conversationId: string): Promise<void> {

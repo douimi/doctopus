@@ -48,7 +48,12 @@ export type PresenceSnapshot = {
   typing: ReadonlyMap<string, string>;
 };
 
-type PresenceMeta = { userId: string; typingIn: string | null };
+type PresenceMeta = { userId: string };
+type TypingPing = { userId: string; conversationId: string | null };
+
+/** A typing ping lives this long unless refreshed (sender heartbeats every 2.5s). */
+const TYPING_TTL_MS = 6_000;
+const TYPING_HEARTBEAT_MS = 2_500;
 
 type TenantRealtimeApi = {
   subscribeActivity: (fn: ActivityListener) => () => void;
@@ -62,11 +67,22 @@ const ApiContext = createContext<TenantRealtimeApi | null>(null);
 const EMPTY_PRESENCE: PresenceSnapshot = { online: new Set(), typing: new Map() };
 const PresenceContext = createContext<PresenceSnapshot>(EMPTY_PRESENCE);
 
+function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const x of a) if (!b.has(x)) return false;
+  return true;
+}
+
 /**
- * Owns the single private `tenant:<id>` realtime channel:
- *  - `activity` broadcasts (appointments / consultations pings)
- *  - Presence: who is online, who is typing where.
- * Everything else in the tree subscribes through context, so the topic has
+ * Owns the tenant's private realtime channels:
+ *  - `tenant:<id>`: `activity` broadcasts (appointments / consultations
+ *    pings) + Presence (who is online). Presence is keyed per TAB and
+ *    tracked once: realtime-js 2.105 mutates superseded presence metas in
+ *    place, so updating a tracked payload leaves stale copies behind (that
+ *    is what made "écrit…" stick forever).
+ *  - `typing:<id>`: short-lived typing pings, expired locally after 6s
+ *    without a heartbeat, so a lost "stopped typing" can never stick.
+ * Everything else in the tree subscribes through context, so each topic has
  * exactly one owner (see createTenantChannel).
  */
 export function TenantRealtimeProvider({
@@ -80,54 +96,93 @@ export function TenantRealtimeProvider({
 }) {
   const activityListeners = useRef(new Set<ActivityListener>());
   const reconnectListeners = useRef(new Set<ReconnectListener>());
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const typingRef = useRef<string | null>(null);
-  const [presence, setPresence] = useState<PresenceSnapshot>(EMPTY_PRESENCE);
+  const typingChannelRef = useRef<RealtimeChannel | null>(null);
+  const typingSentRef = useRef<{ conversationId: string | null; at: number }>({
+    conversationId: null,
+    at: 0,
+  });
+  // userId → { conversationId, seen (local clock) }
+  const typingSeenRef = useRef(new Map<string, { conversationId: string; seen: number }>());
+  const [online, setOnline] = useState<ReadonlySet<string>>(EMPTY_PRESENCE.online);
+  const [typing, setTypingState] = useState<ReadonlyMap<string, string>>(EMPTY_PRESENCE.typing);
+
+  const publishTyping = useCallback(() => {
+    const now = Date.now();
+    const next = new Map<string, string>();
+    for (const [uid, t] of typingSeenRef.current) {
+      if (now - t.seen < TYPING_TTL_MS) next.set(uid, t.conversationId);
+      else typingSeenRef.current.delete(uid);
+    }
+    setTypingState((prev) => {
+      if (prev.size === next.size && [...next].every(([k, v]) => prev.get(k) === v)) return prev;
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
     let cancelled = false;
     let channel: RealtimeChannel | null = null;
+    let typingChannel: RealtimeChannel | null = null;
     let joinedOnce = false;
+    const tabKey = `${userId}:${crypto.randomUUID()}`;
 
     void (async () => {
       await ensureRealtimeAuth(supabase);
       if (cancelled) return;
       channel = createTenantChannel(supabase, `tenant:${tenantId}`, {
         private: true,
-        presence: { key: userId },
+        presence: { key: tabKey },
       });
-      channelRef.current = channel;
       const ch = channel;
       ch.on('broadcast', { event: 'activity' }, ({ payload }) => {
         for (const fn of activityListeners.current) fn(payload as TenantActivity);
       })
         .on('presence', { event: 'sync' }, () => {
           const state = ch.presenceState<PresenceMeta>();
-          const online = new Set<string>();
-          const typing = new Map<string, string>();
+          const next = new Set<string>();
           for (const [key, metas] of Object.entries(state)) {
             if (metas.length === 0) continue;
-            online.add(key);
-            const t = metas.find((m) => m.typingIn)?.typingIn;
-            if (t) typing.set(key, t);
+            next.add(metas[metas.length - 1]?.userId ?? key.split(':')[0]!);
           }
-          setPresence({ online, typing });
+          setOnline((prev) => (sameSet(prev, next) ? prev : next));
         })
         .subscribe((status) => {
           if (status !== 'SUBSCRIBED') return;
-          void ch.track({ userId, typingIn: typingRef.current });
+          void ch.track({ userId });
           if (joinedOnce) for (const fn of reconnectListeners.current) fn();
           joinedOnce = true;
         });
+
+      typingChannel = createTenantChannel(supabase, `typing:${tenantId}`, { private: true });
+      typingChannelRef.current = typingChannel;
+      typingChannel
+        .on('broadcast', { event: 'typing' }, ({ payload }) => {
+          const p = payload as TypingPing;
+          if (!p?.userId || p.userId === userId) return;
+          if (p.conversationId) {
+            typingSeenRef.current.set(p.userId, { conversationId: p.conversationId, seen: Date.now() });
+          } else {
+            typingSeenRef.current.delete(p.userId);
+          }
+          publishTyping();
+        })
+        .subscribe();
     })();
+
+    // Expire typing entries whose heartbeat stopped.
+    const sweep = setInterval(() => {
+      if (typingSeenRef.current.size > 0) publishTyping();
+    }, 1_000);
 
     return () => {
       cancelled = true;
-      channelRef.current = null;
+      clearInterval(sweep);
+      typingChannelRef.current = null;
       if (channel) void supabase.removeChannel(channel);
+      if (typingChannel) void supabase.removeChannel(typingChannel);
     };
-  }, [tenantId, userId]);
+  }, [tenantId, userId, publishTyping]);
 
   const subscribeActivity = useCallback((fn: ActivityListener) => {
     activityListeners.current.add(fn);
@@ -143,14 +198,28 @@ export function TenantRealtimeProvider({
     };
   }, []);
 
+  /**
+   * Call on every keystroke with the conversation id, and with null when
+   * the user stops / sends. Sends at most one ping per 2.5s while typing.
+   */
   const setTyping = useCallback(
     (conversationId: string | null) => {
-      if (typingRef.current === conversationId) return;
-      typingRef.current = conversationId;
-      void channelRef.current?.track({ userId, typingIn: conversationId });
+      const last = typingSentRef.current;
+      const now = Date.now();
+      if (conversationId === last.conversationId) {
+        if (conversationId === null || now - last.at < TYPING_HEARTBEAT_MS) return;
+      }
+      typingSentRef.current = { conversationId, at: now };
+      void typingChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { userId, conversationId } satisfies TypingPing,
+      });
     },
     [userId],
   );
+
+  const presence = useMemo<PresenceSnapshot>(() => ({ online, typing }), [online, typing]);
 
   const api = useMemo(
     () => ({ subscribeActivity, subscribeReconnect, setTyping }),

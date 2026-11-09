@@ -6,11 +6,15 @@ import { PageBody } from '@/components/shell/page-body';
 import { PageHeader } from '@/components/shell/page-header';
 import { SettingsTabs } from '../settings-tabs';
 import { CabinetForms } from './forms';
+import { QuickRepliesEditor } from '@/components/settings/quick-replies-editor';
+import { getMessagingBootstrap } from '@/lib/messaging/queries';
 
 export default async function CabinetSettingsPage() {
   const session = await requireDoctor();
   const [tenant] = await dbAdmin().select().from(tenants).where(eq(tenants.id, session.tenantId));
   if (!tenant) return null;
+  // Bootstrap seeds the default quick replies on first visit, like the composer does.
+  const { quickReplies } = await getMessagingBootstrap({ tenantId: session.tenantId, userId: session.userId });
 
   return (
     <>
@@ -35,6 +39,9 @@ export default async function CabinetSettingsPage() {
             defaultConsultationPriceMad: tenant.defaultConsultationPriceMad ?? '',
           }}
         />
+        <div className="mt-6">
+          <QuickRepliesEditor initial={quickReplies.map((q) => ({ label: q.label, body: q.body }))} />
+        </div>
       </PageBody>
     </>
   );

@@ -16,6 +16,8 @@
 --   - Storage objects in the `cabinet-assets` bucket
 --     (logo, signature, stamp). Delete via Supabase dashboard
 --     → Storage → cabinet-assets → search by tenant id.
+--   - Messaging attachments in the private `chat-attachments` bucket:
+--     folder `<tenant id>/` (photos, PDF, voice notes).
 --   - The medications + medication_imports tables — those are platform-
 --     wide, not tenant-scoped. Don't touch.
 
@@ -62,6 +64,9 @@ BEGIN
 
   DELETE FROM conversations              WHERE tenant_id = v_tenant_id;
   GET DIAGNOSTICS v_n = ROW_COUNT;  RAISE NOTICE '  conversations: %', v_n;
+
+  DELETE FROM quick_replies              WHERE tenant_id = v_tenant_id;
+  GET DIAGNOSTICS v_n = ROW_COUNT;  RAISE NOTICE '  quick_replies: %', v_n;
 
   -- 2. Prescriptions
   DELETE FROM prescription_items         WHERE tenant_id = v_tenant_id;
