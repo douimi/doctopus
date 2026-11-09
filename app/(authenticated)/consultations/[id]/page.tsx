@@ -136,7 +136,7 @@ export default async function ConsultationPage({
 
   return (
     <CockpitProvider aiAvailable={assistantState.kind === 'ready'}>
-      <LiveRefresh tenantId={session.tenantId} channel={`consultation-${id}`} />
+      <LiveRefresh />
       <ConsultationHeader
         consultationId={id}
         patient={{

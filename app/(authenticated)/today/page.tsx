@@ -103,7 +103,7 @@ export default async function TodayPage() {
 
   return (
     <>
-      <LiveRefresh tenantId={session.tenantId} channel="today" />
+      <LiveRefresh />
       <PageHeader eyebrow="Aujourd'hui" title={dateLabel} actions={actions} />
 
       <PageBody>

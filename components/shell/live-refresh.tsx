@@ -2,75 +2,57 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import { createTenantChannel } from '@/lib/supabase/realtime';
+import { useRealtimeReconnect, useTenantActivity } from './tenant-realtime';
 
 const REFRESH_DEBOUNCE_MS = 200;
 
-const DEFAULT_TABLES = ['appointments', 'consultations'] as const;
+type Table = 'appointments' | 'consultations';
+const DEFAULT_TABLES: readonly Table[] = ['appointments', 'consultations'];
 
 /**
- * Subscribes to Supabase Realtime changes on the given tables (filtered by
- * tenant_id) and triggers `router.refresh()` whenever something changes.
+ * Triggers `router.refresh()` whenever the cabinet's appointments or
+ * consultations change.
  *
  * Refresh paths:
- *   1. Realtime postgres_changes — instant, the happy path.
- *   2. visibilitychange — fire once when the tab regains focus, so a user
- *      who walked away (laptop suspend, tab switch) gets fresh data on
- *      return without paying for periodic background polling.
+ *   1. Tenant activity broadcast (private `tenant:<id>` channel, owned by
+ *      TenantRealtimeProvider) — instant, the happy path. Content-only
+ *      consultation autosaves are not broadcast, so an open editor is
+ *      never refreshed under the doctor's fingers.
+ *   2. Channel (re)join — covers events missed while the socket was down.
+ *   3. visibilitychange — once when the tab regains focus.
  *
- * Both share a single 200ms debounce so they never trigger redundant
- * refreshes.
+ * All paths share a single 200ms debounce.
  *
- * Mounted on /today, /consultations, /consultations/[id].
+ * Mounted on /today, /today/payments, /consultations, /consultations/[id].
  */
-export function LiveRefresh({
-  tenantId,
-  channel,
-  tables = DEFAULT_TABLES as unknown as readonly string[],
-}: {
-  tenantId: string;
-  /** Unique channel name per page so concurrent subscribers don't collide. */
-  channel: string;
-  tables?: readonly string[];
-}) {
+export function LiveRefresh({ tables = DEFAULT_TABLES }: { tables?: readonly Table[] }) {
   const router = useRouter();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const scheduleRefresh = () => {
+    if (debounceRef.current !== null) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => router.refresh(), REFRESH_DEBOUNCE_MS);
+  };
+
+  useTenantActivity((event) => {
+    if (tables.includes(event.table)) scheduleRefresh();
+  });
+
+  useRealtimeReconnect(scheduleRefresh);
+
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-
-    const scheduleRefresh = () => {
-      if (debounceRef.current !== null) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => router.refresh(), REFRESH_DEBOUNCE_MS);
-    };
-
-    let ch = createTenantChannel(supabase, `${channel}:${tenantId}`);
-    for (const table of tables) {
-      ch = ch.on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table,
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        scheduleRefresh,
-      );
-    }
-    ch.subscribe();
-
     const onVisible = () => {
-      if (document.visibilityState === 'visible') scheduleRefresh();
+      if (document.visibilityState === 'visible') {
+        if (debounceRef.current !== null) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => router.refresh(), REFRESH_DEBOUNCE_MS);
+      }
     };
     document.addEventListener('visibilitychange', onVisible);
-
     return () => {
       if (debounceRef.current !== null) clearTimeout(debounceRef.current);
       document.removeEventListener('visibilitychange', onVisible);
-      supabase.removeChannel(ch);
     };
-  }, [tenantId, channel, tables, router]);
+  }, [router]);
 
   return null;
 }

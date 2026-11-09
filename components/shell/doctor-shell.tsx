@@ -15,6 +15,7 @@ import { NotificationBell } from './notification-bell';
 import { Sidebar } from './sidebar';
 import { SidebarNavGroup, SidebarNavItem } from './sidebar-nav';
 import { SidebarUser } from './sidebar-user';
+import { TenantRealtimeProvider } from './tenant-realtime';
 import { WaitingArrivalsListener } from './waiting-arrivals-listener';
 
 /**
@@ -37,7 +38,7 @@ export function DoctorShell({
     <>
       <BrandLockup size={96} className="-my-4 -ml-2" />
       <div className="ml-auto">
-        <NotificationBell tenantId={session.tenantId} />
+        <NotificationBell />
       </div>
     </>
   );
@@ -133,6 +134,7 @@ export function DoctorShell({
   );
 
   return (
+    <TenantRealtimeProvider tenantId={session.tenantId} userId={session.userId}>
     <div className="min-h-dvh bg-app-surface md:flex">
       <Sidebar theme="sky" brand={desktopBrand} footer={footerNode}>
         {navItems}
@@ -142,15 +144,16 @@ export function DoctorShell({
         drawerBrand={<BrandLockup size={72} className="-my-3" />}
         nav={navItems}
         footer={footerNode}
-        topBarRight={<NotificationBell tenantId={session.tenantId} />}
+        topBarRight={<NotificationBell />}
         tabs={mobileTabs}
       />
       {/* Bottom padding clears the mobile tab bar (h-14 + safe area). */}
       <main className="min-w-0 flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
       </main>
-      <WaitingArrivalsListener tenantId={session.tenantId} />
+      <WaitingArrivalsListener />
       <Toaster />
     </div>
+    </TenantRealtimeProvider>
   );
 }

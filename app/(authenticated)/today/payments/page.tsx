@@ -37,7 +37,7 @@ export default async function PaymentsPage() {
 
   return (
     <>
-      <LiveRefresh tenantId={session.tenantId} channel="payments" />
+      <LiveRefresh />
       <PageHeader
         back={{ href: '/today', label: "Aujourd'hui" }}
         title="Encaissements"

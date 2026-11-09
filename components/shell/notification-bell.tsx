@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Bell, CheckCircle2, ClipboardCheck, UserPlus, Wallet } from 'lucide-react';
-import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import { createTenantChannel } from '@/lib/supabase/realtime';
+import { type TenantActivity, useTenantActivity } from './tenant-realtime';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -33,43 +32,28 @@ const CATEGORY_META: Record<
   },
 };
 
-type AppointmentRow = { status?: string | null };
-type ConsultationRow = {
-  is_finalized?: boolean | null;
-  payment_status?: string | null;
-};
-
-function categorize(payload: {
-  table: string;
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  new: unknown;
-  old: unknown;
-}): Category | null {
-  if (payload.table === 'appointments') {
-    const n = payload.new as AppointmentRow | null;
-    const o = payload.old as AppointmentRow | null;
-    if (n?.status !== 'waiting') return null;
-    if (payload.eventType === 'INSERT') return 'arrival';
-    if (payload.eventType === 'UPDATE' && o?.status !== 'waiting') return 'arrival';
+function categorize(event: TenantActivity): Category | null {
+  if (event.table === 'appointments') {
+    if (event.status !== 'waiting') return null;
+    if (event.op === 'INSERT') return 'arrival';
+    if (event.op === 'UPDATE' && event.oldStatus !== 'waiting') return 'arrival';
     return null;
   }
-  if (payload.table === 'consultations' && payload.eventType === 'UPDATE') {
-    const n = payload.new as ConsultationRow | null;
-    const o = payload.old as ConsultationRow | null;
-    if (n?.is_finalized === true && o?.is_finalized !== true) return 'finalized';
-    if (n?.payment_status === 'paid' && o?.payment_status !== 'paid') return 'payment';
+  if (event.op === 'UPDATE') {
+    if (event.isFinalized === true && event.oldIsFinalized !== true) return 'finalized';
+    if (event.paymentStatus === 'paid' && event.oldPaymentStatus !== 'paid') return 'payment';
   }
   return null;
 }
 
 /**
- * Bell-icon notification indicator. Subscribes to appointments +
- * consultations realtime and categorises each change (arrival /
+ * Bell-icon notification indicator. Listens to tenant activity pings
+ * (appointments + consultations) and categorises each change (arrival /
  * finalized / payment). Shows a red badge with the total since
  * lastSeenAt; click reveals a small panel with the per-category
  * breakdown and a link to /today.
  */
-export function NotificationBell({ tenantId }: { tenantId: string }) {
+export function NotificationBell() {
   const router = useRouter();
   const pathname = usePathname();
   const [counts, setCounts] = useState<Counts>(ZERO_COUNTS);
@@ -134,51 +118,11 @@ export function NotificationBell({ tenantId }: { tenantId: string }) {
     };
   }, [open]);
 
-  useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    const tick = (payload: {
-      table: string;
-      eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-      new: unknown;
-      old: unknown;
-      commit_timestamp?: string;
-    }) => {
-      // Filter out replays older than lastSeenAt — Supabase sometimes
-      // re-sends a few records on reconnect.
-      const ts = payload.commit_timestamp ? Date.parse(payload.commit_timestamp) : Date.now();
-      if (Number.isFinite(ts) && ts <= lastSeenAtRef.current) return;
-      const category = categorize(payload);
-      if (!category) return;
-      setCounts((c) => ({ ...c, [category]: c[category] + 1 }));
-    };
-
-    const channel = createTenantChannel(supabase, `notifications:${tenantId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'appointments',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        tick,
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'consultations',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        tick,
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [tenantId]);
+  useTenantActivity((event) => {
+    const category = categorize(event);
+    if (!category) return;
+    setCounts((c) => ({ ...c, [category]: c[category] + 1 }));
+  });
 
   function clearAndGo() {
     const now = Date.now();

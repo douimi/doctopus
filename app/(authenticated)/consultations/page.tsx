@@ -142,7 +142,7 @@ export default async function ConsultationsPage({ searchParams }: Props) {
 
   return (
     <>
-      <LiveRefresh tenantId={session.tenantId} channel="consultations-list" />
+      <LiveRefresh />
       <PageHeader
         title="Consultations"
         description={
