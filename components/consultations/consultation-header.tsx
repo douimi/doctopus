@@ -58,9 +58,10 @@ export function ConsultationHeader({
       className="sticky top-14 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 md:top-0"
     >
       <div className="flex flex-col gap-2 px-4 py-2.5 md:px-8">
-        <div className="flex items-center gap-2">
+        {/* Narrow phones: actions wrap under the patient instead of crushing the name. */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
           <BackLink />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-[1_1_12rem]">
             <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
               <span className="truncate text-title font-semibold text-foreground">
                 {patient.fullName}
@@ -88,7 +89,7 @@ export function ConsultationHeader({
               />
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <AiToggle unavailableReason={aiUnavailableReason} />
             {primaryAction}
             <HeaderOverflowMenu

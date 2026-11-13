@@ -81,7 +81,7 @@ export function MessageBubble({
                 />
               ) : null}
               {message.body ? (
-                <p className={cn('whitespace-pre-wrap break-words', isImage && 'px-2 pt-1')}>
+                <p className={cn('whitespace-pre-wrap [overflow-wrap:anywhere]', isImage && 'px-2 pt-1')}>
                   {message.kind === 'quick' ? (
                     <Zap className="mr-1 inline size-3.5 -translate-y-px" aria-label="Message rapide" />
                   ) : null}

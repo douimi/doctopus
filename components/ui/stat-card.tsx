@@ -98,7 +98,8 @@ export function StatCard({
       </div>
       <div
         className={cn(
-          'mt-2 truncate text-display font-semibold tabular-nums',
+          // Smaller on phones (two cards per row) so amounts like "1 250,00 MAD" fit instead of truncating.
+          'mt-2 text-title font-semibold tabular-nums sm:text-display',
           TONE_VALUE[tone],
         )}
       >

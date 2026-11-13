@@ -15,7 +15,8 @@ export function SectionCard({
   return (
     <details className="group/section panel overflow-hidden" open={defaultOpen}>
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-4 py-2 text-heading font-semibold transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring group-open/section:border-b group-open/section:border-border [&::-webkit-details-marker]:hidden">
-        <span className="flex items-center gap-2">
+        {/* The title never wraps; the hint truncates into the remaining space. */}
+        <span className="flex shrink-0 items-center gap-2">
           <ChevronRight
             className="size-4 text-subtle-foreground transition-transform group-open/section:rotate-90"
             aria-hidden

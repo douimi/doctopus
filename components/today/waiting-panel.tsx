@@ -38,7 +38,7 @@ export function WaitingPanel({
         return (
           <li
             key={a.id}
-            className="flex min-h-14 items-center gap-3 px-4 py-2.5 transition-colors duration-(--duration-fast) hover:bg-muted/40"
+            className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 transition-colors duration-(--duration-fast) hover:bg-muted/40"
           >
             <div
               className="flex size-7 shrink-0 items-center justify-center rounded-md bg-warning-tint text-small font-semibold tabular-nums text-warning-ink"
@@ -46,7 +46,8 @@ export function WaitingPanel({
             >
               {idx + 1}
             </div>
-            <div className="min-w-0 flex-1">
+            {/* Narrow phones: the actions wrap under the name instead of crushing it. */}
+            <div className="min-w-0 flex-[1_1_9rem]">
               <Link
                 href={`/patients/${a.patient.id}`}
                 className="block break-words rounded-sm text-body font-medium text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -76,7 +77,7 @@ export function WaitingPanel({
               </div>
             </div>
             {a.arrivedAt ? <WaitTime since={a.arrivedAt} /> : null}
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="ml-auto flex shrink-0 items-center gap-1">
               {canStartConsultation ? (
                 <form action={startConsultationAction}>
                   <input type="hidden" name="appointmentId" value={a.id} />

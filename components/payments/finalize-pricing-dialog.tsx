@@ -196,7 +196,7 @@ export function FinalizePricingDialog({
                 </Alert>
               ) : null}
 
-              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className={cn('space-y-1.5', isFree && 'opacity-50')}>
                   <Label htmlFor="price-mad">Prix (MAD)</Label>
                   <Input

@@ -61,7 +61,7 @@ const AUDIT_LABEL: Record<string, string> = {
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="grid gap-0.5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
+    <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
       <dt className="text-small text-muted-foreground">{label}</dt>
       <dd className="min-w-0 text-body text-foreground">{children}</dd>
     </div>
@@ -109,7 +109,7 @@ export default async function AdminTenantDetailPage({
         }
       />
       <PageBody>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           {/* 1 — overview (left column, first row). */}
           <Card className="min-w-0">
             <CardHeader>

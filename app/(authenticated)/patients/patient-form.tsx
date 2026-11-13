@@ -100,7 +100,7 @@ export function PatientForm({
       <Card>
         <CardContent className="space-y-6">
           <FormSection title="Identité">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField label="Nom" error={fe.lastName}>
                 <Input
                   id="lastName"
@@ -152,7 +152,7 @@ export function PatientForm({
           </FormSection>
 
           <FormSection title="Contact">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField label="Téléphone" optional error={fe.phone}>
                 <Input
                   id="phone"
@@ -179,7 +179,7 @@ export function PatientForm({
           </FormSection>
 
           <FormSection title="Couverture">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="grid gap-1.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <Label htmlFor="coverageType">Type</Label>

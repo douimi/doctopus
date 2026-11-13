@@ -264,7 +264,7 @@ export default async function StatsPage({
           <MonthlyTable rows={monthly} labels={monthLabels} selected={month} runningMonth={thisMonth} />
         </Section>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Section title="Recettes par méthode">
             <MethodChart byMethod={revenueByMethod} />
           </Section>

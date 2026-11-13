@@ -60,7 +60,7 @@ export function CreateInviteForm() {
       <CardContent className="space-y-4">
         <form
           action={action}
-          className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_auto] sm:items-start"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_auto] sm:items-start"
         >
           <FormField label="Email" error={fe.email}>
             <Input

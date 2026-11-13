@@ -222,7 +222,7 @@ export default function DesignShowcasePage() {
             <CardContent>
               <form className="space-y-6">
                 <FormSection title="Identité">
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField label="Nom">
                       <Input defaultValue="El Idrissi" />
                     </FormField>
@@ -298,7 +298,7 @@ export default function DesignShowcasePage() {
         </Block>
 
         <Block title="États vides et chargement">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="panel">
               <EmptyState
                 icon={Users}

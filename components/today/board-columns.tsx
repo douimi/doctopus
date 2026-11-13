@@ -64,7 +64,7 @@ export function BoardColumns({ columns }: { columns: BoardColumn[] }) {
         ))}
       </SegmentedControl>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
         {primary ? renderColumn(primary) : null}
         {secondary.length > 0 ? (
           <div className="min-w-0 space-y-6">{secondary.map(renderColumn)}</div>
